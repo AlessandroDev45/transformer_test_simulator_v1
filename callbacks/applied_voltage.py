@@ -211,6 +211,17 @@ def analyze_resonant_system_viability(capacitance_nf, voltage_kv, enrolamento=""
 
 # --- Callbacks ---
 
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+@dash.callback(
+    Output("transformer-info-applied-page", "children"),
+    Input("transformer-info-applied", "children"),
+    prevent_initial_call=False
+)
+def update_applied_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    return global_panel_content
+
 # Callback para preencher o campo de frequência na página de tensão aplicada
 # Removido para permitir que o usuário preencha manualmente a frequência de ensaio
 # A frequência de ensaio deve ser preenchida pelo usuário, não calculada automaticamente

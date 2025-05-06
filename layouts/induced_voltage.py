@@ -38,7 +38,20 @@ def create_induced_voltage_layout():
         # Primeira seção - Informações do Transformador (Container a ser preenchido)
         dbc.Row([
             dbc.Col([
-                html.Div(id="transformer-info-induced", className="mb-2") # Div onde o painel será renderizado
+                html.Div([
+                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
+                    html.Div(id="transformer-info-induced-page", className="mb-2"),
+                    # Div oculta para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}),
+                    # Adicionado para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"})
+                ])
             ], width=12)
         ], className=SPACING['row_margin']),
 

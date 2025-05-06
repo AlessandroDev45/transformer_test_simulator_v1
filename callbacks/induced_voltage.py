@@ -84,8 +84,16 @@ def register_induced_voltage_callbacks(app_instance):
     """
     log.debug("Registrando callbacks de Tensão Induzida")
 
-    # --- Callback para exibir informações do transformador removido ---
-    # Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
+    # --- Callback para exibir informações do transformador na página ---
+    # Este callback copia o conteúdo do painel global para o painel específico da página
+    @app_instance.callback(
+        Output("transformer-info-induced-page", "children"),
+        Input("transformer-info-induced", "children"),
+        prevent_initial_call=False
+    )
+    def update_induced_page_info_panel(global_panel_content):
+        """Copia o conteúdo do painel global para o painel específico da página."""
+        return global_panel_content
 
     # --- Callback principal para cálculo de tensão induzida ---
     @app_instance.callback(

@@ -21,7 +21,8 @@ from config import (
     PLACEHOLDER_STYLE, ERROR_STYLE, CARD_HEADER_STYLE
 )
 # Importar funções de utilidade para stores
-from utils.store_utils import prepare_data_for_store, update_store_data, update_app_cache
+from utils.store_diagnostics import convert_numpy_types
+from components.validators import validate_dict_inputs
 from utils.constants import (
     potencia_magnet_data, perdas_nucleo_data,
     Q_SWITCH_POWERS, CAPACITORS_BY_VOLTAGE,
@@ -94,14 +95,26 @@ def losses_render_tab_content(tab_ativa):
      Output("corrente-excitacao-1-1", "value", allow_duplicate=True),
      Output("corrente-excitacao-1-2", "value", allow_duplicate=True)],
     [Input("tabs-perdas", "active_tab")],
-    [State("losses-store", "data")],
     prevent_initial_call=True)
-def losses_load_vazio_values(active_tab, losses_data):
+def losses_load_vazio_values(active_tab):
+    """
+    Carrega os valores de perdas em vazio do MCP quando a aba é selecionada.
+    """
     if active_tab != "tab-vazio": raise PreventUpdate
+
+    # Verificar se o MCP está disponível
+    if not hasattr(app, 'mcp') or app.mcp is None:
+        log.error("MCP não disponível para carregar valores de perdas em vazio")
+        return tuple([no_update] * 6)
+
+    # Obter dados do MCP
+    losses_data = app.mcp.get_data('losses-store')
+
     outputs = [no_update] * 6
     if losses_data and 'resultados_perdas_vazio' in losses_data:
         stored = losses_data['resultados_perdas_vazio']
         outputs = [stored.get(k, no_update) for k in ['perdas_vazio_kw', 'peso_nucleo', 'corrente_excitacao', 'inducao', 'corrente_exc_1_1', 'corrente_exc_1_2']]
+
     return tuple(outputs)
 
 @dash.callback(
@@ -110,16 +123,31 @@ def losses_load_vazio_values(active_tab, losses_data):
      Output("perdas-carga-kw_U_max", "value", allow_duplicate=True),
      Output("temperatura-referencia", "value", allow_duplicate=True)],
     [Input("tabs-perdas", "active_tab")],
-    [State("losses-store", "data")],
     prevent_initial_call=True)
-def losses_load_carga_values(active_tab, losses_data):
-    if active_tab != "tab-carga" or not losses_data or 'resultados_perdas_carga' not in losses_data: raise PreventUpdate
+def losses_load_carga_values(active_tab):
+    """
+    Carrega os valores de perdas em carga do MCP quando a aba é selecionada.
+    """
+    if active_tab != "tab-carga": raise PreventUpdate
+
+    # Verificar se o MCP está disponível
+    if not hasattr(app, 'mcp') or app.mcp is None:
+        log.error("MCP não disponível para carregar valores de perdas em carga")
+        return tuple([no_update] * 4)
+
+    # Obter dados do MCP
+    losses_data = app.mcp.get_data('losses-store')
+
+    if not losses_data or 'resultados_perdas_carga' not in losses_data:
+        return tuple([no_update] * 4)
+
     stored = losses_data['resultados_perdas_carga']
     # Provide defaults if keys are missing but the main dict exists
     p_nom = stored.get('perdas_carga_nom', no_update)
     p_min = stored.get('perdas_carga_min', no_update)
     p_max = stored.get('perdas_carga_max', no_update)
     t_ref = stored.get('temperatura_referencia', 75 if p_nom != no_update else no_update) # Default 75 only if other data is present
+
     return p_nom, p_min, p_max, t_ref
 
 # --- Callback para Atualizar Cache de Dados do Transformador removido ---
@@ -134,12 +162,13 @@ def losses_load_carga_values(active_tab, losses_data):
      Output("losses-store", "data", allow_duplicate=True)],
     [Input("calcular-perdas-vazio", "n_clicks")],
     [State(id, "value") for id in ["perdas-vazio-kw", "peso-projeto-Ton", "corrente-excitacao",
-                                  "inducao-nucleo", "corrente-excitacao-1-1", "corrente-excitacao-1-2"]] +
-    [State("transformer-inputs-store", "data"),
-     State("losses-store", "data")],
+                                  "inducao-nucleo", "corrente-excitacao-1-1", "corrente-excitacao-1-2"]],
     prevent_initial_call=True
 )
-def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2, transformer_data, losses_data):
+def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2):
+    """
+    Processa os inputs de perdas em vazio, atualiza o MCP, e retorna os resultados para a UI.
+    """
     if n_clicks is None: raise PreventUpdate
 
     initial_params = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
@@ -147,14 +176,25 @@ def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_exc
     initial_sut = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
     initial_legend_obs = html.Div()
 
+    # Verificar se o MCP está disponível
+    if not hasattr(app, 'mcp') or app.mcp is None:
+        error_div = html.Div("MCP não disponível. Não é possível processar os dados.", style=ERROR_STYLE)
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+
     # --- Input Validation ---
     required_inputs = [perdas_vazio, peso_nucleo, corrente_excitacao, inducao]
     if any(val is None or val == '' for val in required_inputs):
         error_div = html.Div("Preencha todos os campos obrigatórios (Perdas, Peso, Corr. Exc%, Indução).", style=ERROR_STYLE)
         return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+
+    # Obter dados do transformador do MCP
+    transformer_data = app.mcp.get_data('transformer-inputs-store')
     if not transformer_data:
         error_div = html.Div("Dados básicos do transformador não encontrados.", style=ERROR_STYLE)
         return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+
+    # Obter dados de perdas existentes do MCP
+    losses_data = app.mcp.get_data('losses-store')
 
     try:
         # --- Constants & Helpers ---
@@ -598,7 +638,7 @@ def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_exc
         legenda_observacoes_content = create_legend_section(valores_excedidos, sut_analysis_data)
         dut_voltage_results_content = html.Div(tabela_resultados_dut_content, style=TABLE_WRAPPER_STYLE)
 
-        # --- Update Store (Vazio) ---
+        # --- Update MCP (Vazio) ---
         # Prepare the new data to be stored
         new_data = {
             'resultados_aco_m4': resultados_aco_m4, 'resultados_projeto': resultados_projeto,
@@ -617,8 +657,28 @@ def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_exc
         # Update the resultados_perdas_vazio section with the new data
         current_data['resultados_perdas_vazio'].update(new_data)
 
-        # Prepare the data for storage (ensure it's serializable)
-        final_data = prepare_data_for_store(current_data, "losses-store")
+        # Validar os dados antes de armazenar no MCP
+        validation_rules = {
+            'perdas_vazio_kw': {'required': True, 'positive': True, 'label': 'Perdas em Vazio'},
+            'peso_nucleo': {'required': True, 'positive': True, 'label': 'Peso do Núcleo'},
+            'corrente_excitacao': {'required': True, 'positive': True, 'label': 'Corrente de Excitação'},
+            'inducao': {'required': True, 'positive': True, 'label': 'Indução'}
+        }
+
+        validation_errors = validate_dict_inputs(new_data, validation_rules)
+        if validation_errors:
+            log.warning(f"Validação de dados de perdas em vazio falhou: {validation_errors}")
+            # Continua mesmo com erros, mas loga os problemas
+
+        # Serializar os dados antes de armazenar no MCP
+        serializable_data = convert_numpy_types(current_data, debug_path="losses_vazio_update")
+
+        # Armazenar no MCP
+        app.mcp.set_data('losses-store', serializable_data)
+        log.info("Dados de perdas em vazio atualizados no MCP")
+
+        # Retornar os dados para o store (para manter compatibilidade)
+        final_data = serializable_data
 
         return (parametros_gerais_content,
                 dut_voltage_results_content,
@@ -933,17 +993,22 @@ def calculate_sut_eps_current_compensated(
      Output("condicoes-nominais-card-body", "children"),
      Output("losses-store", "data", allow_duplicate=True)],
     [Input("calcular-perdas-carga", "n_clicks")],
-    [State(id, "value") for id in ["perdas-carga-kw_U_nom", "perdas-carga-kw_U_min", "perdas-carga-kw_U_max", "temperatura-referencia"]] +
-    [State("transformer-inputs-store", "data"),
-     State("losses-store", "data")],
+    [State(id, "value") for id in ["perdas-carga-kw_U_nom", "perdas-carga-kw_U_min", "perdas-carga-kw_U_max", "temperatura-referencia"]],
     prevent_initial_call=True
 )
-def losses_handle_perdas_carga(n_clicks, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia, transformer_data, losses_data):
+def losses_handle_perdas_carga(n_clicks, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia):
+    """
+    Processa os inputs de perdas em carga, atualiza o MCP, e retorna os resultados para a UI.
+    """
     if n_clicks is None: raise PreventUpdate
 
-    initial_nominal_content = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
     initial_detailed_content = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
     error_div = None # Initialize error div
+
+    # Verificar se o MCP está disponível
+    if not hasattr(app, 'mcp') or app.mcp is None:
+        error_div = html.Div("MCP não disponível. Não é possível processar os dados.", style=ERROR_STYLE)
+        return initial_detailed_content, error_div, no_update
 
     # --- Input Validation ---
     required_fields = [perdas_carga_nom, perdas_carga_min, perdas_carga_max]
@@ -952,9 +1017,15 @@ def losses_handle_perdas_carga(n_clicks, perdas_carga_nom, perdas_carga_min, per
     if any(field is None or field == '' for field in required_fields):
         error_div = html.Div("Por favor, preencha todos os campos de perdas em carga.", style=ERROR_STYLE)
         return initial_detailed_content, error_div, no_update # Put error in nominal card
+
+    # Obter dados do transformador do MCP
+    transformer_data = app.mcp.get_data('transformer-inputs-store')
     if not transformer_data or any(transformer_data.get(field) is None or transformer_data.get(field) == '' for field in required_transformer_fields):
         error_div = html.Div("Dados incompletos do transformador. Verifique os dados básicos.", style=ERROR_STYLE)
         return initial_detailed_content, error_div, no_update
+
+    # Obter dados de perdas existentes do MCP
+    losses_data = app.mcp.get_data('losses-store')
     if not losses_data or 'resultados_perdas_vazio' not in losses_data or losses_data['resultados_perdas_vazio'].get('perdas_vazio_kw') is None:
         error_div = html.Div("As perdas em vazio não foram calculadas. Calcule-as primeiro na aba 'Perdas em Vazio'.", style=ERROR_STYLE)
         return initial_detailed_content, error_div, no_update
@@ -2576,8 +2647,25 @@ def losses_handle_perdas_carga(n_clicks, perdas_carga_nom, perdas_carga_min, per
         # Update the resultados_perdas_carga section with the new data
         current_data['resultados_perdas_carga'].update(new_data)
 
-        # Prepare the data for storage (ensure it's serializable)
-        final_data = prepare_data_for_store(current_data, "losses-store")
+        # Validar os dados antes de armazenar no MCP
+        validation_rules = {
+            'perdas_carga_nom': {'required': True, 'positive': True, 'label': 'Perdas em Carga (Nominal)'},
+            'perdas_carga_min': {'required': True, 'positive': True, 'label': 'Perdas em Carga (Tap Menor)'},
+            'perdas_carga_max': {'required': True, 'positive': True, 'label': 'Perdas em Carga (Tap Maior)'},
+            'temperatura_referencia': {'required': True, 'min': 0, 'max': 200, 'label': 'Temperatura de Referência'}
+        }
+
+        validation_errors = validate_dict_inputs(new_data, validation_rules)
+        if validation_errors:
+            log.warning(f"Validação de dados de perdas em carga falhou: {validation_errors}")
+            # Continua mesmo com erros, mas loga os problemas
+
+        # Serializar os dados antes de armazenar no MCP
+        serializable_data = convert_numpy_types(current_data, debug_path="losses_carga_update")
+
+        # Armazenar no MCP
+        app.mcp.set_data('losses-store', serializable_data)
+        log.info("Dados de perdas em carga atualizados no MCP")
 
         log.info(f"Cálculo de perdas em carga concluído para Tref={temperatura_ref}°C. Max V: {max_test_voltage_kv_overall:.1f} kV, Max Q Req: {max_test_power_mvar_overall_required:.1f} MVAr.")
         log.info(f"Sugestão Geral - CS: {cs_config_str}, Q: {q_config_str} ({q_power_mvar_provided_overall:.1f} MVAr)")
@@ -2585,7 +2673,7 @@ def losses_handle_perdas_carga(n_clicks, perdas_carga_nom, perdas_carga_min, per
         # --- Return ---
         return (detailed_results_layout,
                 condicoes_nominais_content,
-                final_data)
+                serializable_data)
 
     except ValueError as e:
         log.error(f"ValueError in handle_perdas_carga: {e}")

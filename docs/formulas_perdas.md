@@ -1,3 +1,12 @@
+# Perdas em Transformadores
+
+## Introdução
+
+As perdas em transformadores são divididas em duas categorias principais:
+
+- Perdas em vazio (Fe)
+- Perdas em carga (Cu)
+
 # Detalhamento dos Cálculos de Perdas
 
 Este documento detalha as fórmulas e parâmetros usados nos cálculos de perdas em vazio e em carga.

@@ -57,7 +57,19 @@ def create_dielectric_comprehensive_layout():
         # Primeira seção - Informações do Transformador (Container a ser preenchido)
         dbc.Row([
             dbc.Col([
-                html.Div(id="transformer-info-comprehensive", className=SPACING['row_margin']) # Div onde o painel será renderizado
+                html.Div([
+                    # Div onde o painel será renderizado
+                    html.Div(id="transformer-info-comprehensive", className=SPACING['row_margin']),
+                    # Div oculta para compatibilidade com o callback global_updates
+                    html.Div(id="transformer-info-dieletric", style={"display": "none"}),
+                    # Adicionado para compatibilidade com o callback global_updates
+                    html.Div(id="transformer-info-losses", style={"display": "none"}),
+                    html.Div(id="transformer-info-impulse", style={"display": "none"}),
+                    html.Div(id="transformer-info-applied", style={"display": "none"}),
+                    html.Div(id="transformer-info-induced", style={"display": "none"}),
+                    html.Div(id="transformer-info-short-circuit", style={"display": "none"}),
+                    html.Div(id="transformer-info-temperature-rise", style={"display": "none"})
+                ])
             ], width=12)
         ], className=SPACING['row_margin']),
 

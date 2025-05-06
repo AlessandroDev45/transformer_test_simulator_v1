@@ -22,6 +22,16 @@ def create_standards_management_layout():
         # Store para comunicação entre callbacks
         dcc.Store(id="standards-processing-status-store", data=None, storage_type="memory"),
 
+        # Divs ocultas para compatibilidade com o callback global_updates
+        html.Div(id="transformer-info-losses", style={"display": "none"}),
+        html.Div(id="transformer-info-impulse", style={"display": "none"}),
+        html.Div(id="transformer-info-dieletric", style={"display": "none"}),
+        html.Div(id="transformer-info-applied", style={"display": "none"}),
+        html.Div(id="transformer-info-induced", style={"display": "none"}),
+        html.Div(id="transformer-info-short-circuit", style={"display": "none"}),
+        html.Div(id="transformer-info-temperature-rise", style={"display": "none"}),
+        html.Div(id="transformer-info-comprehensive", style={"display": "none"}),
+
         # Nota: Os stores globais são definidos em components/global_stores.py
         # e incluídos no layout principal em layouts/main_layout.py
         dbc.Row([

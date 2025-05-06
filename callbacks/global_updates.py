@@ -1,14 +1,17 @@
-
 # callbacks/global_updates.py
 """
 Callbacks globais para atualização de componentes em múltiplas seções.
-Centraliza a atualização dos painéis de informação do transformador.
+Centraliza a atualização dos painéis de informação do transformador lendo do MCP.
 """
 import dash
 from dash import Input, Output, callback, ctx, no_update, html
 import logging
 from components.transformer_info_template import create_transformer_info_panel
-from app import app # Import app instance to access cache
+from app import app # Import app instance to access MCP
+from utils.logger import log_detailed # Importa log detalhado
+import time
+import json
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -21,134 +24,73 @@ info_panel_outputs = [
     Output("transformer-info-induced", "children", allow_duplicate=True),
     Output("transformer-info-short-circuit", "children", allow_duplicate=True),
     Output("transformer-info-temperature-rise", "children", allow_duplicate=True),
+    # Adicionar outros painéis se existirem
+    Output("transformer-info-comprehensive", "children", allow_duplicate=True), # Exemplo
 ]
 
 @callback(
     info_panel_outputs,
-    Input("transformer-inputs-store", "data"),
-    prevent_initial_call=True # Prevent running on initial load before data exists
+    Input("transformer-inputs-store", "data"), # Acionado quando o store (e portanto o MCP) muda
+    prevent_initial_call='initial_duplicate' # Permite rodar na carga inicial para exibir dados padrão/carregados
 )
-def global_updates_all_transformer_info_panels(transformer_data):
+def global_updates_all_transformer_info_panels(store_data): # Recebe dados do store como trigger
     """
-    Atualiza TODOS os painéis de informação do transformador nas diferentes
-    seções sempre que os dados básicos são salvos/atualizados.
+    Atualiza TODOS os painéis de informação do transformador lendo do MCP.
     """
-    import time
-    import json
-    from utils.logger import log_detailed
-    from utils.callback_helpers import standard_transformer_info_callback
-
     start_time = time.time()
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    triggered_id = ctx.triggered_id if ctx.triggered else "N/A"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    triggered_id = ctx.triggered_id if ctx.triggered else "Initial Load / No Trigger"
+    module_name = "global_updates"
+    function_name = "global_updates_all_transformer_info_panels"
 
     log_detailed(
-        log,
-        'info',
-        f"[Global Info Panel Update] Iniciando atualização de painéis",
-        module="global_updates",
-        function="update_all_transformer_info_panels",
-        data={
-            'timestamp': timestamp,
-            'trigger': triggered_id,
-            'data_type': type(transformer_data).__name__,
-            'data_keys': list(transformer_data.keys()) if isinstance(transformer_data, dict) else None,
-            'data_size': len(json.dumps(transformer_data)) if transformer_data else 0
-        }
+        log, 'debug',
+        f"Iniciando atualização global de painéis",
+        module=module_name, function=function_name,
+        data={'trigger': triggered_id}
     )
 
-    # Verificar se o MCP está disponível
-    mcp_available = hasattr(app, 'mcp') and app.mcp is not None
-    if mcp_available:
-        log_detailed(
-            log,
-            'info',
-            f"[Global Info Panel Update] MCP disponível, verificando dados",
-            module="global_updates",
-            function="update_all_transformer_info_panels"
-        )
+    if app.mcp is None:
+        log.error(f"[{module_name}] MCP não disponível. Não é possível atualizar painéis.")
+        error_panel = html.Div("Erro interno: MCP não inicializado.", className="alert alert-danger small")
+        return [error_panel] * len(info_panel_outputs)
 
-        # Verificar se os dados no MCP são consistentes com os dados recebidos
-        mcp_data = app.mcp.get_data('transformer-inputs-store')
-        data_match = transformer_data == mcp_data
+    # --- Obter dados do MCP ---
+    transformer_data_mcp = app.mcp.get_data('transformer-inputs-store')
 
-        log_detailed(
-            log,
-            'info',
-            f"[Global Info Panel Update] Verificação de consistência MCP: {data_match}",
-            module="global_updates",
-            function="update_all_transformer_info_panels",
-            data={
-                'mcp_keys': list(mcp_data.keys()) if isinstance(mcp_data, dict) else None,
-                'data_match': data_match
-            }
-        )
+    log_detailed(
+        log, 'debug',
+        f"Dados obtidos do MCP para painéis",
+        module=module_name, function=function_name,
+        data={'keys': list(transformer_data_mcp.keys()) if isinstance(transformer_data_mcp, dict) else None}
+    )
 
-        # Se os dados não forem consistentes, atualizar o MCP
-        if not data_match and transformer_data:
-            app.mcp.set_data('transformer-inputs-store', transformer_data, validate=False)
-            log_detailed(
-                log,
-                'info',
-                f"[Global Info Panel Update] MCP atualizado com novos dados",
-                module="global_updates",
-                function="update_all_transformer_info_panels"
-            )
+    # Verificar se os dados são válidos (simples verificação se é um dict não vazio)
+    if not isinstance(transformer_data_mcp, dict) or not transformer_data_mcp:
+         log.warning(f"[{module_name}] Dados do MCP inválidos ou vazios. Exibindo mensagem padrão.")
+         default_panel = create_transformer_info_panel({}) # Cria painel vazio/padrão
+         return [default_panel] * len(info_panel_outputs)
 
-    # Atualizar o cache de dados do transformador
-    if hasattr(app, 'transformer_data_cache') and isinstance(transformer_data, dict):
-        app.transformer_data_cache = transformer_data
-        log_detailed(
-            log,
-            'info',
-            f"[Global Info Panel Update] Cache global atualizado",
-            module="global_updates",
-            function="update_all_transformer_info_panels",
-            data={'fields_count': len(transformer_data)}
-        )
-
-    # Criar o painel usando a função padronizada
+    # Criar o painel HTML
     try:
-        panel_html = standard_transformer_info_callback(
-            transformer_data=transformer_data,
-            module_name="global_updates",
-            function_name="update_all_transformer_info_panels",
-            app_instance=app
-        )
-
-        # Calcular o tempo de execução
+        panel_html = create_transformer_info_panel(transformer_data_mcp)
         execution_time = time.time() - start_time
-
         log_detailed(
-            log,
-            'info',
-            f"[Global Info Panel Update] Painel criado com sucesso",
-            module="global_updates",
-            function="update_all_transformer_info_panels",
-            data={
-                'execution_time_ms': round(execution_time * 1000, 2),
-                'panel_type': type(panel_html).__name__
-            }
+            log, 'debug',
+            f"Painel de informações global criado",
+            module=module_name, function=function_name,
+            data={'execution_time_ms': round(execution_time * 1000, 2)}
         )
-
-        # Return the same panel for all outputs
+        # Retorna o mesmo painel para todas as saídas
         return [panel_html] * len(info_panel_outputs)
     except Exception as e:
-        # Calcular o tempo até a exceção
         execution_time = time.time() - start_time
-
         log_detailed(
-            log,
-            'error',
-            "[Global Info Panel Update] Erro ao criar painel de informações",
-            module="global_updates",
-            function="update_all_transformer_info_panels",
-            data={
-                'execution_time_ms': round(execution_time * 1000, 2),
-                'error_type': type(e).__name__
-            },
+            log, 'error',
+            f"Erro ao criar painel de informações global",
+            module=module_name, function=function_name,
+            data={'execution_time_ms': round(execution_time * 1000, 2)},
             exception=e
         )
-
-        error_panel = html.Div(f"Erro ao carregar dados do transformador: {e}", className="alert alert-danger")
+        error_panel = html.Div(f"Erro ao carregar dados: {e}", className="alert alert-danger small")
         return [error_panel] * len(info_panel_outputs)

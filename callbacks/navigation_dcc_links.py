@@ -1,6 +1,6 @@
 # callbacks/navigation_dcc_links.py
 import dash
-from dash import Input, Output, State, html, dcc
+from dash import Input, Output, State, html, dcc, no_update
 import dash_bootstrap_components as dbc
 import logging
 import traceback
@@ -211,5 +211,53 @@ def update_active_link_style(pathname):
         log.error(f"Erro ao atualizar estilo do link ativo: {e}")
         # Retorna estilos vazios em caso de erro
         return [{} for _ in VALID_ROUTES]
+
+# Callback para mostrar informações de callbacks
+@dash.callback(
+    Output('callback-info-panel', 'children'),
+    Output('callback-info-panel', 'style'),
+    Input('url', 'pathname'),
+    Input('url', 'search')
+)
+def show_callback_info(pathname, search):
+    """
+    Mostra informações sobre os callbacks do módulo atual.
+
+    Args:
+        pathname (str): O pathname atual
+        search (str): A parte de consulta da URL
+
+    Returns:
+        tuple: (conteúdo do painel, estilo do painel)
+    """
+    try:
+        # Verifica se a URL contém o parâmetro ?show_callbacks=true
+        show_callbacks = 'show_callbacks=true' in (search or '')
+
+        if not show_callbacks:
+            # Se não estiver mostrando callbacks, esconde o painel
+            return None, {'display': 'none'}
+
+        # Importa o analisador de callbacks
+        from utils.callback_analyzer import get_module_info_by_pathname, format_module_info_html
+
+        # Obtém informações do módulo
+        module_info = get_module_info_by_pathname(pathname)
+
+        # Formata as informações como HTML
+        html_content = format_module_info_html(module_info)
+
+        # Retorna o conteúdo e o estilo do painel
+        return html.Div([
+            html.H3("Informações de Callbacks", className="mb-3"),
+            html.Div([
+                html.Div(html.A("Fechar", href=pathname, className="btn btn-sm btn-danger"), className="mb-3"),
+                html.Div(html.Iframe(srcDoc=html_content, style={"border": "none", "width": "100%", "height": "70vh"}))
+            ], className="p-3")
+        ], className="bg-light text-dark p-3 rounded"), {'display': 'block', 'position': 'fixed', 'top': '70px', 'right': '20px', 'width': '600px', 'maxHeight': '80vh', 'overflowY': 'auto', 'zIndex': '1000', 'backgroundColor': '#f8f9fa', 'border': '1px solid #ddd', 'borderRadius': '5px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.1)'}
+
+    except Exception as e:
+        log.error(f"Erro ao mostrar informações de callbacks: {e}")
+        return html.Div(f"Erro ao mostrar informações de callbacks: {str(e)}"), {'display': 'block', 'position': 'fixed', 'top': '70px', 'right': '20px', 'width': '400px', 'backgroundColor': '#f8d7da', 'color': '#721c24', 'padding': '10px', 'borderRadius': '5px', 'zIndex': '1000'}
 
 # A importação em app.py já deve registrar este callback.

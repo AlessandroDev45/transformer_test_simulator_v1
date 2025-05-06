@@ -11,6 +11,17 @@ from components.transformer_info_template import create_transformer_info_panel
 
 log = logging.getLogger(__name__)
 
+def safe_float(value, default=None):
+    """Converte valor para float de forma segura, retorna default em caso de erro."""
+    if value is None or value == '':
+        return default
+    try:
+        s_value = str(value).replace('.', '').replace(',', '.')
+        return float(s_value)
+    except (ValueError, TypeError):
+        log.warning(f"Could not convert '{value}' to float.")
+        return default
+
 def standard_transformer_info_callback(transformer_data, module_name, function_name, app_instance):
     """
     Função padronizada para atualizar o painel de informações do transformador.

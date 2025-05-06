@@ -422,13 +422,38 @@ class TabelaTransformadorNBR(NormaBase):
         super().__init__("NBR 5356-3", config.PATH_NBR_DATA, "tabela.json")
         # _carregar_dados() já foi chamado no __init__ da classe base
 
-    # Métodos get_* específicos da NBR podem ser adicionados aqui se houver lógica
-    # diferente da busca padrão no JSON, mas geralmente os métodos da base devem servir.
-    # Exemplo: Se NBR tivesse uma regra específica não presente no JSON.
-    # def get_valor_especifico_nbr(self, ...):
-    #     # Lógica específica NBR
-    #     pass
-    pass # Nenhuma lógica específica NBR necessária por enquanto, usa métodos da base
+    def get_impulso_atm_values(self, classe_tensao: Union[str, float]) -> List[Union[int, float]]:
+        """ Retorna valores de Impulso Atmosférico (BIL) para uma classe de tensão. """
+        valores = []
+        um_valor = safe_float_convert(classe_tensao)
+        if um_valor is None: return valores
+        niveis_encontrados = self._encontrar_nivel_isolamento(um_valor)
+        for nivel in niveis_encontrados:
+            if nivel.get('standard') == 'IEC/NBR':
+                bil = nivel.get('bil_kvp')
+                if bil is not None and bil not in valores:
+                    valores.append(bil)
+        return sorted(valores)
+
+    def get_nbi_neutro_values(self, classe_tensao: Union[str, float]) -> List[Union[int, float]]:
+        """
+        Retorna valores de NBI para o neutro com base na classe de tensão.
+        Normalmente, o NBI do neutro é 60% do NBI principal para a mesma classe.
+        """
+        valores = []
+        um_valor = safe_float_convert(classe_tensao)
+        if um_valor is None: return valores
+
+        # Obter valores de NBI principal para esta classe
+        valores_nbi_principal = self.get_impulso_atm_values(um_valor)
+
+        # Calcular valores de NBI para o neutro (60% do NBI principal)
+        for nbi in valores_nbi_principal:
+            nbi_neutro = round(nbi * 0.6, 1)  # 60% do NBI principal, arredondado para 1 casa decimal
+            if nbi_neutro not in valores:
+                valores.append(nbi_neutro)
+
+        return sorted(valores)
 
 
 class TabelaTransformadorIEEE(NormaBase):

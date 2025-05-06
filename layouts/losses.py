@@ -187,7 +187,14 @@ def create_losses_layout():
         dbc.Row([
             dbc.Col(html.Div([
                 create_transformer_info_panel(transformer_data),
-                html.Div(id="transformer-info-losses", style={"display": "none"}) # Compatibility
+                html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}), # Compatibility
+                html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"}) # Compatibility
             ], className="mb-1"), width=12)
         ], className="mb-1"),
 

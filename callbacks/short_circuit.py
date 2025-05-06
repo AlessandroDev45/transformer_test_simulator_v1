@@ -1,7 +1,9 @@
 # callbacks/short_circuit.py
 """ Callbacks para a seção de Suportabilidade a Curto-Circuito. """
 import dash
+import numpy as np
 from dash import dcc, html, Input, Output, State, callback, ctx, no_update, callback_context
+from utils.callback_helpers import safe_float
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
@@ -47,19 +49,6 @@ FAIL_STYLE = {**BASE_STATUS_STYLE, "color": colors.get('fail', '#dc3545'), "back
 WARNING_STYLE = {**BASE_STATUS_STYLE, "color": colors.get('warning', '#ffc107'), "backgroundColor": "#fff3cd"} # Yellow text, light yellow bg
 
 # --- Funções Auxiliares ---
-def safe_float(value, default=None):
-    """ Safely convert value to float, return default on error. """
-    if value is None or value == '':
-        return default
-    try:
-        # Handle potential formatting like '1,234.56' if needed
-        if isinstance(value, str):
-             value = value.replace(',', '') # Basic handling
-        return float(value)
-    except (ValueError, TypeError):
-        log.warning(f"Could not convert '{value}' to float.")
-        return default
-
 def create_empty_sc_figure():
     """ Creates an empty placeholder figure for the impedance variation graph. """
     fig = px.bar(title="Variação da Impedância (%)")
@@ -75,8 +64,16 @@ def create_empty_sc_figure():
 
 # --- Callbacks ---
 
-# Callback para atualizar o painel de informações do transformador removido
-# Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+@app.callback(
+    Output("transformer-info-short-circuit-page", "children"),
+    Input("transformer-info-short-circuit", "children"),
+    prevent_initial_call=False
+)
+def update_short_circuit_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    return global_panel_content
 
 # Callback para CARREGAR dados do Store
 @app.callback(
@@ -192,13 +189,13 @@ def short_circuit_load_data(stored_data, pathname):
 
 # Callback principal para cálculo e verificação
 @app.callback(
-    [Output("isc-sym-result", "value"),           # Output: Isc Simétrica (kA)
-     Output("isc-peak-result", "value"),          # Output: Isc Pico (kA)
-     Output("delta-impedance-result", "value"),  # Output: Variação Z (%)
-     Output("impedance-check-status", "children"), # Output: Status (APROVADO/REPROVADO)
-     Output("impedance-variation-graph", "figure"),# Output: Gráfico de barras
-     Output("short-circuit-error-message", "children"), # Output: Mensagem de erro
-     Output("short-circuit-store", "data")],      # Output: Store com resultados
+    [Output("isc-sym-result", "value", allow_duplicate=True),           # Output: Isc Simétrica (kA)
+     Output("isc-peak-result", "value", allow_duplicate=True),          # Output: Isc Pico (kA)
+     Output("delta-impedance-result", "value", allow_duplicate=True),  # Output: Variação Z (%)
+     Output("impedance-check-status", "children", allow_duplicate=True), # Output: Status (APROVADO/REPROVADO)
+     Output("impedance-variation-graph", "figure", allow_duplicate=True),# Output: Gráfico de barras
+     Output("short-circuit-error-message", "children", allow_duplicate=True), # Output: Mensagem de erro
+     Output("short-circuit-store", "data", allow_duplicate=True)],      # Output: Store com resultados
     [Input("calc-short-circuit-btn", "n_clicks")], # Trigger: Botão Calcular
     [State("impedance-before", "value"),          # State: Z antes (%)
      State("impedance-after", "value"),           # State: Z depois (%)
@@ -383,201 +380,4 @@ def short_circuit_calculate_and_verify(
         return None, None, None, "-", empty_fig, error_message, no_update
 
 
-# Callback para cálculo (usando o botão que era Limpar)
-@callback(
-    [Output("isc-sym-result", "value", allow_duplicate=True),           # Output: Isc Simétrica (kA)
-     Output("isc-peak-result", "value", allow_duplicate=True),          # Output: Isc Pico (kA)
-     Output("delta-impedance-result", "value", allow_duplicate=True),  # Output: Variação Z (%)
-     Output("impedance-check-status", "children", allow_duplicate=True), # Output: Status (APROVADO/REPROVADO)
-     Output("impedance-variation-graph", "figure", allow_duplicate=True),# Output: Gráfico de barras
-     Output("short-circuit-error-message", "children", allow_duplicate=True), # Output: Mensagem de erro
-     Output("short-circuit-store", "data", allow_duplicate=True)],      # Output: Store com resultados
-    [Input("limpar-short-circuit", "n_clicks")], # Trigger: Botão Calcular
-    [State("impedance-before", "value"),          # State: Z antes (%)
-     State("impedance-after", "value"),           # State: Z depois (%)
-     State("peak-factor", "value"),               # State: Fator k√2
-     State("isc-side", "value"),                  # State: Lado (AT/BT/TERCIARIO)
-     State("power-category", "value"),            # State: Categoria (I/II/III)
-     State("transformer-inputs-store", "data"),   # State: Dados básicos do trafo
-     State("short-circuit-store", "data"),        # State: Dados atuais do store
-     State("url", "pathname")],                   # State: URL atual para verificação
-    prevent_initial_call=True
-)
-def short_circuit_calculate_and_verify_limpar(
-    n_clicks, z_before_str, z_after_str, k_peak_factor_str, side, category,
-    transformer_data, current_store_data, pathname):
-    """
-    Calcula correntes de curto-circuito, variação de impedância, verifica conformidade
-    e atualiza a UI e o store. Acionado pelo botão 'Limpar'.
-    """
-    # Verificar se estamos na página correta
-    if pathname != "/curto-circuito":
-        log.info(f"Ignorando callback short_circuit_calculate_and_verify_limpar em página diferente: {pathname}")
-        raise PreventUpdate
 
-    if n_clicks is None or n_clicks == 0:
-        raise PreventUpdate
-
-    log.info("Calculando Suportabilidade a Curto-Circuito...")
-    log.info(f"[CALC ShortCircuit] n_clicks = {n_clicks}")
-    log.info(f"[CALC ShortCircuit] Trigger: {callback_context.triggered_id}")
-
-    # Imprimir no console também
-    print(f"\n\n***** [CALC ShortCircuit] CALLBACK INICIADO *****")
-    print(f"[CALC ShortCircuit] n_clicks = {n_clicks}")
-    print(f"[CALC ShortCircuit] Trigger: {callback_context.triggered_id}")
-
-    # --- Gráfico Vazio Padrão ---
-    empty_fig = create_empty_sc_figure()
-
-    # --- Validação de Entradas da UI ---
-    input_values = {
-        'z_before': safe_float(z_before_str),
-        'z_after': safe_float(z_after_str),
-        'k_peak_factor': safe_float(k_peak_factor_str),
-        'side': side,
-        'category': category
-    }
-    validation_rules = {
-        'z_before': {'required': True, 'positive': True, 'label': 'Z Pré-Ensaio (%)'},
-        'z_after': {'required': True, 'positive': True, 'label': 'Z Pós-Ensaio (%)'},
-        'k_peak_factor': {'required': True, 'positive': True, 'label': 'Fator de Pico (k√2)'},
-        'side': {'required': True, 'allowed': ['AT', 'BT', 'TERCIARIO'], 'label': 'Lado Cálculo Isc'},
-        'category': {'required': True, 'allowed': ['I', 'II', 'III'], 'label': 'Categoria Potência'}
-    }
-    errors = validate_dict_inputs(input_values, validation_rules)
-
-    # --- Validação de Dados do Transformador ---
-    if not transformer_data:
-        errors.append("Dados do transformador (Dados Básicos) não encontrados.")
-    else:
-        # Define keys based on 'side'
-        if side == 'AT': req_keys = ['potencia_mva', 'tensao_at', 'corrente_nominal_at', 'impedancia']
-        elif side == 'BT': req_keys = ['potencia_mva', 'tensao_bt', 'corrente_nominal_bt', 'impedancia']
-        elif side == 'TERCIARIO': req_keys = ['potencia_mva', 'tensao_terciario', 'corrente_nominal_terciario', 'impedancia']
-        else: req_keys = [] # Already caught by validation rules
-
-        missing_trafo = [k for k in req_keys if transformer_data.get(k) is None or str(transformer_data.get(k)).strip() == '']
-        if missing_trafo:
-            errors.append(f"Dados básicos necessários para cálculo Isc ({side}) ausentes: {', '.join(missing_trafo)}.")
-        # Also check if nominal impedance exists and is valid
-        if 'impedancia' not in req_keys: # Should not happen if side is valid
-             pass
-        elif transformer_data.get('impedancia') is None or safe_float(transformer_data.get('impedancia'), default=-1) <= 0:
-             errors.append("Impedância nominal (%) em 'Dados Básicos' é inválida ou ausente.")
-
-
-    if errors:
-        log.warning(f"Erros de validação Curto-Circuito: {errors}")
-        error_msg = html.Ul([html.Li(e) for e in errors], style={"color": "red", "fontSize": "0.7rem"})
-        return None, None, None, "-", empty_fig, error_msg, no_update
-
-    # --- Cálculos ---
-    try:
-        # Extrai valores validados
-        z_before = input_values['z_before']
-        z_after = input_values['z_after']
-        k_peak_factor = input_values['k_peak_factor'] # This is k*sqrt(2)
-
-        # Pega dados do transformador (garantidos que existem e são válidos)
-        potencia_mva = float(transformer_data['potencia_mva'])
-        impedancia_nominal_percent = float(transformer_data['impedancia'])
-        impedancia_pu = impedancia_nominal_percent / 100.0
-        tipo = transformer_data.get('tipo_transformador', 'Trifásico')
-        sqrt_3 = math.sqrt(3) if tipo == 'Trifásico' else 1.0
-
-        # Pega corrente nominal do lado selecionado (garantido que existe e é > 0)
-        if side == 'AT': corrente_nominal_a = float(transformer_data['corrente_nominal_at'])
-        elif side == 'BT': corrente_nominal_a = float(transformer_data['corrente_nominal_bt'])
-        else: corrente_nominal_a = float(transformer_data['corrente_nominal_terciario'])
-
-        # --- Cálculos Principais ---
-        isc_sym_ka, isc_peak_ka = calculate_short_circuit_params(
-            corrente_nominal_a, impedancia_pu, k_peak_factor
-        )
-        delta_z_percent = calculate_impedance_variation(z_before, z_after)
-
-        # --- Verificação do Critério ---
-        limit = constants.IMPEDANCE_VARIATION_LIMITS.get(category)
-        limit_text = f"Cat.{category} (±{limit:.1f}%)" if limit is not None else "Cat. Inválida"
-        status_str = "Indeterminado"
-        status_style_to_use = WARNING_STYLE # Default to warning style
-
-        if delta_z_percent is None:
-             status_str = "Erro no cálculo ΔZ"
-             status_style_to_use = FAIL_STYLE
-        elif limit is None:
-             status_str = "Limite não definido (Cat?)"
-        elif abs(delta_z_percent) <= limit:
-             status_str = "APROVADO"
-             status_style_to_use = PASS_STYLE
-        else:
-             status_str = "REPROVADO"
-             status_style_to_use = FAIL_STYLE
-
-        status_children = html.Span(f"ΔZ={delta_z_percent:.2f}% | {status_str}", style=status_style_to_use)
-
-        # ---- Criar Gráfico ----
-        fig = create_empty_sc_figure() # Start with empty
-        if delta_z_percent is not None and limit is not None and limit > 0:
-            df_graph = pd.DataFrame({
-                'Métrica': ['Variação Medida (ΔZ)', 'Limite Superior', 'Limite Inferior'],
-                'Valor (%)': [delta_z_percent, limit, -limit],
-                'Tipo': ['Medido', 'Limite', 'Limite']
-            })
-            fig = px.bar(df_graph, x='Métrica', y='Valor (%)', color='Tipo',
-                         title=f"Variação da Impedância vs Limite ({limit_text})",
-                         color_discrete_map={'Medido': colors.get('primary', 'royalblue'), 'Limite': colors.get('fail', 'firebrick')},
-                         text='Valor (%)', height=300)
-
-            fig.update_traces(texttemplate='%{y:.2f}%', textposition='outside', cliponaxis=False)
-            fig.update_layout(
-                template="plotly_white",
-                yaxis_title="Variação (%)",
-                xaxis_title="",
-                legend_title_text='',
-                yaxis_range=[-limit * 1.5 - 1, limit * 1.5 + 1],
-                margin=dict(t=50, b=10, l=10, r=10),
-                title_font_size=12,
-                font_size=10
-            )
-
-        # --- Armazenar Resultados ---
-        results = {
-            "isc_sym_kA": round(isc_sym_ka, 2) if isc_sym_ka is not None else None,
-            "isc_peak_kA": round(isc_peak_ka, 2) if isc_peak_ka is not None else None,
-            "delta_impedance_percent": round(delta_z_percent, 2) if delta_z_percent is not None else None,
-            "limit_used": limit,
-            "status_text": status_str # Armazena o status textual
-        }
-        if current_store_data is None: current_store_data = {}
-        # Salva inputs originais E resultados
-        original_inputs = {
-            'impedance_before': z_before_str, 'impedance_after': z_after_str,
-            'peak_factor': k_peak_factor_str, 'isc_side': side, 'category': category
-        }
-        current_store_data['inputs_curto_circuito'] = original_inputs
-        current_store_data['resultados_curto_circuito'] = results
-        current_store_data['timestamp'] = datetime.datetime.now().isoformat()
-
-        # Armazenar o gráfico no store para persistência
-        current_store_data['graph_figure'] = fig
-
-        print(f"[CALC ShortCircuit] Stored data: {current_store_data}")
-
-        log.info("Cálculo de Curto-Circuito concluído.")
-        # Limpa mensagem de erro e retorna resultados
-        return (round(isc_sym_ka, 2) if isc_sym_ka is not None else None,
-                round(isc_peak_ka, 2) if isc_peak_ka is not None else None,
-                f"{delta_z_percent:.2f}" if delta_z_percent is not None else "",
-                status_children, fig, "", current_store_data)
-
-    # --- Tratamento de Erros ---
-    except ValueError as e:
-        log.warning(f"Erro de valor no cálculo de curto-circuito: {e}")
-        error_message = f"Erro: {e}"
-        return None, None, None, "-", empty_fig, error_message, no_update
-    except Exception as e:
-        log.exception("Erro inesperado no cálculo de curto-circuito.")
-        error_message = f"Erro inesperado: {e}"
-        return None, None, None, "-", empty_fig, error_message, no_update

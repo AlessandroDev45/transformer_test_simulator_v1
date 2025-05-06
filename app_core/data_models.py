@@ -74,6 +74,7 @@ class TransformerInputsData(BaseModel):
     grupo_ligacao: Optional[str] = Field(default=None, description="Grupo de Ligação (Ex: Dyn1)")
     liquido_isolante: Optional[str] = Field(default='Mineral', description="Líquido Isolante")
     elevacao_oleo_topo: Optional[float] = Field(default=None, description="Elev. Óleo no Topo (°C/K)")
+    elevacao_enrol: Optional[float] = Field(default=None, description="Elev. Enrolamento Comum (°C)")
     tipo_isolamento: Optional[str] = Field(default='uniforme', description="Tipo de Isolamento")
     # Tensões de Ensaio (Podem ser nulas se não definidas)
     teste_tensao_aplicada_at: Optional[Union[int, float, str]] = Field(default=None, description="Tensão Aplicada AT (kV)")

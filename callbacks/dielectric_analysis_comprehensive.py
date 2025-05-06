@@ -612,6 +612,10 @@ def force_load_dielectric_data(n_clicks, transformer_data):
     # Retornar os dados gerados
     return data_to_store
 
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+# Removido callback duplicado que estava causando conflito
+
 # --- Callback para exibir os parâmetros selecionados ---
 @callback(
     Output("selected-params-display", "children"),
@@ -1133,5 +1137,16 @@ def create_enrolamento_comparison(verificador, enrolamento_data, tipo_transforma
             html.P(f"Erro ao criar comparação para {nome}:", className="text-danger"),
             html.P(str(e), className="text-danger")
         ])
+
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+@callback(
+    Output("transformer-info-comprehensive", "children"),
+    Input("transformer-info-dieletric", "children"),
+    prevent_initial_call=False
+)
+def update_comprehensive_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    return global_panel_content
 
 # End of file

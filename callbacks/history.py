@@ -3,7 +3,7 @@
 Callbacks para a seção de Histórico de Sessões.
 """
 import dash
-from dash import Input, Output, State, callback, ctx, no_update, html, ALL
+from dash import Input, Output, State, ctx, no_update, html, ALL
 import dash_bootstrap_components as dbc
 import logging
 from dash.exceptions import PreventUpdate
@@ -30,6 +30,13 @@ from layouts import COLORS
 log = logging.getLogger(__name__)
 
 # --- Callback para carregar a tabela de histórico ao entrar na página ---
+@app.callback(
+    Output("history-table-body", "children"),
+    [Input("url", "pathname"),
+     Input("search-button", "n_clicks")],
+    [State("search-input", "value")],
+    prevent_initial_call=False
+)
 def load_history_table(pathname, n_clicks, search_term):
     """Carrega a tabela de histórico quando o usuário entra na página ou realiza uma busca."""
     print(f"[DEBUG] Callback load_history_table acionado. Pathname: {pathname}, Trigger: {ctx.triggered_id}")
@@ -71,6 +78,14 @@ def load_history_table(pathname, n_clicks, search_term):
         return []
 
 # --- Callback para abrir o modal de salvar sessão ---
+@app.callback(
+    Output("save-session-modal", "is_open"),
+    [Input("save-current-session-button", "n_clicks"),
+     Input("save-session-cancel", "n_clicks"),
+     Input("save-session-confirm", "n_clicks")],
+    [State("save-session-modal", "is_open")],
+    prevent_initial_call=True
+)
 def toggle_save_modal(n_save, n_cancel, n_confirm, is_open):
     """Abre ou fecha o modal de salvar sessão."""
     if ctx.triggered_id == "save-current-session-button":
@@ -80,6 +95,24 @@ def toggle_save_modal(n_save, n_cancel, n_confirm, is_open):
     return is_open
 
 # --- Callback para salvar a sessão atual ---
+@app.callback(
+    [Output("history-message", "children"),
+     Output("history-table-body", "children", allow_duplicate=True),
+     Output("stats-total-sessions", "children", allow_duplicate=True),
+     Output("stats-last-session", "children", allow_duplicate=True)],
+    [Input("save-session-confirm", "n_clicks")],
+    [State("session-name-input", "value"),
+     State("session-notes-input", "value"),
+     State("transformer-inputs-store", "data"),
+     State("losses-store", "data"),
+     State("impulse-store", "data"),
+     State("dieletric-analysis-store", "data"),
+     State("applied-voltage-store", "data"),
+     State("induced-voltage-store", "data"),
+     State("short-circuit-store", "data"),
+     State("temperature-rise-store", "data")],
+    prevent_initial_call=True
+)
 def save_current_session(n_clicks, session_name, notes, *store_data):
     """Salva a sessão atual no banco de dados."""
     print(f"\n\n{'!'*10} CALLBACK save_current_session ACIONADO {'!'*10}")
@@ -334,6 +367,15 @@ def save_current_session(n_clicks, session_name, notes, *store_data):
         return dbc.Alert(f"Erro ao salvar sessão: {str(e)}", color="danger"), no_update, no_update, no_update
 
 # --- Callback para abrir o modal de confirmação de exclusão ---
+@app.callback(
+    [Output("delete-session-modal", "is_open"),
+     Output("delete-session-id-store", "data")],
+    [Input({"type": "delete-btn", "index": ALL}, "n_clicks"),
+     Input("delete-session-cancel", "n_clicks"),
+     Input("delete-session-confirm", "n_clicks")],
+    [State("delete-session-modal", "is_open")],
+    prevent_initial_call=True
+)
 def toggle_delete_modal(delete_clicks, cancel_clicks, confirm_clicks, is_open):
     """Abre ou fecha o modal de confirmação de exclusão."""
     print(f"[DEBUG] toggle_delete_modal acionado. Trigger: {ctx.triggered_id}")
@@ -371,6 +413,15 @@ def toggle_delete_modal(delete_clicks, cancel_clicks, confirm_clicks, is_open):
     return is_open, no_update
 
 # --- Callback para excluir uma sessão ---
+@app.callback(
+    [Output("history-message", "children", allow_duplicate=True),
+     Output("history-table-body", "children", allow_duplicate=True),
+     Output("stats-total-sessions", "children", allow_duplicate=True),
+     Output("stats-last-session", "children", allow_duplicate=True)],
+    [Input("delete-session-confirm", "n_clicks")],
+    [State("delete-session-id-store", "data")],
+    prevent_initial_call=True
+)
 def delete_session(n_clicks, session_data):
     """Exclui uma sessão do banco de dados."""
     if n_clicks is None or n_clicks == 0 or not session_data:
@@ -432,6 +483,14 @@ def delete_session(n_clicks, session_data):
         return dbc.Alert(f"Erro ao excluir sessão: {str(e)}", color="danger"), no_update, no_update, no_update
 
 # --- Callback para carregar uma sessão ---
+@app.callback(
+    [Output("history-temp-store", "data"),
+     Output("history-message", "children", allow_duplicate=True),
+     Output("stats-current-session", "children", allow_duplicate=True)],
+    [Input({"type": "load-btn", "index": ALL}, "n_clicks")],
+    [State("transformer-inputs-store", "data")],
+    prevent_initial_call=True
+)
 def load_session(load_clicks, transformer_inputs=None):
     """Carrega uma sessão do banco de dados e armazena os dados no store temporário."""
     print(f"[DEBUG] load_session acionado. Trigger: {ctx.triggered_id}, Clicks: {load_clicks}")
@@ -500,6 +559,21 @@ def load_session(load_clicks, transformer_inputs=None):
         return no_update, dbc.Alert(f"Erro ao carregar sessão: {str(e)}", color="danger"), no_update
 
 # --- Callback para processar os dados carregados ---
+@app.callback(
+    [
+        # Outputs para os dados dos stores
+        Output("transformer-inputs-store", "data", allow_duplicate=True),
+        Output("losses-store", "data", allow_duplicate=True),
+        Output("impulse-store", "data", allow_duplicate=True),
+        Output("dieletric-analysis-store", "data", allow_duplicate=True),
+        Output("applied-voltage-store", "data", allow_duplicate=True),
+        Output("induced-voltage-store", "data", allow_duplicate=True),
+        Output("short-circuit-store", "data", allow_duplicate=True),
+        Output("temperature-rise-store", "data", allow_duplicate=True),
+    ],
+    [Input("history-temp-store", "data")],
+    prevent_initial_call=True
+)
 def process_loaded_data(temp_store_data):
     """
     Processa os dados carregados e atualiza os stores.
@@ -507,7 +581,6 @@ def process_loaded_data(temp_store_data):
     evitando problemas de timing durante as transições de página.
     """
     import time
-    import json
     from utils.logger import log_detailed, check_store_exists
     from dash import ctx
 
@@ -671,6 +744,13 @@ def process_loaded_data(temp_store_data):
     )
 
 # --- Callback para atualizar as estatísticas da página de histórico ---
+@app.callback(
+    [Output("stats-total-sessions", "children"),
+     Output("stats-last-session", "children"),
+     Output("stats-current-session", "children")],
+    [Input("url", "pathname")],
+    prevent_initial_call=False
+)
 def update_history_stats(pathname):
     """Atualiza as estatísticas exibidas na página de histórico."""
     if pathname != "/historico":
@@ -698,111 +778,22 @@ def update_history_stats(pathname):
         log.error(f"Erro ao atualizar estatísticas de histórico: {e}")
         return "--", "--", "Nova Sessão"
 
+# --- Callback separado para navegação após o processamento dos dados ---
+@app.callback(
+    Output("url", "pathname", allow_duplicate=True),
+    Input("history-temp-store", "data"),
+    prevent_initial_call=True
+)
+def navigate_after_load(data):
+    """Navega para a página de dados básicos após o carregamento dos dados."""
+    return "/dados" if data else dash.no_update
+
 # --- Registrar os callbacks com a aplicação ---
 def register_history_callbacks(app):
     """
     Registra os callbacks de histórico com a aplicação.
 
-    Nota: Todos os callbacks foram refatorados para usar diretamente os dcc.Store
-    em vez do MCP, simplificando o fluxo de dados e reduzindo pontos de falha.
+    Nota: Todos os callbacks foram refatorados para usar decoradores @app.callback,
+    então esta função não precisa mais registrar os callbacks explicitamente.
     """
-    app.callback(
-        Output("history-table-body", "children"),
-        [Input("url", "pathname"),
-         Input("search-button", "n_clicks")],
-        [State("search-input", "value")],
-        prevent_initial_call=False
-    )(load_history_table)
-
-    # Callback para atualizar as estatísticas
-    app.callback(
-        [Output("stats-total-sessions", "children"),
-         Output("stats-last-session", "children"),
-         Output("stats-current-session", "children")],
-        [Input("url", "pathname")],
-        prevent_initial_call=False
-    )(update_history_stats)
-
-    app.callback(
-        Output("save-session-modal", "is_open"),
-        [Input("save-current-session-button", "n_clicks"),
-         Input("save-session-cancel", "n_clicks"),
-         Input("save-session-confirm", "n_clicks")],
-        [State("save-session-modal", "is_open")],
-        prevent_initial_call=True
-    )(toggle_save_modal)
-
-    app.callback(
-        [Output("history-message", "children"),
-         Output("history-table-body", "children", allow_duplicate=True),
-         Output("stats-total-sessions", "children", allow_duplicate=True),
-         Output("stats-last-session", "children", allow_duplicate=True)],
-        [Input("save-session-confirm", "n_clicks")],
-        [State("session-name-input", "value"),
-         State("session-notes-input", "value"),
-         State("transformer-inputs-store", "data"),
-         State("losses-store", "data"),
-         State("impulse-store", "data"),
-         State("dieletric-analysis-store", "data"),
-         State("applied-voltage-store", "data"),
-         State("induced-voltage-store", "data"),
-         State("short-circuit-store", "data"),
-         State("temperature-rise-store", "data")],
-        prevent_initial_call=True
-    )(save_current_session)
-
-    # Callback para botões de excluir
-    app.callback(
-        [Output("delete-session-modal", "is_open"),
-         Output("delete-session-id-store", "data")],
-        [Input({"type": "delete-btn", "index": ALL}, "n_clicks"),
-         Input("delete-session-cancel", "n_clicks"),
-         Input("delete-session-confirm", "n_clicks")],
-        [State("delete-session-modal", "is_open")],
-        prevent_initial_call=True
-    )(toggle_delete_modal)
-
-    app.callback(
-        [Output("history-message", "children", allow_duplicate=True),
-         Output("history-table-body", "children", allow_duplicate=True),
-         Output("stats-total-sessions", "children", allow_duplicate=True),
-         Output("stats-last-session", "children", allow_duplicate=True)],
-        [Input("delete-session-confirm", "n_clicks")],
-        [State("delete-session-id-store", "data")],
-        prevent_initial_call=True
-    )(delete_session)
-
-    # Callback para botões de carregar - usando um store intermediário
-    app.callback(
-        [Output("history-temp-store", "data"),
-         Output("history-message", "children", allow_duplicate=True),
-         Output("stats-current-session", "children", allow_duplicate=True)],
-        [Input({"type": "load-btn", "index": ALL}, "n_clicks")],
-        [State("transformer-inputs-store", "data")],
-        prevent_initial_call=True
-    )(load_session)
-
-    # Callback para processar os dados carregados e atualizar os stores
-    # Separamos a atualização dos stores da navegação para evitar problemas de timing
-    app.callback(
-        [
-            # Outputs para os dados dos stores
-            Output("transformer-inputs-store", "data", allow_duplicate=True),
-            Output("losses-store", "data", allow_duplicate=True),
-            Output("impulse-store", "data", allow_duplicate=True),
-            Output("dieletric-analysis-store", "data", allow_duplicate=True),
-            Output("applied-voltage-store", "data", allow_duplicate=True),
-            Output("induced-voltage-store", "data", allow_duplicate=True),
-            Output("short-circuit-store", "data", allow_duplicate=True),
-            Output("temperature-rise-store", "data", allow_duplicate=True),
-        ],
-        [Input("history-temp-store", "data")],
-        prevent_initial_call=True
-    )(process_loaded_data)
-
-    # Callback separado para navegação após o processamento dos dados
-    app.callback(
-        Output("url", "pathname", allow_duplicate=True),
-        Input("history-temp-store", "data"),
-        prevent_initial_call=True
-    )(lambda data: "/dados" if data else dash.no_update)
+    log.info("Callbacks do módulo history já registrados via decoradores @app.callback.")

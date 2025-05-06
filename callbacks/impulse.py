@@ -18,6 +18,7 @@ from utils.store_diagnostics import convert_numpy_types
 from dash.exceptions import PreventUpdate
 from components.formatters import formatar_dados_basicos # Para formatar dados do transformador
 from components.transformer_info_template import create_transformer_info_panel
+from utils.routes import normalize_pathname, ROUTE_IMPULSE
 
 # --- Configuração do Logging ---
 logger = logging.getLogger(__name__)
@@ -905,6 +906,112 @@ def create_waveform_analysis_table(analysis_results, impulse_type, v_test_kv_inp
 
 # --- Callbacks ---
 
+# Callback para carregar dados iniciais quando a página é carregada
+@app.callback(
+    [
+        Output("test-voltage", "value"),
+        Output("generator-config", "value"),
+        Output("simulation-model-type", "value"),
+        Output("test-object-capacitance", "value"),
+        Output("stray-capacitance", "value"),
+        Output("shunt-resistor", "value"),
+        Output("front-resistor-expression", "value"),
+        Output("tail-resistor-expression", "value"),
+        Output("inductance-adjustment-factor", "value"),
+        Output("tail-resistance-adjustment-factor", "value"),
+        Output("external-inductance", "value"),
+        Output("transformer-inductance", "value"),
+        Output("impulse-type", "value"),
+        Output("gap-distance", "value"),
+        Output("si-capacitor-value", "value")
+    ],
+    [Input("url", "pathname")],
+    prevent_initial_call=False  # Executa na carga inicial
+)
+def load_impulse_data_on_page_load(pathname):
+    """
+    Carrega os dados iniciais do módulo de impulso quando a página é carregada.
+    Este callback é executado quando a URL muda para '/impulso'.
+    """
+    log.info(f"[IMPULSE LOAD] Callback de carregamento inicial acionado. Pathname: {pathname}")
+
+    # Verifica se estamos na página correta
+    if pathname is None:
+        raise PreventUpdate
+
+    clean_path = normalize_pathname(pathname)
+    if clean_path != ROUTE_IMPULSE:
+        log.debug(f"[IMPULSE LOAD] Não estamos na página de impulso (pathname={pathname}). Prevenindo atualização.")
+        raise PreventUpdate
+
+    # Tenta obter os dados do MCP
+    if app.mcp is None:
+        log.error("[IMPULSE LOAD] MCP não inicializado. Abortando.")
+        raise PreventUpdate
+
+    # Obtém os dados do store de impulso
+    impulse_data = app.mcp.get_data('impulse-store')
+    log.info(f"[IMPULSE LOAD] Dados obtidos do MCP: {impulse_data}")
+
+    # Valores padrão caso não haja dados no store
+    defaults = {
+        "test_voltage": 1200,
+        "generator_config": "6S-1P",
+        "simulation_model_type": "hybrid",
+        "test_object_capacitance": 3000,
+        "stray_capacitance": 400,
+        "shunt_resistor": 0.01,
+        "front_resistor_expression": "15",
+        "tail_resistor_expression": "100",
+        "inductance_adjustment_factor": 1.0,
+        "tail_resistance_adjustment_factor": 1.0,
+        "external_inductance": 10,
+        "transformer_inductance": 0.05,
+        "impulse_type": "lightning",
+        "gap_distance": 4.0,
+        "si_capacitor_value": 600
+    }
+
+    # Se não houver dados no store, usa os valores padrão
+    if not impulse_data:
+        log.info("[IMPULSE LOAD] Nenhum dado encontrado no store. Usando valores padrão.")
+        return [
+            defaults["test_voltage"],
+            defaults["generator_config"],
+            defaults["simulation_model_type"],
+            defaults["test_object_capacitance"],
+            defaults["stray_capacitance"],
+            defaults["shunt_resistor"],
+            defaults["front_resistor_expression"],
+            defaults["tail_resistor_expression"],
+            defaults["inductance_adjustment_factor"],
+            defaults["tail_resistance_adjustment_factor"],
+            defaults["external_inductance"],
+            defaults["transformer_inductance"],
+            defaults["impulse_type"],
+            defaults["gap_distance"],
+            defaults["si_capacitor_value"]
+        ]
+
+    # Extrai os valores do store ou usa os valores padrão
+    return [
+        impulse_data.get("test_voltage", defaults["test_voltage"]),
+        impulse_data.get("generator_config", defaults["generator_config"]),
+        impulse_data.get("simulation_model_type", defaults["simulation_model_type"]),
+        impulse_data.get("test_object_capacitance", defaults["test_object_capacitance"]),
+        impulse_data.get("stray_capacitance", defaults["stray_capacitance"]),
+        impulse_data.get("shunt_resistor", defaults["shunt_resistor"]),
+        impulse_data.get("front_resistor_expression", defaults["front_resistor_expression"]),
+        impulse_data.get("tail_resistor_expression", defaults["tail_resistor_expression"]),
+        impulse_data.get("inductance_adjustment_factor", defaults["inductance_adjustment_factor"]),
+        impulse_data.get("tail_resistance_adjustment_factor", defaults["tail_resistance_adjustment_factor"]),
+        impulse_data.get("external_inductance", defaults["external_inductance"]),
+        impulse_data.get("transformer_inductance", defaults["transformer_inductance"]),
+        impulse_data.get("impulse_type", defaults["impulse_type"]),
+        impulse_data.get("gap_distance", defaults["gap_distance"]),
+        impulse_data.get("si_capacitor_value", defaults["si_capacitor_value"])
+    ]
+
 # Callback para iniciar/parar simulação automática
 @app.callback(
     [Output("simulate-button-text", "children"),
@@ -1027,6 +1134,17 @@ def update_rt_value(up_clicks, down_clicks, current_value):
         logger.error(f"Error updating Rt value: {e}")
 
     return current_value
+
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+@app.callback(
+    Output("transformer-info-impulse-page", "children"),
+    Input("transformer-info-impulse", "children"),
+    prevent_initial_call=False
+)
+def update_impulse_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    return global_panel_content
 
 # Callback para mostrar/esconder a calculadora de indutância do transformador
 @app.callback(
@@ -1308,7 +1426,7 @@ def create_impulse_graph(t, v, peak_voltage, rise_time, tail_time):
 # Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
 
 # Função de registro de callbacks para compatibilidade com app.py
-def register_callbacks(app):
+def register_impulse_callbacks(app):
     """
     Registra os callbacks do módulo de impulso.
     Esta função é chamada por app.py para garantir que todos os callbacks sejam registrados.

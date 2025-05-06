@@ -72,10 +72,18 @@ def create_short_circuit_layout():
             dbc.Col([
                 # Componente de informações do transformador adicionado diretamente no layout
                 html.Div([
-                    # Painel de informações do transformador para a seção de Curto-Circuito
-                    create_transformer_info_panel(transformer_data),
-                    # Div oculta para manter compatibilidade com callbacks existentes
-                    html.Div(id="transformer-info-short-circuit", style={"display": "none"})
+                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
+                    html.Div(id="transformer-info-short-circuit-page", className="mb-2"),
+                    # Div oculta para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+                    # Adicionado para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"})
                 ], className="mb-2")
             ], width=12)
         ], className=SPACING['row_margin']),
@@ -186,7 +194,7 @@ def create_short_circuit_layout():
 
                             # Botão de Cálculo
                             dbc.Col([
-                                dbc.Button("Calcular/Verificar", id="limpar-short-circuit", color="primary",
+                                dbc.Button("Calcular / Verificar", id="calc-short-circuit-btn", color="primary",
                                           size="md", className="w-100 mt-1", style=TYPOGRAPHY['button']),
                             ], width=6, className="d-flex align-items-center"),
                         ], className="mb-2"),

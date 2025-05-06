@@ -1051,5 +1051,13 @@ def dielectric_analysis_update_tipo_isolamento_display(transformer_data):
         return "-"
     return tipo_isolamento.capitalize()
 
-# --- Callback para exibir informações do transformador removido ---
-# Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
+# --- Callback para exibir informações do transformador na página ---
+# Este callback copia o conteúdo do painel global para o painel específico da página
+@callback(
+    Output("transformer-info-dieletric-page", "children"),
+    Input("transformer-info-dieletric", "children"),
+    prevent_initial_call=False
+)
+def update_dieletric_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    return global_panel_content

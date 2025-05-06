@@ -1,36 +1,44 @@
 # components/global_stores.py
 """
 Componente para armazenar todos os stores globais da aplicação.
-
-IMPORTANTE: Os stores principais usam storage_type='local' para garantir que os dados
-persistam entre navegações de páginas. Isso é essencial para que os dados inseridos
-nas diferentes seções estejam disponíveis quando o usuário navega para a página de
-Histórico e tenta salvar a sessão.
-
-- storage_type='local': Dados persistem entre páginas e sessões do navegador
-- storage_type='session': Dados persistem entre páginas, mas são perdidos ao fechar o navegador
-- storage_type='memory': Dados são perdidos ao navegar entre páginas (NÃO USE para stores principais)
 """
 from dash import dcc
 import logging
-from app import app
 
 log = logging.getLogger(__name__)
 
-def create_global_stores():
+def create_global_stores(app=None): # Aceita app como argumento opcional
     """
     Cria todos os stores globais necessários para a aplicação.
+
+    Args:
+        app: A instância da aplicação Dash (opcional)
     """
     log.info("Criando stores globais...")
 
     # Importar valores padrão para transformer-inputs-store
     from app_core.transformer_mcp import DEFAULT_TRANSFORMER_INPUTS
 
-    # Retorna uma lista de stores em vez de um container
+    # Tenta obter dados iniciais do app se disponível, senão usa defaults
+    transformer_initial_data = DEFAULT_TRANSFORMER_INPUTS.copy()
+    losses_initial_data = {'resultados_perdas_vazio': {}, 'resultados_perdas_carga': {}}
+
+    if app is not None:
+        # Se o MCP estiver inicializado no app, tenta obter dados dele
+        if hasattr(app, 'mcp') and app.mcp is not None:
+            transformer_initial_data = app.mcp.get_data('transformer-inputs-store') or transformer_initial_data
+            losses_initial_data = app.mcp.get_data('losses-store') or losses_initial_data
+            # ... Fazer o mesmo para outros stores se necessário ...
+        # Se não houver MCP, tenta usar caches se existirem
+        elif hasattr(app, 'transformer_data_cache'):
+             transformer_initial_data = app.transformer_data_cache or transformer_initial_data
+        if hasattr(app, 'losses_store_initial'):
+             losses_initial_data = app.losses_store_initial or losses_initial_data
+
     stores = [
-        # Stores principais da aplicação - usando 'local' para persistir dados entre páginas
-        dcc.Store(id='transformer-inputs-store', storage_type='local', data=DEFAULT_TRANSFORMER_INPUTS.copy()),
-        dcc.Store(id='losses-store', storage_type='local', data=getattr(app, 'losses_store_initial', {'resultados_perdas_vazio': {}, 'resultados_perdas_carga': {}})),
+        # Stores principais - 'local' para persistência
+        dcc.Store(id='transformer-inputs-store', storage_type='local', data=transformer_initial_data),
+        dcc.Store(id='losses-store', storage_type='local', data=losses_initial_data),
         dcc.Store(id='impulse-store', storage_type='local', data={}),
         dcc.Store(id='dieletric-analysis-store', storage_type='local', data={}),
         dcc.Store(id='applied-voltage-store', storage_type='local', data={}),
@@ -46,8 +54,9 @@ def create_global_stores():
         dcc.Store(id="tail-resistor-data", storage_type="memory", data={}),
         dcc.Store(id="calculated-inductance", storage_type="memory", data={}),
         dcc.Store(id="simulation-status", storage_type="memory", data={"running": False}),
+        dcc.Store(id='limit-status-store', storage_type='memory', data={'limite_atingido': False}), # Store para status do limite
 
-        # Stores para o módulo de normas
+        # Stores para normas
         dcc.Store(id="standards-processing-status-store", storage_type="memory", data=None),
         dcc.Store(id="standards-current-search", storage_type="memory", data=None),
         dcc.Store(id="standards-current-category", storage_type="memory", data=None),

@@ -84,10 +84,18 @@ def create_impulse_layout():
                 # Componente de informações do transformador adicionado diretamente no layout
                 # Usando a função create_transformer_info_panel diretamente com os dados obtidos do cache
                 html.Div([
-                    # Painel de informações do transformador com cor azul para a seção de Impulso
-                    create_transformer_info_panel(transformer_data),
-                    # Div oculta para manter compatibilidade com callbacks existentes
-                    html.Div(id="transformer-info-impulse", style={"display": "none"})
+                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
+                    html.Div(id="transformer-info-impulse-page", className="mb-1"),
+                    # Divs ocultas para manter compatibilidade com callbacks existentes
+                    html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+                    # Adicionado para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"})
                 ], className="mb-1")
             ], width=12)
         ], className="mb-1"), # Reduzida a margem inferior da linha de info

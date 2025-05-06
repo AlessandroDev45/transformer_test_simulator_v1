@@ -41,6 +41,16 @@ def create_history_layout():
         dcc.Store(id='history-temp-store', storage_type='memory'), # Temporário para carregar
         dcc.Store(id='delete-session-id-store', storage_type='memory'), # Para ID de exclusão
 
+        # Divs ocultas para compatibilidade com o callback global_updates
+        html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}),
+        html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"}),
+
         # Título da Página (como antes)
         dbc.Row([dbc.Col(html.Div([html.I(className="fas fa-history me-2", style={"fontSize": "1.8rem", "color": COLORS['accent']}), html.H4("Histórico de Sessões", className="d-inline align-middle", style=TYPOGRAPHY['title'])], className="d-flex align-items-center"), width=12)], className=f"{SPACING['row_margin']} pt-2"),
 
