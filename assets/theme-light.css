@@ -1,0 +1,214 @@
+
+/* assets/theme-light.css */
+/* Importar variáveis do tema claro */
+@import url('theme-light-vars.css');
+
+/* Estilos GERAIS para o body quando .light-theme está ativo */
+body.light-theme {
+    background-color: var(--light-background-main) !important;
+    color: var(--light-text-dark) !important; /* Texto padrão escuro */
+}
+body.light-theme a { color: var(--light-accent) !important; }
+body.light-theme a:hover { color: var(--light-primary) !important; }
+body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4, body.light-theme h5, body.light-theme h6 {
+    color: var(--light-text-dark) !important;
+}
+
+/* Navbar Claro */
+body.light-theme .navbar {
+    background-color: var(--light-primary) !important;
+}
+/* Texto branco na navbar */
+body.light-theme .navbar, body.light-theme .navbar .nav-link, body.light-theme .navbar .navbar-brand, body.light-theme .navbar h4, body.light-theme .navbar span, body.light-theme .navbar .h4 {
+    color: white !important; /* Texto branco para contraste */
+}
+/* Itens específicos da Navbar */
+body.light-theme #usage-counter-display {
+     background-color: rgba(255, 255, 255, 0.2) !important;
+     border-color: rgba(255, 255, 255, 0.3) !important;
+     color: white !important;
+ }
+ body.light-theme #limit-alert-div .alert {
+     background-color: rgba(220, 53, 69, 0.9) !important;
+     border-color: rgba(220, 53, 69, 0.5) !important;
+     color: white !important;
+}
+body.light-theme #theme-toggle {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+body.light-theme #theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Sidebar Claro */
+body.light-theme .sidebar { /* Classe CSS aplicada à sidebar Nav */
+    background-color: var(--light-background-card-header) !important; /* Cinza claro */
+    border-right: 1px solid var(--light-border) !important;
+}
+body.light-theme .sidebar .nav-link { /* Links dentro da sidebar */
+    color: var(--light-text-dark) !important; /* Texto escuro nos links */
+    border-left: 3px solid transparent !important;
+}
+body.light-theme .sidebar .nav-link:hover {
+    background-color: #f8f9fa !important; /* Fundo quase branco no hover */
+    color: var(--light-primary) !important;
+    border-left-color: var(--light-secondary) !important;
+}
+/* Link Ativo na Sidebar */
+body.light-theme .sidebar div[id^='nav-container-'][style*='background-color'] .nav-link, /* Regra dinâmica do callback */
+body.light-theme .sidebar .nav-link.active /* Se usar classe 'active' */
+{
+    background-color: var(--light-primary) !important;
+    color: white !important;
+    font-weight: bold !important;
+    border-left-color: var(--light-accent) !important;
+}
+
+/* Conteúdo Claro */
+body.light-theme #content {
+    background-color: var(--light-background-main) !important;
+}
+
+/* Footer Claro */
+body.light-theme footer {
+    background-color: var(--light-background-card-header) !important;
+    border-top: 1px solid var(--light-border) !important;
+    color: var(--light-text-muted) !important;
+}
+
+/* Componentes no Tema Claro (Overrides para .app-* classes) */
+body.light-theme .app-card { background-color: var(--light-background-card) !important; border-color: var(--light-border) !important; }
+body.light-theme .app-card-header { background-color: var(--light-background-card-header) !important; color: var(--light-text-dark) !important; border-bottom-color: var(--light-border) !important; }
+body.light-theme .app-card-body { background-color: var(--light-background-card) !important; color: var(--light-text-dark) !important; }
+body.light-theme .app-table th { background-color: var(--light-background-header) !important; color: var(--light-text-header) !important; }
+body.light-theme .app-table td { color: var(--light-text-dark) !important; } /* Texto escuro para células */
+body.light-theme .app-input, body.light-theme .app-select, body.light-theme .app-textarea { background-color: var(--light-background-input) !important; color: var(--light-text-dark) !important; border-color: var(--light-border-strong) !important; }
+body.light-theme .app-label { color: var(--light-text-dark) !important; }
+body.light-theme .app-input[readonly] { background-color: var(--light-background-card-header) !important; color: var(--light-text-muted) !important; }
+
+/* Dropdowns Claro */
+body.light-theme .dash-dropdown-dark .Select-control { background-color: var(--light-background-input) !important; border-color: var(--light-border-strong) !important; }
+body.light-theme .dash-dropdown-dark .Select-value-label, body.light-theme .dash-dropdown-dark .Select-placeholder { color: var(--light-text-dark) !important; }
+body.light-theme .dash-dropdown-dark .Select-input > input { color: var(--light-text-dark) !important; }
+body.light-theme .dash-dropdown-dark .Select-arrow { border-color: var(--light-text-muted) transparent transparent !important; }
+body.light-theme .dash-dropdown-dark .Select-menu-outer { background-color: var(--light-background-input) !important; border-color: var(--light-border-strong) !important; }
+body.light-theme .dash-dropdown-dark .Select-option { color: var(--light-text-dark) !important; background-color: var(--light-background-input) !important; }
+body.light-theme .dash-dropdown-dark .Select-option:hover, body.light-theme .dash-dropdown-dark .Select-option.is-focused { background-color: #e9ecef !important; }
+body.light-theme .dash-dropdown-dark .Select-option.is-selected { background-color: var(--light-primary) !important; color: white !important; }
+
+
+/* Botões Claros */
+body.light-theme .app-btn-primary { background-color: var(--light-primary) !important; color: white !important; }
+body.light-theme .app-btn-primary:hover { background-color: color-mix(in srgb, var(--light-primary) 85%, black) !important; }
+body.light-theme .app-btn-secondary { background-color: var(--light-secondary) !important; color: white !important; }
+body.light-theme .app-btn-secondary:hover { background-color: color-mix(in srgb, var(--light-secondary) 85%, black) !important; }
+/* Adicionar :hover para outros botões se necessário */
+body.light-theme .app-btn-success { background-color: var(--light-success) !important; color: white !important; }
+body.light-theme .app-btn-danger { background-color: var(--light-danger) !important; color: white !important; }
+body.light-theme .app-btn-warning { background-color: var(--light-warning) !important; color: black !important; }
+body.light-theme .app-btn-info { background-color: var(--light-info) !important; color: white !important; }
+
+
+/* Status Claro */
+body.light-theme .app-status-success { color: var(--light-success) !important; background-color: var(--light-pass-bg) !important; }
+body.light-theme .app-status-danger { color: var(--light-danger) !important; background-color: var(--light-fail-bg) !important; }
+body.light-theme .app-status-warning { color: var(--light-warning) !important; background-color: var(--light-warning-bg) !important; }
+
+/* Tabela de Histórico Claro */
+body.light-theme .history-table-body { background-color: var(--light-background-card) !important; border-color: var(--light-border) !important; }
+body.light-theme .history-table-body .row { border-bottom-color: var(--light-border) !important; }
+body.light-theme .history-table-body .col-3 { color: var(--light-text-dark) !important; }
+body.light-theme #history-table > div:first-child { background-color: var(--light-background-card-header) !important; color: var(--light-text-dark) !important; border-color: var(--light-border) !important; }
+body.light-theme #no-sessions-message { background-color: var(--light-background-card) !important; color: var(--light-text-muted) !important; border-color: var(--light-border) !important; }
+
+/* Overrides para transformer_info_template no tema claro */
+body.light-theme .transformer-info-panel {
+    background-color: var(--light-background-card) !important;
+    border: 1px solid var(--light-border) !important;
+    color: var(--light-text-dark) !important;
+}
+body.light-theme .transformer-info-panel .row,
+body.light-theme .transformer-info-panel div {
+    color: var(--light-text-dark) !important;
+}
+/* Headers internos */
+body.light-theme .transformer-info-panel div[style*="fontWeight: bold"][style*="padding"] {
+     background-color: var(--light-background-card-header) !important; /* Cinza claro header */
+     color: var(--light-text-dark) !important; /* Texto escuro no header */
+     border-bottom: 1px solid var(--light-border) !important;
+}
+/* Spans dentro de headers internos */
+body.light-theme .transformer-info-panel div[style*="fontWeight: bold"][style*="padding"] span {
+    color: var(--light-text-dark) !important;
+}
+/* Header principal */
+body.light-theme .transformer-info-panel > div:first-child[style*="background-image"],
+body.light-theme .transformer-info-panel > div:first-child[style*="backgroundColor: var(--dark-primary)"] /* Target specific dark color */
+{
+     background-color: var(--light-primary) !important; /* Azul primário */
+     color: white !important;
+     border-bottom-color: var(--light-primary) !important;
+     background-image: none !important;
+}
+body.light-theme .transformer-info-panel > div:first-child[style*="background-image"] span,
+body.light-theme .transformer-info-panel > div:first-child[style*="backgroundColor: var(--dark-primary)"] span
+{
+      color: white !important;
+}
+/* Bordas internas */
+body.light-theme .transformer-info-panel div[style*="borderRight"] { border-right-color: var(--light-border) !important; }
+body.light-theme .transformer-info-panel div[style*="borderBottom"] { border-bottom-color: var(--light-border) !important; }
+/* Texto muted */
+body.light-theme .transformer-info-panel span[style*="color: #AAAAAA"] {
+  color: var(--light-text-muted) !important;
+}
+/* Label no painel de info */
+body.light-theme .transformer-info-panel span[style*="color: var(--dark-text-muted)"] {
+  color: var(--light-text-muted) !important;
+}
+/* Valor no painel de info */
+body.light-theme .transformer-info-panel span[style*="color: var(--dark-text-light)"] {
+  color: var(--light-text-dark) !important;
+}
+
+
+/* Tabelas de Resultados - Garantir texto escuro em fundos claros */
+body.light-theme .table-value-cell, /* Classe usada em algumas tabelas */
+body.light-theme td[style*="backgroundColor: white"],
+body.light-theme td[style*="background-color: white"],
+body.light-theme td[style*="background-color: #ffffff"],
+body.light-theme td[style*="background-color: var(--light-background-card)"],
+body.light-theme td[style*="background-color: #e9ecef"], /* Cinza claro */
+body.light-theme td[style*="background-color: #f8f9fa"], /* Quase branco */
+body.light-theme td[style*="background-color: var(--light-ok-bg-faint-opaque)"],
+body.light-theme td[style*="background-color: var(--light-warning-bg-faint-opaque)"],
+body.light-theme td[style*="background-color: var(--light-warning-high-bg-faint-opaque)"],
+body.light-theme td[style*="background-color: var(--light-danger-bg-opaque)"],
+body.light-theme td[style*="background-color: var(--light-info-bg-faint-opaque)"],
+body.light-theme .table td /* Regra mais genérica para garantir */
+{
+    color: var(--light-text-dark) !important;
+}
+
+/* Headers de tabela no tema claro */
+body.light-theme .table th, body.light-theme table th {
+    background-color: var(--light-background-header) !important; /* Azul escuro */
+    color: var(--light-text-header) !important; /* Branco */
+}
+
+/* Labels no tema claro */
+body.light-theme label,
+body.light-theme .form-label {
+    color: var(--light-text-dark) !important;
+}
+
+/* Inputs Readonly no tema claro */
+body.light-theme input[readonly],
+body.light-theme .form-control[readonly],
+body.light-theme .read-only-input {
+    background-color: var(--light-background-card-header) !important;
+    color: var(--light-text-muted) !important;
+    cursor: default !important;
+}

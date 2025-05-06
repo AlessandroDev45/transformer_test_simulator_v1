@@ -1,0 +1,137 @@
+/* assets/components.css */
+
+/* Cards (base escuro) */
+.app-card {
+    background-color: var(--dark-background-card);
+    border: 1px solid var(--dark-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+.app-card-header {
+    background-color: var(--dark-background-card-header);
+    color: var(--dark-text-header);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 0.03rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--dark-border-strong);
+}
+.app-card-body {
+    padding: 0.75rem;
+    background-color: var(--dark-background-card);
+    color: var(--dark-text-light);
+}
+
+/* Tabelas (base escuro) */
+.app-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.75rem; }
+.app-table th {
+    background-color: var(--dark-background-header);
+    color: var(--dark-text-header);
+    text-align: center;
+    font-weight: bold;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+}
+.app-table td { padding: 0.3rem 0.5rem; font-size: 0.75rem; color: var(--dark-text-light); }
+.app-table tr:nth-child(even) td { background-color: rgba(255, 255, 255, 0.03); } /* Subtle striping */
+.app-table td.highlight-red { background-color: var(--dark-fail-bg); color: var(--dark-text-light); }
+.app-table td.highlight-yellow { background-color: var(--dark-warning-bg); color: var(--dark-text-light); }
+
+/* Formulários (base escuro) */
+.app-input, .app-select, .app-textarea {
+    background-color: var(--dark-background-input);
+    color: var(--dark-text-light);
+    border: 1px solid var(--dark-border);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    height: 28px;
+}
+.app-select { min-height: 28px; }
+.app-textarea { height: auto; }
+.app-label { font-size: 0.75rem; font-weight: 500; color: var(--dark-text-light); margin-bottom: 0.1rem; display: block; }
+.app-input[readonly], .app-textarea[readonly] {
+    background-color: var(--dark-background-card-header);
+    color: var(--dark-text-muted);
+    cursor: default;
+}
+
+/* Dropdowns (Dash specific - Target the generated classes) */
+/* Dark theme base styles */
+.dash-dropdown-dark .Select-control {
+    background-color: var(--dark-background-input) !important;
+    border: 1px solid var(--dark-border) !important;
+    height: 28px !important; min-height: 28px !important;
+}
+.dash-dropdown-dark .Select-value-label, .dash-dropdown-dark .Select-placeholder {
+    color: var(--dark-text-light) !important; line-height: 26px !important; font-size: 0.75rem !important;
+}
+.dash-dropdown-dark .Select-input > input { color: var(--dark-text-light) !important; }
+.dash-dropdown-dark .Select-arrow { border-color: var(--dark-text-muted) transparent transparent !important; }
+.dash-dropdown-dark .Select-menu-outer {
+    background-color: var(--dark-background-input) !important; border: 1px solid var(--dark-border) !important; z-index: 1055 !important; /* Ensure dropdown is on top */
+}
+.dash-dropdown-dark .Select-option {
+    color: var(--dark-text-light) !important; background-color: var(--dark-background-input) !important; font-size: 0.75rem !important; padding: 4px 8px !important;
+}
+.dash-dropdown-dark .Select-option:hover,
+.dash-dropdown-dark .Select-option.is-focused {
+    background-color: var(--dark-background-card) !important;
+}
+.dash-dropdown-dark .Select-option.is-selected {
+    background-color: var(--dark-primary) !important;
+    color: white !important;
+}
+
+
+/* Botões (base escuro) */
+.app-btn { /* Classe base */
+    border-radius: 3px; padding: 0.3rem 0.6rem; font-size: 0.75rem; font-weight: 500;
+    border: none; cursor: pointer; transition: background-color 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    height: 28px; display: inline-flex; align-items: center; justify-content: center;
+}
+.app-btn-primary { background-color: var(--dark-primary); color: var(--dark-text-header); }
+.app-btn-primary:hover { background-color: color-mix(in srgb, var(--dark-primary) 85%, black); }
+.app-btn-secondary { background-color: var(--dark-secondary); color: var(--dark-text-header); }
+.app-btn-secondary:hover { background-color: color-mix(in srgb, var(--dark-secondary) 85%, black); }
+/* Add success, danger, warning, info similarly */
+.app-btn-success { background-color: var(--dark-success); color: var(--dark-text-header); }
+.app-btn-success:hover { background-color: color-mix(in srgb, var(--dark-success) 85%, black); }
+.app-btn-danger { background-color: var(--dark-danger); color: var(--dark-text-header); }
+.app-btn-danger:hover { background-color: color-mix(in srgb, var(--dark-danger) 85%, black); }
+.app-btn-warning { background-color: var(--dark-warning); color: var(--dark-text-dark); } /* Dark text on yellow */
+.app-btn-warning:hover { background-color: color-mix(in srgb, var(--dark-warning) 85%, black); }
+.app-btn-info { background-color: var(--dark-info); color: var(--dark-text-header); }
+.app-btn-info:hover { background-color: color-mix(in srgb, var(--dark-info) 85%, black); }
+
+
+/* Abas (base escuro) */
+.app-tabs { display: flex; border-bottom: 1px solid var(--dark-border); margin-bottom: 1rem; }
+.app-tab {
+    background-color: var(--dark-background-card-header); color: var(--dark-text-muted);
+    border: 1px solid var(--dark-border); border-bottom: none;
+    border-radius: 4px 4px 0 0; padding: 0.3rem 0.6rem; font-size: 0.75rem;
+    margin-right: 2px; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;
+}
+.app-tab:hover { background-color: var(--dark-background-card); color: var(--dark-text-light); }
+.app-tab.active {
+    background-color: var(--dark-background-card); color: var(--dark-accent);
+    border-bottom: 2px solid var(--dark-accent); margin-bottom: -1px; /* Overlap border */
+    font-weight: bold;
+}
+
+/* Status (base escuro) */
+.app-status { display: inline-block; padding: 0.15rem 0.3rem; border-radius: 3px; font-weight: bold; font-size: 0.7rem; }
+.app-status-success { color: var(--dark-success); background-color: var(--dark-pass-bg); }
+.app-status-danger { color: var(--dark-danger); background-color: var(--dark-fail-bg); }
+.app-status-warning { color: var(--dark-warning); background-color: var(--dark-warning-bg); }
+
+/* Tabela de histórico customizada (base escuro) */
+.history-table-body .row { border-bottom: 1px solid var(--dark-border); }
+.history-table-body .row:last-child { border-bottom: none; }
+.history-table-body .col-3 { padding: 6px 8px; font-size: 0.75rem; color: var(--dark-text-light);} /* Ensure light text */
+#history-table > div:first-child { background-color: var(--dark-background-card-header); color: var(--dark-text-header); border-color: var(--dark-border);} /* Table Header */
+#no-sessions-message { background-color: var(--dark-background-card); color: var(--dark-text-muted); border-color: var(--dark-border);}

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados Básicos do Transformador - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1400px;
+            margin-top: 20px;
+        }
+        .sidebar {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 5px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: #3a3a3a;
+            padding: 30px;
+            border-radius: 5px;
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc-h1 {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .toc-h2 {
+            padding-left: 15px;
+        }
+        .toc-h3 {
+            padding-left: 30px;
+            font-size: 0.9em;
+        }
+        .toc-h4 {
+            padding-left: 45px;
+            font-size: 0.85em;
+        }
+        .toc a {
+            color: #b9d1ea;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0078d7;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        h1 {
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        code {
+            color: #ff9d00;
+            background-color: #2a2a2a;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #555;
+        }
+        th {
+            background-color: #444;
+        }
+        tr:nth-child(even) {
+            background-color: #3f3f3f;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px;
+            background-color: #444;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Dados Básicos do Transformador
+
+Este documento detalha os parâmetros básicos de entrada para transformadores, suas relações e os cálculos derivados desses dados que são utilizados em diversos módulos de ensaio.
+
+---
+
+## 1. Parâmetros de Entrada
+
+Os dados básicos do transformador são divididos em várias categorias:
+
+### 1.1. Especificações Gerais
+
+| Parâmetro               | Descrição                                  | Unidade  | Variável                      |
+|-------------------------|-------------------------------------------|----------|-------------------------------|
+| Tipo de Transformador   | Monofásico ou Trifásico                   | -        | \`tipo_transformador\`        |
+| Potência Nominal        | Potência nominal do transformador         | MVA      | \`potencia_mva\`              |
+| Frequência              | Frequência nominal de operação            | Hz       | \`frequencia\`                |
+| Grupo de Ligação        | Defasamento angular (ex: Dyn11)           | -        | \`grupo_ligacao\`             |
+| Líquido Isolante        | Tipo de óleo ou fluido isolante           | -        | \`liquido_isolante\`          |
+| Elevação de Óleo        | Elevação de temperatura do óleo           | °C       | \`elevacao_oleo_topo\`        |
+| Tipo de Isolamento      | Uniforme ou não-uniforme                  | -        | \`tipo_isolamento\`           |
+
+### 1.2. Parâmetros dos Enrolamentos
+
+Para cada enrolamento (AT, BT, Terciário), os seguintes parâmetros são necessários:
+
+| Parâmetro               | Descrição                                  | Unidade  | Variável (exemplo para AT)    |
+|-------------------------|-------------------------------------------|----------|-------------------------------|
+| Tensão                  | Tensão nominal do enrolamento             | kV       | \`tensao_at\`                 |
+| Classe de Tensão        | Classe de isolamento                      | kV       | \`classe_tensao_at\`          |
+| Elevação do Enrolamento | Elevação de temperatura do enrolamento    | °C       | \`elevacao_enrol_at\`         |
+| Impedância              | Impedância percentual                     | %        | \`impedancia\`                |
+| NBI / BIL               | Nível Básico de Impulso                   | kV       | \`nbi_at\`                    |
+| IM / SIL                | Impulso de Manobra                        | kV       | \`sil_at\`                    |
+| Conexão                 | Tipo de conexão (estrela, triângulo)      | -        | \`conexao_at\`                |
+| Tensão Bucha Neutro     | Classe de tensão da bucha de neutro       | kV       | \`tensao_bucha_neutro_at\`    |
+| NBI Neutro              | NBI da bucha de neutro                    | kV       | \`nbi_neutro_at\`             |
+
+### 1.3. Parâmetros de Tap
+
+| Parâmetro               | Descrição                                  | Unidade  | Variável                      |
+|-------------------------|-------------------------------------------|----------|-------------------------------|
+| Tensão AT Tap Maior     | Tensão no tap de maior tensão             | kV       | \`tensao_at_tap_maior\`       |
+| Impedância Tap Maior    | Impedância no tap de maior tensão         | %        | \`impedancia_tap_maior\`      |
+| Tensão AT Tap Menor     | Tensão no tap de menor tensão             | kV       | \`tensao_at_tap_menor\`       |
+| Impedância Tap Menor    | Impedância no tap de menor tensão         | %        | \`impedancia_tap_menor\`      |
+
+### 1.4. Tensões de Ensaio
+
+| Parâmetro               | Descrição                                  | Unidade  | Variável                      |
+|-------------------------|-------------------------------------------|----------|-------------------------------|
+| Tensão Aplicada AT      | Tensão de ensaio aplicada AT              | kV       | \`teste_tensao_aplicada_at\`  |
+| Tensão Aplicada BT      | Tensão de ensaio aplicada BT              | kV       | \`teste_tensao_aplicada_bt\`  |
+| Tensão Aplicada Ter.    | Tensão de ensaio aplicada Terciário       | kV       | \`teste_tensao_aplicada_terciario\` |
+| Tensão Induzida AT      | Tensão de ensaio induzida AT              | kV       | \`teste_tensao_induzida\`     |
+
+### 1.5. Pesos
+
+| Parâmetro               | Descrição                                  | Unidade  | Variável                      |
+|-------------------------|-------------------------------------------|----------|-------------------------------|
+| Peso Total              | Peso total do transformador               | ton      | \`peso_total\`                |
+| Peso Parte Ativa        | Peso da parte ativa                       | ton      | \`peso_parte_ativa\`          |
+| Peso Óleo               | Peso do óleo isolante                     | ton      | \`peso_oleo\`                 |
+| Peso Tanque/Acessórios  | Peso do tanque e acessórios               | ton      | \`peso_tanque_acessorios\`    |
+
+## 2. Cálculos Derivados
+
+### 2.1. Correntes Nominais
+
+#### 2.1.1. Para Transformadores Monofásicos
+
+* \`I_nom_at = (S_nom * 1000) / V_at\` (A)
+* \`I_nom_bt = (S_nom * 1000) / V_bt\` (A)
+* \`I_nom_ter = (S_nom * 1000) / V_ter\` (A)
+
+#### 2.1.2. Para Transformadores Trifásicos
+
+* \`I_nom_at = (S_nom * 1000) / (√3 * V_at)\` (A)
+* \`I_nom_bt = (S_nom * 1000) / (√3 * V_bt)\` (A)
+* \`I_nom_ter = (S_nom * 1000) / (√3 * V_ter)\` (A)
+
+Onde:
+* \`I_nom_at\`, \`I_nom_bt\` e \`I_nom_ter\` são as correntes nominais nos lados AT, BT e Terciário
+* \`S_nom\` é a potência nominal em MVA
+* \`V_at\`, \`V_bt\` e \`V_ter\` são as tensões nominais em kV
+
+### 2.2. Correntes Nominais nos Taps
+
+* \`I_nom_at_tap_maior = (S_nom * 1000) / (√3 * V_at_tap_maior)\` (A)
+* \`I_nom_at_tap_menor = (S_nom * 1000) / (√3 * V_at_tap_menor)\` (A)
+
+Onde:
+* \`I_nom_at_tap_maior\` e \`I_nom_at_tap_menor\` são as correntes nominais nos taps de maior e menor tensão
+* \`V_at_tap_maior\` e \`V_at_tap_menor\` são as tensões nos taps de maior e menor tensão em kV
+
+### 2.3. Impedância Base e Indutância
+
+* \`Z_base_at = (V_at^2 * 1000) / S_nom\` (Ω)
+* \`Z_cc_ohm = Z_base_at * (Z_percentual / 100)\` (Ω)
+* \`L_cc = Z_cc_ohm / (2 * π * f)\` (H)
+
+Onde:
+* \`Z_base_at\` é a impedância base no lado AT em ohms
+* \`Z_cc_ohm\` é a impedância de curto-circuito em ohms
+* \`L_cc\` é a indutância de curto-circuito em henries
+* \`f\` é a frequência em Hz
+
+## 3. Tipos de Conexão e Implicações
+
+### 3.1. Conexões Principais
+
+* **Estrela (Y)**: Os enrolamentos são conectados em um ponto comum (neutro). Adequada para alta tensão.
+* **Estrela Aterrada (Yn)**: Conexão estrela com o neutro aterrado. Requer bucha de neutro.
+* **Triângulo (D)**: Os enrolamentos formam um circuito fechado. Adequada para baixa tensão.
+* **Zigue-Zague (Z)**: Conexão especial que oferece melhor distribuição de fluxo magnético.
+
+### 3.2. Implicações das Conexões
+
+* **Estrela (Y/Yn)**:
+  * Tensão de fase = Tensão de linha / √3
+  * Corrente de fase = Corrente de linha
+  * Requer campos de dados para bucha de neutro quando Yn
+
+* **Triângulo (D)**:
+  * Tensão de fase = Tensão de linha
+  * Corrente de fase = Corrente de linha / √3
+  * Não possui neutro acessível
+
+### 3.3. Grupo de Ligação
+
+O grupo de ligação (ex: Dyn11, YNd5) indica:
+* Conexão do lado AT (maiúscula: D, Y, YN, Z)
+* Conexão do lado BT (minúscula: d, y, yn, z)
+* Defasamento angular (número: 0, 5, 6, 11)
+
+## 4. Níveis de Isolamento
+
+### 4.1. NBI / BIL (Nível Básico de Impulso)
+
+O NBI (Nível Básico de Impulso) ou BIL (Basic Impulse Level) é a tensão suportável de impulso atmosférico (1.2/50 μs) que o equipamento deve suportar. Os valores são padronizados conforme a classe de tensão:
+
+#### 4.1.1. Valores Padronizados IEC/NBR
+
+| Classe de Tensão (kV) | NBI / BIL Típico (kVp) |
+|-----------------------|------------------------|
+| 1.2                   | -                      |
+| 3.6                   | 40                     |
+| 7.2                   | 60                     |
+| 12                    | 75                     |
+| 15                    | 95, 110                |
+| 17.5                  | 95                     |
+| 24                    | 125                    |
+| 36                    | 170                    |
+| 52                    | 250                    |
+| 72.5                  | 325                    |
+| 123                   | 450, 550               |
+| 145                   | 550, 650               |
+| 170                   | 650, 750               |
+| 245                   | 750, 850, 950, 1050    |
+| 362                   | 950, 1050, 1175        |
+| 525                   | 1300, 1425, 1550       |
+| 800                   | 1800, 1950, 2100       |
+
+#### 4.1.2. Valores Padronizados IEEE
+
+| Classe de Tensão (kV) | NBI / BIL Típico (kVp) |
+|-----------------------|------------------------|
+| 1.2                   | 30                     |
+| 5                     | 60                     |
+| 8.7                   | 75                     |
+| 15                    | 95, 110                |
+| 25.8                  | 125, 150               |
+| 34.5                  | 150, 200               |
+| 46                    | 200, 250               |
+| 69                    | 250, 350               |
+| 115                   | 350, 450, 550          |
+| 138                   | 450, 550, 650          |
+| 161                   | 550, 650, 750          |
+| 230                   | 650, 750, 825, 900     |
+| 345                   | 900, 1050, 1175        |
+| 500                   | 1300, 1425, 1550, 1675, 1800 |
+| 765                   | 1800, 1925, 2050       |
+
+### 4.2. IM / SIL (Impulso de Manobra)
+
+O IM (Impulso de Manobra) ou SIL (Switching Impulse Level) é a tensão suportável de impulso de manobra (250/2500 μs) que o equipamento deve suportar. É relevante principalmente para classes de tensão acima de 170 kV:
+
+#### 4.2.1. Valores Padronizados IEC/NBR
+
+| Classe de Tensão (kV) | IM / SIL Típico (kVp) |
+|-----------------------|----------------------|
+| 170                   | -                    |
+| 245                   | 650, 750, 850        |
+| 362                   | 850, 950             |
+| 525                   | 1050, 1175           |
+| 800                   | 1425, 1550           |
+
+#### 4.2.2. Valores Padronizados IEEE
+
+| Classe de Tensão (kV) | IM / SIL Típico (kVp) |
+|-----------------------|----------------------|
+| 115                   | 280, 375, 460        |
+| 138                   | 375, 460, 540        |
+| 161                   | 460, 540, 620        |
+| 230                   | 540, 620, 685, 745   |
+| 345                   | 745, 870, 975        |
+| 500                   | 1080, 1180, 1290, 1390, 1500 |
+| 765                   | 1500, 1600, 1700     |
+
+### 4.3. Tensão Aplicada
+
+A tensão aplicada é o valor eficaz da tensão senoidal (60 Hz) aplicada durante o ensaio dielétrico de tensão aplicada. Os valores são padronizados conforme a classe de tensão:
+
+#### 4.3.1. Valores Padronizados IEC/NBR
+
+| Classe de Tensão (kV) | Tensão Aplicada Típica (kV rms) |
+|-----------------------|-----------------------------|
+| 1.2                   | 10                          |
+| 3.6                   | 10                          |
+| 7.2                   | 20                          |
+| 12                    | 28                          |
+| 15                    | 38                          |
+| 17.5                  | 38                          |
+| 24                    | 50                          |
+| 36                    | 70                          |
+| 52                    | 95                          |
+| 72.5                  | 140                         |
+| 123                   | 185, 230                    |
+| 145                   | 230, 275                    |
+| 170                   | 275, 325                    |
+| 245                   | 325, 360, 395, 460          |
+| 362                   | 460, 510                    |
+| 525                   | 570, 630, 680               |
+| 800                   | 830, 900, 960               |
+
+#### 4.3.2. Valores Padronizados IEEE
+
+| Classe de Tensão (kV) | Tensão Aplicada Típica (kV rms) |
+|-----------------------|-----------------------------|
+| 1.2                   | 10                          |
+| 5                     | 19                          |
+| 8.7                   | 26                          |
+| 15                    | 34                          |
+| 25.8                  | 50                          |
+| 34.5                  | 70                          |
+| 46                    | 95                          |
+| 69                    | 140                         |
+| 115                   | 140, 185, 230               |
+| 138                   | 185, 230, 275               |
+| 161                   | 230, 275, 325               |
+| 230                   | 275, 325, 360, 395          |
+| 345                   | 395, 460, 520               |
+| 500                   | -                           |
+| 765                   | 800, 840, 900               |
+
+### 4.4. Tensão Induzida
+
+A tensão induzida é o valor eficaz da tensão aplicada durante o ensaio dielétrico de tensão induzida. Os valores são padronizados conforme a classe de tensão e divididos em dois tipos principais:
+
+#### 4.4.1. ACSD (Tensão Induzida de Curta Duração)
+
+* Aplicada por 60 segundos
+* Geralmente utilizada para transformadores com Um ≤ 170 kV
+
+#### 4.4.2. ACLD (Tensão Induzida de Longa Duração)
+
+* Aplicada por 30 minutos (Um < 300 kV) ou 60 minutos (Um ≥ 300 kV)
+* Obrigatória para transformadores com Um > 170 kV
+* Realizada com frequência elevada (tipicamente 100-200 Hz)
+* Inclui medição de descargas parciais
+
+#### 4.4.3. Valores Padronizados IEC/NBR
+
+| Classe de Tensão (kV) | Tensão Induzida ACSD (kV rms) | Tensão Induzida ACLD (kV rms) |
+|-----------------------|-------------------------------|-------------------------------|
+| 72.5                  | 140                           | -                             |
+| 123                   | 230                           | 230                           |
+| 145                   | 275                           | 325                           |
+| 170                   | 325                           | 360                           |
+| 245                   | 360, 395, 460                 | 395, 460                      |
+| 362                   | 510                           | 570                           |
+| 525                   | 630, 680                      | 680, 740                      |
+| 800                   | 900, 960                      | 960, 1030                     |
+
+#### 4.4.4. Valores Padronizados IEEE
+
+| Classe de Tensão (kV) | Tensão Induzida ACSD (kV rms) | Tensão Induzida ACLD (kV rms) |
+|-----------------------|-------------------------------|-------------------------------|
+| 69                    | 140                           | -                             |
+| 115                   | 140, 185, 230                 | 120                           |
+| 138                   | 185, 230, 275                 | 145                           |
+| 161                   | 230, 275, 325                 | 170                           |
+| 230                   | 275, 325, 360, 395            | 240                           |
+| 345                   | 395, 460, 520                 | 360                           |
+| 500                   | -                             | 550                           |
+| 765                   | 800, 840, 900                 | 900                           |
+
+#### 4.4.5. Fórmulas para Cálculo da Tensão Induzida
+
+* **ACSD Fase-Terra (IEC/NBR)**: U_teste = valor tabelado (acsd_kv_rms)
+* **ACSD Fase-Fase (IEC/NBR)**: U_teste = valor tabelado (acsd_kv_rms)
+* **ACLD (IEC/NBR)**: U_teste = valor tabelado (acld_kv_rms)
+
+Níveis de tensão para medição de descargas parciais:
+* U_pre = 1.1 × Um/√3 (tensão de pré-estresse)
+* U2 = 1.5 × Um/√3 (tensão de medição)
+
+## 5. Relação com Outros Módulos de Ensaio
+
+### 5.1. Ensaio de Perdas
+
+* Utiliza potência nominal, tensões e correntes nominais
+* Utiliza impedância para cálculos de perdas em carga
+* Utiliza tipo de transformador para cálculos específicos
+
+### 5.2. Ensaio de Impulso
+
+* Utiliza NBI/BIL para determinar tensões de ensaio
+* Utiliza indutância calculada a partir da impedância
+* Utiliza classe de tensão para determinar distâncias de isolamento
+
+### 5.3. Ensaio de Tensão Aplicada
+
+* Utiliza valores de tensão aplicada especificados
+* Utiliza conexão para determinar configuração de ensaio
+* Utiliza classe de tensão da bucha de neutro quando aplicável
+
+### 5.4. Ensaio de Tensão Induzida
+
+* Utiliza tensão nominal e tensão induzida especificada
+* Utiliza frequência nominal para cálculos
+* Utiliza potência nominal para dimensionamento
+
+### 5.5. Análise Dielétrica
+
+* Utiliza todos os níveis de isolamento (NBI, IM, Aplicada, Induzida)
+* Utiliza classe de tensão para determinar requisitos mínimos
+* Utiliza tipo de isolamento para análises específicas
+
+### 5.6. Ensaio de Curto-Circuito
+
+* Utiliza impedância e correntes nominais
+* Utiliza potência nominal para cálculos de forças
+* Utiliza conexões para determinar distribuição de correntes
+
+### 5.7. Ensaio de Elevação de Temperatura
+
+* Utiliza elevação de óleo e enrolamentos especificados
+* Utiliza perdas calculadas a partir dos dados básicos
+* Utiliza pesos para cálculos de constantes térmicas
+
+## 6. Boas Práticas para Entrada de Dados
+
+1. **Consistência de Unidades**: Sempre utilize as unidades especificadas (MVA, kV, A, %, °C, ton).
+
+2. **Dados Completos**: Preencha todos os campos relevantes para garantir cálculos precisos em todos os módulos.
+
+3. **Verificação de Valores**:
+   * Potência > 0
+   * Tensões > 0
+   * Impedância > 0
+   * Frequência típica (50 ou 60 Hz)
+   * Elevações de temperatura dentro de limites normativos
+
+4. **Conexões Corretas**:
+   * Para conexão Yn (estrela aterrada), preencher dados da bucha de neutro
+   * Verificar se o grupo de ligação é compatível com as conexões selecionadas
+
+5. **Níveis de Isolamento**:
+   * Selecionar valores padronizados conforme normas técnicas
+   * Verificar compatibilidade com a classe de tensão
+
+---
+
+## Notas Importantes
+
+1. Os dados básicos do transformador são fundamentais para todos os módulos de ensaio e devem ser preenchidos com precisão.
+
+2. As correntes nominais são calculadas automaticamente a partir da potência e tensões nominais.
+
+3. A indutância do transformador, calculada a partir da impedância, é utilizada em diversos módulos, especialmente no ensaio de impulso.
+
+4. A conexão em estrela aterrada (Yn) requer o preenchimento dos dados da bucha de neutro.
+
+5. Os níveis de isolamento (NBI, IM, Aplicada, Induzida) devem ser selecionados conforme normas técnicas aplicáveis.
+
+6. **Lógica para exibição dos campos NBI/BIL e IM/SIL**:
+   * Os campos NBI/BIL são exibidos para todas as classes de tensão
+   * Os campos IM/SIL são exibidos apenas quando a classe de tensão > 170 kV
+   * Os campos NBI/BIL Neutro e IM/SIL Neutro são exibidos apenas quando a conexão é do tipo estrela aterrada (Yn)
+   * Os valores disponíveis para seleção são filtrados automaticamente com base na classe de tensão selecionada, conforme as tabelas acima
+
+## 7. Inputs, Tipos e Callbacks
+
+### 7.1. Inputs e Tipos
+
+#### 7.1.1. Especificações Gerais
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| potencia_mva | number | Potência nominal do transformador em MVA |
+| frequencia | number | Frequência nominal em Hz |
+| grupo_ligacao | text | Grupo de ligação (ex: Dyn1) |
+| liquido_isolante | text | Tipo de líquido isolante |
+| tipo_transformador | dropdown | Tipo do transformador (Trifásico/Monofásico) |
+| tipo_isolamento | dropdown | Tipo de isolamento (uniforme/não-uniforme/progressivo) |
+| impedancia | number | Impedância percentual |
+
+#### 7.1.2. Elevações de Temperatura e Pesos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| elevacao_oleo_topo | number | Elevação de temperatura do óleo em °C |
+| elevacao_enrol_at | number | Elevação de temperatura do enrolamento AT em °C |
+| elevacao_enrol_bt | number | Elevação de temperatura do enrolamento BT em °C |
+| elevacao_enrol_terciario | number | Elevação de temperatura do enrolamento terciário em °C |
+| peso_total | number | Peso total do transformador em toneladas |
+| peso_parte_ativa | number | Peso da parte ativa em toneladas |
+| peso_oleo | number | Peso do óleo em toneladas |
+| peso_tanque_acessorios | number | Peso do tanque e acessórios em toneladas |
+
+#### 7.1.3. Enrolamento de Alta Tensão (AT)
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| tensao_at | number | Tensão nominal do enrolamento AT em kV |
+| classe_tensao_at | number | Classe de tensão do enrolamento AT em kV |
+| conexao_at | dropdown | Tipo de conexão do enrolamento AT |
+| nbi_at | dropdown | Nível Básico de Impulso do enrolamento AT em kV |
+| im_at | dropdown | Impulso de Manobra do enrolamento AT em kV |
+| sil_at | dropdown | Nível de Impulso de Manobra do enrolamento AT em kV |
+| teste_tensao_aplicada_at | dropdown | Tensão de ensaio aplicada AT em kV |
+| tensao_at_tap_maior | number | Tensão no tap de maior tensão em kV |
+| tensao_at_tap_menor | number | Tensão no tap de menor tensão em kV |
+| impedancia_tap_maior | number | Impedância no tap de maior tensão em % |
+| impedancia_tap_menor | number | Impedância no tap de menor tensão em % |
+
+#### 7.1.4. Enrolamento de Baixa Tensão (BT)
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| tensao_bt | number | Tensão nominal do enrolamento BT em kV |
+| classe_tensao_bt | number | Classe de tensão do enrolamento BT em kV |
+| conexao_bt | dropdown | Tipo de conexão do enrolamento BT |
+| nbi_bt | dropdown | Nível Básico de Impulso do enrolamento BT em kV |
+| im_bt | dropdown | Impulso de Manobra do enrolamento BT em kV |
+| sil_bt | dropdown | Nível de Impulso de Manobra do enrolamento BT em kV |
+| teste_tensao_aplicada_bt | dropdown | Tensão de ensaio aplicada BT em kV |
+
+#### 7.1.5. Enrolamento Terciário
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| tensao_terciario | number | Tensão nominal do enrolamento terciário em kV |
+| classe_tensao_terciario | number | Classe de tensão do enrolamento terciário em kV |
+| conexao_terciario | dropdown | Tipo de conexão do enrolamento terciário |
+| nbi_terciario | dropdown | Nível Básico de Impulso do enrolamento terciário em kV |
+| im_terciario | dropdown | Impulso de Manobra do enrolamento terciário em kV |
+| sil_terciario | dropdown | Nível de Impulso de Manobra do enrolamento terciário em kV |
+| teste_tensao_aplicada_terciario | dropdown | Tensão de ensaio aplicada terciário em kV |
+
+#### 7.1.6. Buchas de Neutro
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| tensao_bucha_neutro_at | number | Classe de tensão da bucha de neutro AT em kV |
+| tensao_bucha_neutro_bt | number | Classe de tensão da bucha de neutro BT em kV |
+| tensao_bucha_neutro_terciario | number | Classe de tensão da bucha de neutro terciário em kV |
+| nbi_neutro_at | dropdown | NBI da bucha de neutro AT em kV |
+| nbi_neutro_bt | dropdown | NBI da bucha de neutro BT em kV |
+| nbi_neutro_terciario | dropdown | NBI da bucha de neutro terciário em kV |
+| im_neutro_at | dropdown | Impulso de Manobra do neutro AT em kV |
+| im_neutro_bt | dropdown | Impulso de Manobra do neutro BT em kV |
+| im_neutro_terciario | dropdown | Impulso de Manobra do neutro terciário em kV |
+
+#### 7.1.7. Ensaios Especiais
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| teste_tensao_induzida | dropdown | Tensão de ensaio induzida em kV |
+
+### 7.2. Callbacks Principais
+
+#### 7.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| load_current_values_from_store | Carrega valores do store | Carrega todos os valores salvos no store para os componentes da interface |
+| update_transformer_calculations_and_store | Calcula e salva dados | Calcula correntes nominais, controla visibilidade de componentes e salva dados no store |
+| limpar_transformer_inputs_trigger | Limpa campos | Limpa todos os campos do formulário |
+
+#### 7.2.2. Callbacks de Níveis de Isolamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_nbi_im_sil_options | Atualiza opções de NBI/IM/SIL | Preenche os dropdowns de NBI, IM e SIL com base nas classes de tensão |
+| update_nbi_im_sil_values | Atualiza valores de NBI/IM/SIL | Atualiza os valores selecionados nos dropdowns de NBI, IM e SIL |
+| update_nbi_neutro_options | Atualiza opções de NBI Neutro | Preenche os dropdowns de NBI Neutro com base nas classes de tensão das buchas de neutro |
+| update_nbi_neutro_values | Atualiza valores de NBI Neutro | Atualiza os valores selecionados nos dropdowns de NBI Neutro |
+
+#### 7.2.3. Callbacks de Tensões de Ensaio
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_tensao_aplicada_options | Atualiza opções de Tensão Aplicada | Preenche os dropdowns de Tensão Aplicada com base nas classes de tensão |
+| update_tensao_aplicada_values | Atualiza valores de Tensão Aplicada | Atualiza os valores selecionados nos dropdowns de Tensão Aplicada |
+| update_tensao_induzida_options | Atualiza opções de Tensão Induzida | Preenche o dropdown de Tensão Induzida com base na classe de tensão AT |
+| update_tensao_induzida_value | Atualiza valor de Tensão Induzida | Atualiza o valor selecionado no dropdown de Tensão Induzida |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(html, searchTerm) {
+            if (!searchTerm) return html;
+
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            return html.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initial render
+        document.addEventListener('DOMContentLoaded', renderMarkdown);
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', renderMarkdown);
+    </script>
+</body>
+</html>

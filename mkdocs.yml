@@ -1,0 +1,65 @@
+# mkdocs.yml
+site_name: Simulador de Testes - Ajuda Técnica
+site_url: /assets/help_docs/ # Prefixo para URLs relativas corretas quando servido pelo Dash
+
+theme:
+    name: material
+    language: pt # Define o idioma para pt-BR (se suportado pelo tema)
+    palette:
+      # Paleta para modo escuro automático baseado na preferência do OS
+      - scheme: slate
+        primary: blue grey # Ou outra cor primária
+        accent: light blue
+        toggle:
+          icon: material/brightness-4
+          name: Switch to light mode
+      # Paleta para modo claro automático
+      - scheme: default
+        primary: blue grey # Mesma cor primária
+        accent: light blue
+        toggle:
+          icon: material/brightness-7
+          name: Switch to dark mode
+    features:
+        - navigation.instant # Carregamento mais rápido entre páginas
+        - navigation.tabs # Abas se tiver múltiplas seções principais
+        - navigation.top # Botão "Voltar ao topo"
+        - search.suggest # Sugestões de busca enquanto digita
+        - search.highlight # Destaca termos nos resultados
+        - toc.integrate # Integra o sumário na barra lateral esquerda
+
+# Define a estrutura de navegação (ajuste os títulos e nomes de arquivo)
+nav:
+  - 'Perdas': 'formulas_perdas.md'
+  - 'Tensão Induzida': 'formulas_induzida.md'
+  - 'Tensão Aplicada': 'formulas_aplicada.md'
+  - 'Impulso': 'formulas_impulso.md'
+  - 'Análise Dielétrica': 'formulas_dieletrica.md'
+  - 'Curto-Circuito': 'formulas_curto_circuito.md'
+  - 'Elevação Temperatura': 'formulas_temperatura.md'
+
+# Extensões Markdown para melhor renderização
+markdown_extensions:
+  - pymdownx.highlight: # Destaque de sintaxe para código
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences # Permite aninhar blocos de código, etc.
+  - admonition # Blocos de notas/avisos (!note, !warning)
+  - pymdownx.details # Blocos colapsáveis
+  - pymdownx.tabbed: # Conteúdo em abas dentro do markdown
+      alternate_style: true
+  - attr_list # Permite adicionar atributos HTML/CSS a elementos markdown
+  - md_in_html # Permite markdown dentro de tags HTML
+  - tables # Suporte básico a tabelas
+  - toc:
+      permalink: true # Adiciona links permanentes aos cabeçalhos para o TOC
+
+# Plugins
+plugins:
+  - search # Plugin de busca essencial
+
+# Extra: Configuração para MathJax renderizar LaTeX
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6 # Polyfill para compatibilidade
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js # Biblioteca MathJax

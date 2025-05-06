@@ -1,0 +1,32 @@
+/* assets/theme-dark-vars.css */
+:root {
+    --dark-primary: #26427A;
+    --dark-secondary: #6c757d;
+    --dark-accent: #00BFFF; /* Cyan */
+    --dark-accent-alt: #FFD700; /* Gold */
+    --dark-background-main: #1a1a1a;
+    --dark-background-card: #2c2c2c;
+    --dark-background-card-header: #1f1f1f;
+    --dark-background-input: #3a3a3a;
+    --dark-background-header: #1f1f1f;
+    --dark-background-faint: #333333;
+    --dark-text-light: #e0e0e0;
+    --dark-text-dark: #212529;
+    --dark-text-muted: #a0a0a0;
+    --dark-text-header: #FFFFFF;
+    --dark-border: #444444;
+    --dark-border-light: #555555;
+    --dark-border-strong: #666666;
+    --dark-success: #28a745;
+    --dark-danger: #dc3545;
+    --dark-warning: #ffc107;
+    --dark-info: #00BFFF; /* Cyan */
+    --dark-pass-bg: rgba(40, 167, 69, 0.2);
+    --dark-fail-bg: rgba(220, 53, 69, 0.2);
+    --dark-warning-bg: rgba(255, 193, 7, 0.2);
+    --dark-danger-bg-opaque: #5c1c1c; /* Opaque red for table status */
+    --dark-warning-bg-faint-opaque: rgba(255, 193, 7, 0.3);
+    --dark-warning-high-bg-faint-opaque: rgba(255, 165, 0, 0.3);
+    --dark-ok-bg-faint-opaque: rgba(40, 167, 69, 0.3);
+    --dark-info-bg-faint-opaque: rgba(0, 191, 255, 0.2);
+}

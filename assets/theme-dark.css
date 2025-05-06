@@ -1,0 +1,107 @@
+
+/* assets/theme-dark.css */
+body:not(.light-theme) {
+    background-color: var(--dark-background-main);
+    color: var(--dark-text-light);
+}
+/* Adicione overrides específicos se necessário, por exemplo: */
+body:not(.light-theme) a { color: var(--dark-accent) !important; }
+body:not(.light-theme) a:hover { color: var(--dark-accent-alt) !important; }
+
+/* --- Navbar --- */
+body:not(.light-theme) .navbar {
+    background-color: var(--dark-primary) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+body:not(.light-theme) .navbar, body:not(.light-theme) .navbar .nav-link, body:not(.light-theme) .navbar .navbar-brand, body:not(.light-theme) .navbar h4, body:not(.light-theme) .navbar span, body:not(.light-theme) .navbar .h4 {
+    color: var(--dark-text-light) !important; /* Use !important cautiously */
+}
+body:not(.light-theme) #theme-toggle {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: var(--dark-text-light) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* --- Sidebar --- */
+body:not(.light-theme) .sidebar { /* Target sidebar Nav by class */
+     background-color: var(--dark-background-card-header) !important;
+     border-right: 1px solid var(--dark-border) !important;
+}
+body:not(.light-theme) .sidebar .nav-link { /* Target nav links */
+    color: var(--dark-text-muted) !important;
+    border-left: 3px solid transparent !important;
+}
+body:not(.light-theme) .sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--dark-text-light) !important;
+    border-left-color: var(--dark-secondary) !important;
+}
+/* Active link - Target the container div */
+body:not(.light-theme) .sidebar div[id^='nav-container-'][style*='background-color'] .nav-link {
+    background-color: var(--dark-primary) !important; /* Cor do link ativo */
+    color: white !important;
+    font-weight: bold !important;
+    border-left-color: var(--dark-accent) !important;
+}
+
+/* --- Content Area --- */
+body:not(.light-theme) #content {
+    background-color: var(--dark-background-main) !important;
+}
+
+/* --- Footer --- */
+body:not(.light-theme) footer {
+     background-color: var(--dark-background-card-header) !important;
+     border-top: 1px solid var(--dark-border) !important;
+     color: var(--dark-text-muted) !important;
+}
+
+/* --- TABLES: Ensure light text on dark cells --- */
+body:not(.light-theme) .table td,
+body:not(.light-theme) table td,
+body:not(.light-theme) .app-table td,
+body:not(.light-theme) .table-value-cell /* Specific class if used */
+{
+    color: var(--dark-text-light) !important; /* FORCE light text */
+}
+
+/* Ensure table headers also have light text */
+body:not(.light-theme) .table th,
+body:not(.light-theme) table th,
+body:not(.light-theme) .app-table th
+{
+    color: var(--dark-text-header) !important;
+}
+
+/* Fix for specific result containers if needed */
+body:not(.light-theme) #resultado-tensao-induzida .table td,
+body:not(.light-theme) #applied-voltage-results .table td,
+body:not(.light-theme) #condicoes-nominais-card-body .table td,
+body:not(.light-theme) #resultados-perdas-carga .table td {
+    color: var(--dark-text-light) !important;
+}
+
+/* Ensure labels are light */
+body:not(.light-theme) label,
+body:not(.light-theme) .form-label {
+    color: var(--dark-text-light) !important;
+}
+
+/* --- Dropdowns (Keep dark theme styles) --- */
+body:not(.light-theme) .dash-dropdown-dark .Select-control { background-color: var(--dark-background-input) !important; border-color: var(--dark-border) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-value-label, body:not(.light-theme) .dash-dropdown-dark .Select-placeholder { color: var(--dark-text-light) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-input > input { color: var(--dark-text-light) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-arrow { border-color: var(--dark-text-muted) transparent transparent !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-menu-outer { background-color: var(--dark-background-input) !important; border-color: var(--dark-border) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-option { color: var(--dark-text-light) !important; background-color: var(--dark-background-input) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-option:hover, body:not(.light-theme) .dash-dropdown-dark .Select-option.is-focused { background-color: var(--dark-background-card) !important; }
+body:not(.light-theme) .dash-dropdown-dark .Select-option.is-selected { background-color: var(--dark-primary) !important; color: white !important; }
+
+/* Read-only inputs specific styles */
+body:not(.light-theme) input[readonly],
+body:not(.light-theme) .form-control[readonly],
+body:not(.light-theme) .read-only-input { /* Specific class if used */
+    background-color: var(--dark-background-card-header) !important;
+    color: var(--dark-text-muted) !important;
+    cursor: default !important;
+}

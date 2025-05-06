@@ -1,0 +1,49 @@
+/* assets/base.css */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('utilities.css');
+@import url('components.css');
+@import url('theme-dark-vars.css'); /* Importa vars escuras como padrão */
+@import url('theme-light-vars.css'); /* Importa vars claras */
+@import url('theme-dark.css'); /* Aplica estilos escuros padrão */
+@import url('theme-light.css'); /* Contém overrides para .light-theme */
+
+/* Estilos base globais */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Transição base */
+}
+
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Estilos de tabela mais genéricos (para tabelas não-dbc) */
+table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+th, td { padding: 0.5rem; border: 1px solid var(--dark-border); /* Usa var padrão */ }
+th { font-weight: bold; text-align: left; }
+
+/* Transições para alternância de tema */
+.theme-transition,
+.theme-transition *,
+.theme-transition *:before,
+.theme-transition *:after {
+    transition: all 0.3s ease-in-out !important;
+    transition-delay: 0 !important;
+}
+
+/* Scrollbar Styling (Dark Theme Default) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--dark-background-card); }
+::-webkit-scrollbar-thumb { background: var(--dark-border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dark-secondary); }
+
+/* Scrollbar Styling (Light Theme Override) */
+body.light-theme ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.light-theme ::-webkit-scrollbar-track { background: var(--light-background-card-header); }
+body.light-theme ::-webkit-scrollbar-thumb { background: var(--light-border-strong); border-radius: 4px; }
+body.light-theme ::-webkit-scrollbar-thumb:hover { background: var(--light-secondary); }
+
+/* Specific override for ReportLab table text color */
+/* Apply default text color based on theme */
+.reportlab-table td { color: var(--dark-text-light); /* Default dark theme text color */ }
+body.light-theme .reportlab-table td { color: var(--light-text-dark) !important; /* Override for light theme */ }
