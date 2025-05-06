@@ -12,12 +12,14 @@ O simulador oferece os seguintes módulos de análise:
 
 - **Dados Básicos do Transformador**: Entrada e cálculo de parâmetros fundamentais do transformador
 - **Perdas**: Cálculo e análise de perdas em vazio e em carga
-- **Impulso**: Simulação de ensaios de impulso atmosférico (LI) e impulso cortado (LIC)
+- **Impulso**: Simulação de ensaios de impulso atmosférico (LI), impulso de manobra (SI) e impulso cortado (LIC)
 - **Análise Dielétrica**: Verificação de espaçamentos e níveis de isolamento
 - **Tensão Aplicada**: Cálculo de parâmetros para ensaios de tensão aplicada
 - **Tensão Induzida**: Simulação de ensaios de tensão induzida com análise de frequências variáveis
 - **Curto-Circuito**: Cálculo de correntes de curto-circuito e verificação de suportabilidade
 - **Elevação de Temperatura**: Análise de aquecimento e elevação de temperatura
+- **Histórico de Testes**: Armazenamento e recuperação de sessões de teste anteriores
+- **Consulta de Normas**: Interface para consulta rápida de normas técnicas relevantes
 
 ## Tecnologias Utilizadas
 
@@ -26,20 +28,23 @@ O simulador oferece os seguintes módulos de análise:
 - **Dash Bootstrap Components**: Componentes de UI responsivos
 - **Plotly**: Biblioteca para visualização de dados e gráficos interativos
 - **Pandas**: Manipulação e análise de dados
-- **NumPy**: Computação numérica e científica
+- **NumPy/SciPy**: Computação numérica e científica
+- **SQLite**: Armazenamento local de dados
 
 ## Estrutura do Projeto
 
-```
-transformer_test_simulator/
+```bash
+transformer_test_simulator_v1/
 ├── app.py                  # Ponto de entrada da aplicação
 ├── config.py               # Configurações globais
 ├── app_core/               # Núcleo da aplicação
 │   ├── calculations.py     # Funções de cálculo principais
+│   ├── data_models.py      # Modelos de dados
 │   ├── standards.py        # Implementação das normas técnicas
-│   └── ...
+│   └── transformer_mcp.py  # Model-Controller-Presenter para transformadores
 ├── assets/                 # Arquivos estáticos (CSS, imagens)
-│   └── tables/             # Tabelas de dados das normas
+│   ├── help_docs/          # Documentação de ajuda
+│   └── standards_data/     # Dados das normas técnicas
 ├── callbacks/              # Callbacks Dash para interatividade
 │   ├── transformer_inputs.py
 │   ├── losses.py
@@ -49,59 +54,76 @@ transformer_test_simulator/
 │   ├── induced_voltage.py
 │   ├── short_circuit.py
 │   ├── temperature_rise.py
-│   └── ...
+│   ├── history.py
+│   └── standards_consultation.py
 ├── components/             # Componentes reutilizáveis
 │   ├── formatters.py
 │   ├── ui_elements.py
 │   ├── validators.py
-│   └── ...
+│   ├── global_stores.py
+│   └── help_button.py
 ├── layouts/                # Layouts das diferentes seções
 │   ├── main_layout.py
 │   ├── transformer_inputs.py
 │   ├── losses.py
 │   └── ...
-├── logs/                   # Diretório para logs da aplicação
-└── utils/                  # Utilitários diversos
-    ├── constants.py
-    └── ...
+├── utils/                  # Utilitários diversos
+│   ├── constants.py        # Constantes globais
+│   ├── db_manager.py       # Gerenciamento de banco de dados
+│   ├── logger.py           # Configuração de logs
+│   ├── store_diagnostics.py # Diagnóstico de armazenamento
+│   └── styles.py           # Estilos e temas
+├── data/                   # Diretório para armazenamento de dados
+│   ├── standards.db        # Banco de dados de normas
+│   └── test_sessions.db    # Banco de dados de sessões de teste
+├── docs/                   # Documentação adicional
+│   └── formulas_*.md       # Documentação de fórmulas
+└── requirements.txt        # Dependências do projeto
 ```
 
 ## Requisitos
 
 - Python 3.9 ou superior
-- Dash 3.0.0 ou superior
-- Dash Bootstrap Components
-- Plotly
-- Pandas
-- NumPy
+- Dash 2.5.0 ou superior
+- Dash Bootstrap Components 1.0.0 ou superior
+- Plotly 5.0.0 ou superior
+- NumPy 1.20.0 ou superior
+- SciPy 1.7.0 ou superior
+- Pandas 1.3.0 ou superior
+- SQLite 3.35.0 ou superior
 - Outras dependências listadas em `requirements.txt`
 
 ## Instalação
 
 1. Clone o repositório:
-   ```
-   git clone https://github.com/seu-usuario/transformer_test_simulator.git
-   cd transformer_test_simulator
+
+   ```bash
+   git clone https://github.com/AlessandroDev45/transformer_test_simulator_v1.git
+   cd transformer_test_simulator_v1
    ```
 
 2. Crie e ative um ambiente virtual:
-   ```
+
+   ```bash
    python -m venv venv
    source venv/bin/activate  # No Windows: venv\Scripts\activate
    ```
 
 3. Instale as dependências:
-   ```
+
+   ```bash
    pip install -r requirements.txt
    ```
 
 4. Execute a aplicação:
-   ```
+
+   ```bash
    python app.py
    ```
 
 5. Acesse a aplicação no navegador:
-   ```
+
+   ```text
    http://127.0.0.1:8050/
    ```
 
@@ -110,44 +132,27 @@ transformer_test_simulator/
 1. Comece preenchendo os dados básicos do transformador na primeira aba.
 2. Navegue pelas diferentes seções para realizar análises específicas.
 3. Os resultados são atualizados automaticamente e podem ser visualizados em tabelas e gráficos interativos.
-4. Os dados são armazenados localmente no navegador para persistência entre sessões.
+4. Os dados são armazenados localmente no navegador e podem ser salvos em sessões para uso futuro.
+5. Utilize a aba de histórico para recuperar sessões de teste anteriores.
+6. Consulte as normas técnicas relevantes na aba de consulta de normas.
+
+## Características Principais
+
+- **Interface Responsiva**: Adaptável a diferentes tamanhos de tela
+- **Tema Claro/Escuro**: Suporte a temas de interface para melhor experiência do usuário
+- **Cálculos em Tempo Real**: Resultados atualizados instantaneamente conforme entrada de dados
+- **Visualização Gráfica**: Gráficos interativos para melhor compreensão dos resultados
+- **Persistência de Dados**: Armazenamento local de dados para continuidade entre sessões
+- **Exportação de Relatórios**: Geração de relatórios em formato PDF
+- **Validação de Entrada**: Verificação de dados de entrada para evitar erros de cálculo
+- **Conformidade com Normas**: Verificação automática de conformidade com normas técnicas
 
 ## Normas Técnicas Implementadas
 
 - **ABNT NBR 5356**: Norma brasileira para transformadores de potência
+- **ABNT NBR IEC 60060-1**: Norma brasileira para técnicas de ensaios de alta tensão
 - **IEEE C57.12.00**: Norma americana para transformadores de potência
-- **IEC 60060-1**: Norma internacional para técnicas de ensaios de alta tensão
-
-**Instruções Detalhadas:**
-
-1.  **Varredura:** Examine todos os arquivos `.py` dentro do diretório `callbacks/`.
-2.  **Identificação:** Encontre todas as definições de função que são imediatamente precedidas pelo decorador `@app.callback(...)` ou `app.callback(...)`.
-3.  **Extração de Informações:** Para cada função de callback encontrada:
-    *   Identifique o nome atual da função Python.
-    *   Determine o `nome_do_modulo` a partir do nome do arquivo (ex: `callbacks/losses.py` -> `losses`).
-    *   Analise os `Output(...)` definidos no decorador para entender o propósito principal do callback. Se houver múltiplos Outputs, foque no mais significativo ou descreva a ação geral (ex: `update_page_layout`, `handle_user_input`).
-4.  **Verificação da Convenção:** Compare o nome atual da função com o nome esperado pela convenção `[nome_do_modulo]_[output_principal_ou_proposito_geral]`.
-5.  **Renomeação (se necessário):**
-    *   Se o nome atual *não* seguir a convenção, construa o novo nome padronizado.
-    *   Renomeie a função Python para o novo nome padronizado. (Ex: `def update_graph(...)` em `callbacks/impulse.py` se torna `def impulse_update_graph(...)`).
-6.  **Relatório:** Apresente um resumo das funções de callback encontradas e quais foram renomeadas, mostrando o nome antigo e o novo nome. Ex:
-    *   `callbacks/losses.py`:
-        *   `handle_perdas_vazio` -> `losses_handle_perdas_vazio` (ou `losses_update_vazio_results`)
-        *   `handle_perdas_carga` -> `losses_handle_perdas_carga` (ou `losses_update_carga_results`)
-        *   `display_transformer_info` -> `losses_display_transformer_info`
-    *   `callbacks/impulse.py`:
-        *   `toggle_simulation` -> `impulse_toggle_simulation`
-        *   `display_transformer_info_impulse` -> `impulse_display_transformer_info` (Removido sufixo redundante)
-        *   `update_impulse_simulation` (se existisse) -> `impulse_update_simulation_outputs`
-
-**Considerações Adicionais:**
-
-*   Se um nome de função já segue a convenção, não o altere.
-*   Se a determinação do `[output_principal_ou_proposito_geral]` for ambígua (ex: muitos Outputs não relacionados), use um nome que descreva a ação geral (ex: `impulse_update_main_display`).
-*   Priorize a clareza sobre a brevidade excessiva.
-*   Esta renomeação foca nos nomes das *funções Python*, não nos IDs dos componentes HTML/Dash.
-
-Por favor, execute esta auditoria e aplique as renomeações necessárias em todos os arquivos relevantes no diretório `callbacks/`.
+- **IEC 60076**: Norma internacional para transformadores de potência
 
 ## Contribuição
 
