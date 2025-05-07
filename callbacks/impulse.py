@@ -1425,6 +1425,20 @@ def create_impulse_graph(t, v, peak_voltage, rise_time, tail_time):
 # --- Callback para exibir informações do transformador removido ---
 # Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
 
+# --- Callback para atualizar o painel de informações do transformador na página de impulso ---
+@dash.callback(
+    Output("transformer-info-impulse-page", "children"),
+    Input("transformer-info-impulse", "children"),
+    prevent_initial_call=False
+)
+def update_impulse_page_info_panel(global_panel_content):
+    """
+    Copia o conteúdo do painel de informações global para o painel local da página de impulso.
+    Este callback é acionado quando o painel global é atualizado pelo callback global_updates_all_transformer_info_panels.
+    """
+    log.debug("Atualizando painel de informações do transformador na página de impulso")
+    return global_panel_content
+
 # Função de registro de callbacks para compatibilidade com app.py
 def register_impulse_callbacks(app):
     """

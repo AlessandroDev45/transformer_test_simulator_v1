@@ -297,10 +297,13 @@ class TransformerMCP:
             try:
                 # Tenta converter para float, substituindo vírgula por ponto se necessário
                 if isinstance(value, str):
-                    return float(value.replace(',','.'))
+                    # Remover espaços e substituir vírgula por ponto
+                    cleaned_value = value.strip().replace(',','.')
+                    log.debug(f"[MCP Calc Currents] Convertendo string: '{value}' -> '{cleaned_value}'")
+                    return float(cleaned_value)
                 return float(value)
-            except (ValueError, TypeError):
-                log.warning(f"[MCP Calc Currents] Erro ao converter valor: {value}")
+            except (ValueError, TypeError) as e:
+                log.warning(f"[MCP Calc Currents] Erro ao converter valor: {value}, erro: {e}")
                 return 0  # Retorna 0 em vez de None para garantir o cálculo
 
         potencia = safe_float(potencia_str)
@@ -311,6 +314,8 @@ class TransformerMCP:
         tensao_terciario = safe_float(tensao_terciario_str)
 
         # Verificação mais detalhada dos dados
+        log.info(f"[MCP Calc Currents] Valores originais: tipo={tipo}, potencia_str={potencia_str}, " +
+                f"tensao_at_str={tensao_at_str}, tensao_bt_str={tensao_bt_str}, tensao_terciario_str={tensao_terciario_str}")
         log.info(f"[MCP Calc Currents] Valores convertidos: tipo={tipo}, potencia={potencia}, " +
                 f"tensao_at={tensao_at}, tensao_bt={tensao_bt}, tensao_terciario={tensao_terciario}")
 

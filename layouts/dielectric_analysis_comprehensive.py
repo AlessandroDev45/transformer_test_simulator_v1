@@ -58,17 +58,18 @@ def create_dielectric_comprehensive_layout():
         dbc.Row([
             dbc.Col([
                 html.Div([
-                    # Div onde o painel será renderizado
-                    html.Div(id="transformer-info-comprehensive", className=SPACING['row_margin']),
+                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
+                    html.Div(id="transformer-info-comprehensive-page", className="mb-1"),
                     # Div oculta para compatibilidade com o callback global_updates
-                    html.Div(id="transformer-info-dieletric", style={"display": "none"}),
-                    # Adicionado para compatibilidade com o callback global_updates
-                    html.Div(id="transformer-info-losses", style={"display": "none"}),
-                    html.Div(id="transformer-info-impulse", style={"display": "none"}),
-                    html.Div(id="transformer-info-applied", style={"display": "none"}),
-                    html.Div(id="transformer-info-induced", style={"display": "none"}),
-                    html.Div(id="transformer-info-short-circuit", style={"display": "none"}),
-                    html.Div(id="transformer-info-temperature-rise", style={"display": "none"})
+                    html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"}),
+                    # Divs ocultos para compatibilidade com o callback global_updates
+                    html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-induced", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+                    html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"})
                 ])
             ], width=12)
         ], className=SPACING['row_margin']),

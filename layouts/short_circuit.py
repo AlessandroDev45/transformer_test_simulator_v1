@@ -75,12 +75,13 @@ def create_short_circuit_layout():
         # Primeira seção - Informações do Transformador (sempre visível no topo)
         dbc.Row([
             dbc.Col([
-                # Componente de informações do transformador adicionado diretamente no layout
+                # Componente de informações do transformador
                 html.Div([
-                    # Criando o painel diretamente com os dados obtidos
-                    create_transformer_info_panel(transformer_data),
-                    # Divs ocultos para compatibilidade com o callback global_updates
+                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
+                    html.Div(id="transformer-info-short-circuit-page", className="mb-1"),
+                    # Div oculta para compatibilidade com o callback global_updates
                     html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
+                    # Divs ocultos para compatibilidade com o callback global_updates
                     html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),

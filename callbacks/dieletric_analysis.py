@@ -1060,4 +1060,5 @@ def dielectric_analysis_update_tipo_isolamento_display(transformer_data):
 )
 def update_dieletric_page_info_panel(global_panel_content):
     """Copia o conteúdo do painel global para o painel específico da página."""
+    log.debug("Atualizando painel de informações do transformador na página de análise dielétrica")
     return global_panel_content

@@ -153,6 +153,20 @@ def losses_load_carga_values(active_tab):
 # --- Callback para Atualizar Cache de Dados do Transformador removido ---
 # Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
 
+# --- Callback para atualizar o painel de informações do transformador na página de perdas ---
+@dash.callback(
+    Output("transformer-info-losses-page", "children"),
+    Input("transformer-info-losses", "children"),
+    prevent_initial_call=False
+)
+def update_losses_page_info_panel(global_panel_content):
+    """
+    Copia o conteúdo do painel de informações global para o painel local da página de perdas.
+    Este callback é acionado quando o painel global é atualizado pelo callback global_updates_all_transformer_info_panels.
+    """
+    log.debug("Atualizando painel de informações do transformador na página de perdas")
+    return global_panel_content
+
 # --- Callback Perdas em Vazio (Unchanged from previous version) ---
 @dash.callback(
     [Output("parametros-gerais-card-body", "children"),

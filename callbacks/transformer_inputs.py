@@ -240,124 +240,23 @@ def load_elevacao_comum_initial(pathname):
     log.info(f"[Load Elevação Comum] Valor carregado: {elevacao_comum}")
     return elevacao_comum
 
-# --- Callbacks para atualizar VALORES de dropdowns (MODIFICADOS com allow_duplicate=True) ---
-# Estes callbacks agora só precisam atualizar o MCP. A UI será atualizada pelo callback principal.
-@app.callback(
-    Output("transformer-inputs-store", "data", allow_duplicate=True), # Output ÚNICO para o store
-    [
-        Input("nbi_at", "value"), Input("sil_at", "value"),
-        Input("nbi_bt", "value"), Input("sil_bt", "value"),
-        Input("nbi_terciario", "value"), Input("sil_terciario", "value")
-    ],
-    prevent_initial_call=True
-)
-def update_mcp_from_nbi_sil_values(nbi_at_val, sil_at_val, nbi_bt_val, sil_bt_val, nbi_ter_val, sil_ter_val):
-    """Atualiza o MCP quando os valores de NBI/SIL mudam na UI."""
-    if app.mcp is None: raise PreventUpdate
-    mcp_data = app.mcp.get_data('transformer-inputs-store')
-    if not mcp_data: mcp_data = DEFAULT_TRANSFORMER_INPUTS.copy()
-
-    # Verifica se algum valor realmente mudou em comparação com o MCP
-    changed = (nbi_at_val != mcp_data.get('nbi_at') or sil_at_val != mcp_data.get('sil_at') or
-               nbi_bt_val != mcp_data.get('nbi_bt') or sil_bt_val != mcp_data.get('sil_bt') or
-               nbi_ter_val != mcp_data.get('nbi_terciario') or sil_ter_val != mcp_data.get('sil_terciario'))
-
-    if not changed: return no_update # Não atualiza se nada mudou
-
-    updated_mcp_data = mcp_data.copy()
-    updated_mcp_data.update({
-        'nbi_at': nbi_at_val, 'sil_at': sil_at_val,
-        'nbi_bt': nbi_bt_val, 'sil_bt': sil_bt_val,
-        'nbi_terciario': nbi_ter_val, 'sil_terciario': sil_ter_val
-    })
-    serializable_data = convert_numpy_types(updated_mcp_data, debug_path="mcp_update_nbi_sil")
-    app.mcp.set_data('transformer-inputs-store', serializable_data)
-    log.info("[NBI/SIL UI -> MCP] MCP atualizado com valores NBI/SIL da UI.")
-    # Retorna os dados atualizados para o store (que acionará outros callbacks se necessário)
-    return serializable_data
-
-
-@app.callback(
-    Output("transformer-inputs-store", "data", allow_duplicate=True),
-    [
-        Input("nbi_neutro_at", "value"), Input("nbi_neutro_bt", "value"), Input("nbi_neutro_terciario", "value")
-    ],
-    prevent_initial_call=True
-)
-def update_mcp_from_nbi_neutro_values(nbi_n_at_val, nbi_n_bt_val, nbi_n_ter_val):
-    """Atualiza o MCP quando os valores de NBI Neutro mudam na UI."""
-    if app.mcp is None: raise PreventUpdate
-    mcp_data = app.mcp.get_data('transformer-inputs-store')
-    if not mcp_data: mcp_data = DEFAULT_TRANSFORMER_INPUTS.copy()
-
-    changed = (nbi_n_at_val != mcp_data.get('nbi_neutro_at') or
-               nbi_n_bt_val != mcp_data.get('nbi_neutro_bt') or
-               nbi_n_ter_val != mcp_data.get('nbi_neutro_terciario'))
-
-    if not changed: return no_update
-
-    updated_mcp_data = mcp_data.copy()
-    updated_mcp_data.update({
-        'nbi_neutro_at': nbi_n_at_val,
-        'nbi_neutro_bt': nbi_n_bt_val,
-        'nbi_neutro_terciario': nbi_n_ter_val
-    })
-    serializable_data = convert_numpy_types(updated_mcp_data, debug_path="mcp_update_nbi_neutro")
-    app.mcp.set_data('transformer-inputs-store', serializable_data)
-    log.info("[NBI Neutro UI -> MCP] MCP atualizado com valores NBI Neutro da UI.")
-    return serializable_data
-
-@app.callback(
-    Output("transformer-inputs-store", "data", allow_duplicate=True),
-    [
-        Input("teste_tensao_aplicada_at", "value"), Input("teste_tensao_aplicada_bt", "value"), Input("teste_tensao_aplicada_terciario", "value")
-    ],
-    prevent_initial_call=True
-)
-def update_mcp_from_tensao_aplicada_values(tap_at_val, tap_bt_val, tap_ter_val):
-    """Atualiza o MCP quando os valores de Tensão Aplicada mudam na UI."""
-    if app.mcp is None: raise PreventUpdate
-    mcp_data = app.mcp.get_data('transformer-inputs-store')
-    if not mcp_data: mcp_data = DEFAULT_TRANSFORMER_INPUTS.copy()
-
-    changed = (tap_at_val != mcp_data.get('teste_tensao_aplicada_at') or
-               tap_bt_val != mcp_data.get('teste_tensao_aplicada_bt') or
-               tap_ter_val != mcp_data.get('teste_tensao_aplicada_terciario'))
-
-    if not changed: return no_update
-
-    updated_mcp_data = mcp_data.copy()
-    updated_mcp_data.update({
-        'teste_tensao_aplicada_at': tap_at_val,
-        'teste_tensao_aplicada_bt': tap_bt_val,
-        'teste_tensao_aplicada_terciario': tap_ter_val
-    })
-    serializable_data = convert_numpy_types(updated_mcp_data, debug_path="mcp_update_tap")
-    app.mcp.set_data('transformer-inputs-store', serializable_data)
-    log.info("[Tap UI -> MCP] MCP atualizado com valores de Tensão Aplicada da UI.")
-    return serializable_data
-
-@app.callback(
-    Output("transformer-inputs-store", "data", allow_duplicate=True),
-    Input("teste_tensao_induzida", "value"),
-    prevent_initial_call=True
-)
-def update_mcp_from_tensao_induzida_value(ti_val):
-    """Atualiza o MCP quando o valor de Tensão Induzida muda na UI."""
-    if app.mcp is None: raise PreventUpdate
-    mcp_data = app.mcp.get_data('transformer-inputs-store')
-    if not mcp_data: mcp_data = DEFAULT_TRANSFORMER_INPUTS.copy()
-
-    changed = ti_val != mcp_data.get('teste_tensao_induzida')
-
-    if not changed: return no_update
-
-    updated_mcp_data = mcp_data.copy()
-    updated_mcp_data['teste_tensao_induzida'] = ti_val
-    serializable_data = convert_numpy_types(updated_mcp_data, debug_path="mcp_update_ti")
-    app.mcp.set_data('transformer-inputs-store', serializable_data)
-    log.info("[TI UI -> MCP] MCP atualizado com valor de Tensão Induzida da UI.")
-    return serializable_data
+# --- Callbacks para atualizar VALORES de dropdowns (REMOVIDOS) ---
+# Estes callbacks individuais foram removidos para evitar redundância e conflitos.
+# O callback principal update_transformer_calculations_and_mcp é o único responsável
+# por atualizar o MCP com todos os valores do formulário, incluindo os dropdowns.
+# Isso simplifica o fluxo de dados e evita atualizações múltiplas e desordenadas do MCP.
+#
+# Os callbacks removidos eram:
+# - update_mcp_from_nbi_sil_values
+# - update_mcp_from_nbi_neutro_values
+# - update_mcp_from_tensao_aplicada_values
+# - update_mcp_from_tensao_induzida_value
+#
+# Agora, quando qualquer valor do formulário muda, o callback principal
+# update_transformer_calculations_and_mcp é acionado, coleta todos os valores
+# atuais da UI e atualiza o MCP de uma só vez.
+#
+# A UI é atualizada pelo callback load_ui_on_page_load quando necessário.
 
 # --- Callback de Carregamento Inicial da UI (só roda na carga da página) ---
 @app.callback(
@@ -593,6 +492,29 @@ def update_transformer_calculations_and_mcp(*args):
     log.debug(f"[Update Callback] Valores de entrada da UI: {inputs_dict}")
 
     try:
+        # Verificar se temos os dados mínimos necessários para o cálculo
+        if 'potencia_mva' in inputs_dict and inputs_dict['potencia_mva'] and 'tensao_at' in inputs_dict and inputs_dict['tensao_at'] and 'tensao_bt' in inputs_dict and inputs_dict['tensao_bt']:
+            log.info("[Update Callback] Dados mínimos para cálculo de correntes estão presentes.")
+        else:
+            log.warning("[Update Callback] Dados mínimos para cálculo de correntes NÃO estão presentes. Verificando valores:")
+            log.warning(f"Potência MVA: {inputs_dict.get('potencia_mva')}")
+            log.warning(f"Tensão AT: {inputs_dict.get('tensao_at')}")
+            log.warning(f"Tensão BT: {inputs_dict.get('tensao_bt')}")
+
+            # Garantir valores mínimos para cálculo
+            if 'potencia_mva' not in inputs_dict or not inputs_dict['potencia_mva']:
+                inputs_dict['potencia_mva'] = 10.0
+                log.warning(f"[Update Callback] Usando valor padrão para potencia_mva: {inputs_dict['potencia_mva']}")
+            if 'tensao_at' not in inputs_dict or not inputs_dict['tensao_at']:
+                inputs_dict['tensao_at'] = 138.0
+                log.warning(f"[Update Callback] Usando valor padrão para tensao_at: {inputs_dict['tensao_at']}")
+            if 'tensao_bt' not in inputs_dict or not inputs_dict['tensao_bt']:
+                inputs_dict['tensao_bt'] = 13.8
+                log.warning(f"[Update Callback] Usando valor padrão para tensao_bt: {inputs_dict['tensao_bt']}")
+            if 'tipo_transformador' not in inputs_dict or not inputs_dict['tipo_transformador']:
+                inputs_dict['tipo_transformador'] = 'Trifásico'
+                log.warning(f"[Update Callback] Usando valor padrão para tipo_transformador: {inputs_dict['tipo_transformador']}")
+
         # Primeiro, serializar e salvar os dados básicos no MCP
         serializable_inputs = convert_numpy_types(inputs_dict, debug_path="update_transformer_inputs")
         log.debug("[Update Callback] Dados da UI serializados.")
@@ -604,6 +526,22 @@ def update_transformer_calculations_and_mcp(*args):
         log.info("[Update Callback] Calculando correntes nominais...")
         calculated_currents = app.mcp.calculate_nominal_currents(inputs_dict)
         log.info(f"[Update Callback] Correntes calculadas: {calculated_currents}")
+
+        # Verificar se as correntes foram calculadas corretamente
+        if calculated_currents and 'corrente_nominal_at' in calculated_currents and calculated_currents['corrente_nominal_at']:
+            log.info(f"[Update Callback] Corrente AT calculada com sucesso: {calculated_currents['corrente_nominal_at']}A")
+        else:
+            log.error("[Update Callback] Falha no cálculo da corrente AT. Tentando recalcular...")
+            # Forçar recálculo com valores garantidos
+            temp_data = {
+                'tipo_transformador': inputs_dict.get('tipo_transformador', 'Trifásico'),
+                'potencia_mva': float(inputs_dict.get('potencia_mva', 10.0)),
+                'tensao_at': float(inputs_dict.get('tensao_at', 138.0)),
+                'tensao_bt': float(inputs_dict.get('tensao_bt', 13.8)),
+                'tensao_terciario': float(inputs_dict.get('tensao_terciario', 0.0))
+            }
+            calculated_currents = app.mcp.calculate_nominal_currents(temp_data)
+            log.info(f"[Update Callback] Correntes recalculadas: {calculated_currents}")
 
         # Adicionar os valores calculados de corrente ao dicionário de inputs
         inputs_dict.update({
@@ -623,11 +561,45 @@ def update_transformer_calculations_and_mcp(*args):
         # Recalcular estilos de visibilidade
         visibility_styles_mcp = app.mcp.calculate_visibility_styles()
 
+        # Obter os valores calculados de corrente
         corrente_nominal_at = calculated_currents.get('corrente_nominal_at')
         corr_at_maior = calculated_currents.get('corrente_nominal_at_tap_maior')
         corr_at_menor = calculated_currents.get('corrente_nominal_at_tap_menor')
         corrente_nominal_bt = calculated_currents.get('corrente_nominal_bt')
         corrente_nominal_terciario = calculated_currents.get('corrente_nominal_terciario')
+
+        # Verificar se os valores são válidos
+        if corrente_nominal_at is None or corrente_nominal_at == 0:
+            log.warning("[Update Callback] Corrente AT inválida ou zero. Recalculando...")
+            # Tentar recalcular com valores garantidos
+            temp_data = {
+                'tipo_transformador': inputs_dict.get('tipo_transformador', 'Trifásico'),
+                'potencia_mva': float(inputs_dict.get('potencia_mva', 10.0)),
+                'tensao_at': float(inputs_dict.get('tensao_at', 138.0)),
+                'tensao_bt': float(inputs_dict.get('tensao_bt', 13.8)),
+                'tensao_terciario': float(inputs_dict.get('tensao_terciario', 0.0))
+            }
+            recalculated_currents = app.mcp.calculate_nominal_currents(temp_data)
+            corrente_nominal_at = recalculated_currents.get('corrente_nominal_at')
+            corr_at_maior = recalculated_currents.get('corrente_nominal_at_tap_maior')
+            corr_at_menor = recalculated_currents.get('corrente_nominal_at_tap_menor')
+            corrente_nominal_bt = recalculated_currents.get('corrente_nominal_bt')
+            corrente_nominal_terciario = recalculated_currents.get('corrente_nominal_terciario')
+            log.info(f"[Update Callback] Correntes recalculadas: AT={corrente_nominal_at}A, BT={corrente_nominal_bt}A")
+
+            # Atualizar o MCP com os valores recalculados
+            inputs_dict.update({
+                'corrente_nominal_at': corrente_nominal_at,
+                'corrente_nominal_at_tap_maior': corr_at_maior,
+                'corrente_nominal_at_tap_menor': corr_at_menor,
+                'corrente_nominal_bt': corrente_nominal_bt,
+                'corrente_nominal_terciario': corrente_nominal_terciario
+            })
+
+            # Salvar novamente no MCP
+            serializable_inputs = convert_numpy_types(inputs_dict, debug_path="update_transformer_inputs_with_recalculated_currents")
+            app.mcp.set_data('transformer-inputs-store', serializable_inputs)
+            log.info("[Update Callback] MCP atualizado com correntes recalculadas.")
         conexao_at_style = visibility_styles_mcp.get('conexao_at_style')
         conexao_bt_style = visibility_styles_mcp.get('conexao_bt_style')
         conexao_terciario_style = visibility_styles_mcp.get('conexao_terciario_style')

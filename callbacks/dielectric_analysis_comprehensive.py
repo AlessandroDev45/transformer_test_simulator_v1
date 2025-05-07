@@ -1141,12 +1141,13 @@ def create_enrolamento_comparison(verificador, enrolamento_data, tipo_transforma
 # --- Callback para exibir informações do transformador na página ---
 # Este callback copia o conteúdo do painel global para o painel específico da página
 @callback(
-    Output("transformer-info-comprehensive", "children"),
-    Input("transformer-info-dieletric", "children"),
+    Output("transformer-info-comprehensive-page", "children"),
+    Input("transformer-info-comprehensive", "children"),
     prevent_initial_call=False
 )
 def update_comprehensive_page_info_panel(global_panel_content):
     """Copia o conteúdo do painel global para o painel específico da página."""
+    log.debug("Atualizando painel de informações do transformador na página de análise dielétrica abrangente")
     return global_panel_content
 
 # End of file

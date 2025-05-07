@@ -65,15 +65,15 @@ def create_empty_sc_figure():
 # --- Callbacks ---
 
 # --- Callback para exibir informações do transformador na página ---
-# Este callback foi removido pois o painel agora é criado diretamente no layout
-# @app.callback(
-#     Output("transformer-info-short-circuit-page", "children"),
-#     Input("transformer-info-short-circuit", "children"),
-#     prevent_initial_call=False
-# )
-# def update_short_circuit_page_info_panel(global_panel_content):
-#     """Copia o conteúdo do painel global para o painel específico da página."""
-#     return global_panel_content
+@app.callback(
+    Output("transformer-info-short-circuit-page", "children"),
+    Input("transformer-info-short-circuit", "children"),
+    prevent_initial_call=False
+)
+def update_short_circuit_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    log.debug("Atualizando painel de informações do transformador na página de curto-circuito")
+    return global_panel_content
 
 # Callback para CARREGAR dados do Store
 @app.callback(

@@ -85,12 +85,13 @@ def create_impulse_layout():
         # Primeira seção - Informações do Transformador (sempre visível no topo)
         dbc.Row([
             dbc.Col([
-                # Componente de informações do transformador adicionado diretamente no layout
+                # Componente de informações do transformador
                 html.Div([
-                    # Criando o painel diretamente com os dados obtidos
-                    create_transformer_info_panel(transformer_data),
-                    # Divs ocultos para compatibilidade com o callback global_updates
+                    # Painel visível que será atualizado pelo callback local
+                    html.Div(id="transformer-info-impulse-page", className="mb-1"),
+                    # Painel oculto atualizado pelo callback global
                     html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
+                    # Divs ocultos para compatibilidade com o callback global_updates
                     html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),

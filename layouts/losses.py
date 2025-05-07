@@ -186,8 +186,8 @@ def create_losses_layout():
         # Transformer Info Panel
         dbc.Row([
             dbc.Col(html.Div([
-                create_transformer_info_panel(transformer_data),
-                html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}), # Compatibility
+                html.Div(id="transformer-info-losses-page", className="mb-1"), # Painel visível que será atualizado pelo callback local
+                html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}), # Painel oculto atualizado pelo callback global
                 html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}), # Compatibility
                 html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}), # Compatibility
                 html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}), # Compatibility
