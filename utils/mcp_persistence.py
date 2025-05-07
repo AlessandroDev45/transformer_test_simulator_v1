@@ -4,59 +4,9 @@ Utilitários para garantir a persistência de dados no MCP durante a navegação
 
 import logging
 from typing import Dict, Any, Optional
+from utils.mcp_utils import patch_mcp  # Importar a função patch_mcp do módulo mcp_utils
 
 log = logging.getLogger(__name__)
-
-def patch_mcp(app, store_name: str, data: Dict[str, Any]) -> bool:
-    """
-    Atualiza o MCP com os dados fornecidos, mas apenas para campos não vazios.
-    Isso evita que valores None sobrescrevam dados válidos no MCP.
-
-    Args:
-        app: Instância da aplicação Dash
-        store_name: Nome do store no MCP
-        data: Dicionário com os dados a serem atualizados
-
-    Returns:
-        bool: True se algum dado foi atualizado, False caso contrário
-    """
-    if not app.mcp or not data:
-        return False
-
-    # Verificar se os dados essenciais estão presentes para transformer-inputs-store
-    if store_name == 'transformer-inputs-store':
-        essential_fields = ['potencia_mva', 'tensao_at', 'tensao_bt']
-        missing_fields = [field for field in essential_fields if data.get(field) is None]
-
-        if missing_fields:
-            log.debug(f"[patch_mcp] Ignorando atualização do MCP - campos essenciais ausentes: {missing_fields}")
-            return False
-
-    # Obter os dados atuais do MCP
-    current_data = app.mcp.get_data(store_name) or {}
-
-    # Criar uma cópia para não modificar o dicionário original
-    updated_data = current_data.copy()
-
-    # Contar quantos campos foram atualizados
-    updated_count = 0
-
-    # Atualizar apenas os campos não vazios
-    for key, value in data.items():
-        if value is not None and value != "":
-            if key not in current_data or current_data[key] != value:
-                updated_data[key] = value
-                updated_count += 1
-                log.debug(f"[patch_mcp] Atualizando {key}: {current_data.get(key)} -> {value}")
-
-    # Atualizar o MCP apenas se houver alterações
-    if updated_count > 0:
-        app.mcp.set_data(store_name, updated_data)
-        log.info(f"[patch_mcp] {updated_count} campos atualizados no MCP para {store_name}")
-        return True
-
-    log.debug(f"[patch_mcp] Nenhum campo atualizado no MCP para {store_name}")
-    return False
 
 def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> Dict[str, bool]:
     """

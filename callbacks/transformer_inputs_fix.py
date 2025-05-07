@@ -129,99 +129,25 @@ def register_transformer_inputs_callbacks(app_instance):
         """
         Calcula as correntes nominais do transformador e atualiza o MCP.
         """
-        print("\n\n")
-        print("!" * 100)
-        print("!!!! CALLBACK UPDATE_TRANSFORMER_CALCULATIONS_AND_MCP ACIONADO !!!!")
-        print("!" * 100)
-        print("\n")
-
-        # Log de todos os valores recebidos, agrupados por categoria
-        print("--- DADOS BÁSICOS ---")
-        print(f"[Update Callback] Potência MVA: {potencia_mva}")
-        print(f"[Update Callback] Frequência: {frequencia}")
-        print(f"[Update Callback] Grupo Ligação: {grupo_ligacao}")
-        print(f"[Update Callback] Líquido Isolante: {liquido_isolante}")
-        print(f"[Update Callback] Elevação Óleo: {elevacao_oleo_topo}")
-        print(f"[Update Callback] Elevação Enrolamento: {elevacao_enrol}")
-        print(f"[Update Callback] Tipo Transformador: {tipo_transformador}")
-        print(f"[Update Callback] Tipo Isolamento: {tipo_isolamento}")
-
-        print("\n--- PESOS ---")
-        print(f"[Update Callback] Peso Total: {peso_total}")
-        print(f"[Update Callback] Peso Parte Ativa: {peso_parte_ativa}")
-        print(f"[Update Callback] Peso Óleo: {peso_oleo}")
-        print(f"[Update Callback] Peso Tanque: {peso_tanque_acessorios}")
-
-        print("\n--- ALTA TENSÃO (AT) ---")
-        print(f"[Update Callback] Tensão AT: {tensao_at}")
-        print(f"[Update Callback] Classe Tensão AT: {classe_tensao_at}")
-        print(f"[Update Callback] Impedância: {impedancia}")
-        print(f"[Update Callback] NBI AT: {nbi_at}")
-        print(f"[Update Callback] SIL AT: {sil_at}")
-        print(f"[Update Callback] Conexão AT: {conexao_at}")
-        print(f"[Update Callback] Tensão Bucha Neutro AT: {tensao_bucha_neutro_at}")
-        print(f"[Update Callback] NBI Neutro AT: {nbi_neutro_at}")
-
-        print("\n--- TAPS AT ---")
-        print(f"[Update Callback] Tensão AT Tap Maior: {tensao_at_tap_maior}")
-        print(f"[Update Callback] Impedância Tap Maior: {impedancia_tap_maior}")
-        print(f"[Update Callback] Tensão AT Tap Menor: {tensao_at_tap_menor}")
-        print(f"[Update Callback] Impedância Tap Menor: {impedancia_tap_menor}")
-
-        print("\n--- TENSÕES ENSAIO AT ---")
-        print(f"[Update Callback] Tensão Aplicada AT: {teste_tensao_aplicada_at}")
-        print(f"[Update Callback] Tensão Induzida: {teste_tensao_induzida}")
-
-        print("\n--- BAIXA TENSÃO (BT) ---")
-        print(f"[Update Callback] Tensão BT: {tensao_bt}")
-        print(f"[Update Callback] Classe Tensão BT: {classe_tensao_bt}")
-        print(f"[Update Callback] NBI BT: {nbi_bt}")
-        print(f"[Update Callback] SIL BT: {sil_bt}")
-        print(f"[Update Callback] Conexão BT: {conexao_bt}")
-        print(f"[Update Callback] Tensão Bucha Neutro BT: {tensao_bucha_neutro_bt}")
-        print(f"[Update Callback] NBI Neutro BT: {nbi_neutro_bt}")
-        print(f"[Update Callback] Tensão Aplicada BT: {teste_tensao_aplicada_bt}")
-
-        print("\n--- TERCIÁRIO ---")
-        print(f"[Update Callback] Tensão Terciário: {tensao_terciario}")
-        print(f"[Update Callback] Classe Tensão Terciário: {classe_tensao_terciario}")
-        print(f"[Update Callback] NBI Terciário: {nbi_terciario}")
-        print(f"[Update Callback] SIL Terciário: {sil_terciario}")
-        print(f"[Update Callback] Conexão Terciário: {conexao_terciario}")
-        print(f"[Update Callback] Tensão Bucha Neutro Terciário: {tensao_bucha_neutro_terciario}")
-        print(f"[Update Callback] NBI Neutro Terciário: {nbi_neutro_terciario}")
-        print(f"[Update Callback] Tensão Aplicada Terciário: {teste_tensao_aplicada_terciario}")
-
-        # Verificar os tipos de dados principais para cálculo de corrente
-        print("\n--- VERIFICAÇÃO DE TIPOS DE DADOS ---")
-        print(f"[Update Callback] Tipos de dados: potencia_mva={type(potencia_mva)}, tensao_at={type(tensao_at)}, tensao_bt={type(tensao_bt)}, tensao_terciario={type(tensao_terciario)}")
-        print(f"[Update Callback] Valores None ou vazios: potencia_mva={potencia_mva is None}, tensao_at={tensao_at is None}, tensao_bt={tensao_bt is None}, tensao_terciario={tensao_terciario is None}")
+        # Log resumido para o arquivo de log
+        log.info(f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}")
 
         # Verificar se os valores principais são numéricos
         try:
             if potencia_mva is not None:
                 float(potencia_mva)
-                print(f"[Update Callback] potencia_mva é numérico: {potencia_mva}")
             if tensao_at is not None:
                 float(tensao_at)
-                print(f"[Update Callback] tensao_at é numérico: {tensao_at}")
             if tensao_bt is not None:
                 float(tensao_bt)
-                print(f"[Update Callback] tensao_bt é numérico: {tensao_bt}")
             if tensao_terciario is not None:
                 float(tensao_terciario)
-                print(f"[Update Callback] tensao_terciario é numérico: {tensao_terciario}")
             if tensao_at_tap_maior is not None:
                 float(tensao_at_tap_maior)
-                print(f"[Update Callback] tensao_at_tap_maior é numérico: {tensao_at_tap_maior}")
             if tensao_at_tap_menor is not None:
                 float(tensao_at_tap_menor)
-                print(f"[Update Callback] tensao_at_tap_menor é numérico: {tensao_at_tap_menor}")
         except ValueError as e:
-            print(f"[Update Callback] Erro ao converter valor para float: {e}")
-
-        # Log resumido para o arquivo de log
-        log.info(f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}")
+            log.error(f"[Update Callback] Erro ao converter valor para float: {e}")
 
         # Valores padrão para retorno
         corrente_at = None
@@ -343,54 +269,28 @@ def register_transformer_inputs_callbacks(app_instance):
                     current_data['corrente_nominal_at_tap_maior'] = corrente_at_tap_maior
                     current_data['corrente_nominal_at_tap_menor'] = corrente_at_tap_menor
 
-                    # Imprimir os valores que serão salvos no MCP
-                    print("\n--- VALORES SALVOS NO MCP ---")
-                    print(f"POTÊNCIA SALVA NO MCP: {current_data.get('potencia_mva')}")
-                    print(f"FREQUÊNCIA SALVA NO MCP: {current_data.get('frequencia')}")
-                    print(f"GRUPO LIGAÇÃO SALVO NO MCP: {current_data.get('grupo_ligacao')}")
-                    print(f"LÍQUIDO ISOLANTE SALVO NO MCP: {current_data.get('liquido_isolante')}")
-                    print(f"TIPO TRANSFORMADOR SALVO NO MCP: {current_data.get('tipo_transformador')}")
-                    print(f"TIPO ISOLAMENTO SALVO NO MCP: {current_data.get('tipo_isolamento')}")
+                    # Log dos valores principais que serão salvos no MCP (apenas em nível debug)
+                    if log.isEnabledFor(logging.DEBUG):
+                        log.debug(f"[Update Callback] Valores principais a serem salvos no MCP:")
+                        log.debug(f"[Update Callback] Potência: {current_data.get('potencia_mva')}")
+                        log.debug(f"[Update Callback] Tensão AT: {current_data.get('tensao_at')}")
+                        log.debug(f"[Update Callback] Tensão BT: {current_data.get('tensao_bt')}")
+                        log.debug(f"[Update Callback] Corrente AT: {current_data.get('corrente_nominal_at')}")
+                        log.debug(f"[Update Callback] Corrente BT: {current_data.get('corrente_nominal_bt')}")
+                        log.debug(f"[Update Callback] Impedância: {current_data.get('impedancia')}")
 
-                    print("\nTENSÕES SALVAS NO MCP:")
-                    print(f"TENSÃO AT: {current_data.get('tensao_at')}")
-                    print(f"TENSÃO BT: {current_data.get('tensao_bt')}")
-                    print(f"TENSÃO TERCIÁRIO: {current_data.get('tensao_terciario')}")
-                    print(f"TENSÃO AT TAP MAIOR: {current_data.get('tensao_at_tap_maior')}")
-                    print(f"TENSÃO AT TAP MENOR: {current_data.get('tensao_at_tap_menor')}")
-
-                    print("\nCORRENTES CALCULADAS SALVAS NO MCP:")
-                    print(f"CORRENTE AT: {current_data.get('corrente_nominal_at')}")
-                    print(f"CORRENTE BT: {current_data.get('corrente_nominal_bt')}")
-                    print(f"CORRENTE TERCIÁRIO: {current_data.get('corrente_nominal_terciario')}")
-                    print(f"CORRENTE AT TAP MAIOR: {current_data.get('corrente_nominal_at_tap_maior')}")
-                    print(f"CORRENTE AT TAP MENOR: {current_data.get('corrente_nominal_at_tap_menor')}")
-
-                    print("\nIMPEDÂNCIAS SALVAS NO MCP:")
-                    print(f"IMPEDÂNCIA NOMINAL: {current_data.get('impedancia')}")
-                    print(f"IMPEDÂNCIA TAP MAIOR: {current_data.get('impedancia_tap_maior')}")
-                    print(f"IMPEDÂNCIA TAP MENOR: {current_data.get('impedancia_tap_menor')}")
-
-                    print("\nNBI/SIL SALVOS NO MCP:")
-                    print(f"NBI AT: {current_data.get('nbi_at')}")
-                    print(f"SIL AT: {current_data.get('sil_at')}")
-                    print(f"NBI BT: {current_data.get('nbi_bt')}")
-                    print(f"SIL BT: {current_data.get('sil_bt')}")
-                    print(f"NBI TERCIÁRIO: {current_data.get('nbi_terciario')}")
-                    print(f"SIL TERCIÁRIO: {current_data.get('sil_terciario')}")
-                    print(f"NBI NEUTRO AT: {current_data.get('nbi_neutro_at')}")
-                    print(f"NBI NEUTRO BT: {current_data.get('nbi_neutro_bt')}")
-                    print(f"NBI NEUTRO TERCIÁRIO: {current_data.get('nbi_neutro_terciario')}")
-
-                    # Serializar e salvar no MCP
+                    # Serializar e salvar no MCP usando patch_mcp
                     serializable_data = convert_numpy_types(current_data, debug_path="update_transformer_inputs_with_currents")
 
                     # Verificar se os dados principais estão presentes antes de salvar
-                    log.info(f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}")
+                    log.debug(f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}")
 
-                    # Forçar a atualização direta no MCP para garantir que os dados sejam salvos
-                    app_instance.mcp.set_data('transformer-inputs-store', serializable_data)
-                    log.info("[Update Callback] MCP atualizado diretamente com todos os valores do formulário")
+                    # Usar patch_mcp para atualizar o MCP com os dados não vazios
+                    # Isso evita que valores None sobrescrevam dados válidos
+                    if patch_mcp('transformer-inputs-store', serializable_data, app_instance):
+                        log.info("[Update Callback] MCP atualizado com valores não vazios do formulário")
+                    else:
+                        log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
 
                     # Verificar se os dados foram salvos corretamente
                     saved_data = app_instance.mcp.get_data('transformer-inputs-store')
@@ -436,16 +336,11 @@ def register_transformer_inputs_callbacks(app_instance):
                     except Exception as e:
                         log.error(f"[Update Callback] Erro ao propagar dados para outros stores: {e}", exc_info=True)
 
-                    # Verificar se os valores principais foram salvos corretamente
-                    print("\n--- VERIFICAÇÃO DE VALORES NO MCP ---")
-                    saved_data = app_instance.mcp.get_data('transformer-inputs-store')
-                    print(f"POTÊNCIA VERIFICADA NO MCP: {saved_data.get('potencia_mva')}")
-                    print(f"TENSÃO AT VERIFICADA NO MCP: {saved_data.get('tensao_at')}")
-                    print(f"TENSÃO BT VERIFICADA NO MCP: {saved_data.get('tensao_bt')}")
-                    print(f"TENSÃO TERCIÁRIO VERIFICADA NO MCP: {saved_data.get('tensao_terciario')}")
-                    print(f"TENSÃO AT TAP MAIOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_maior')}")
-                    print(f"TENSÃO AT TAP MENOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_menor')}")
-                    print(f"TOTAL DE CAMPOS NO MCP: {len(saved_data)}")
+                    # Verificar se os valores principais foram salvos corretamente (apenas em nível debug)
+                    if log.isEnabledFor(logging.DEBUG):
+                        saved_data = app_instance.mcp.get_data('transformer-inputs-store')
+                        log.debug(f"[Update Callback] Verificação final - Potência: {saved_data.get('potencia_mva')}, Tensão AT: {saved_data.get('tensao_at')}, Tensão BT: {saved_data.get('tensao_bt')}")
+                        log.debug(f"[Update Callback] Total de campos no MCP: {len(saved_data)}")
 
         except Exception as e:
             log.error(f"[Update Callback] Erro: {e}")
