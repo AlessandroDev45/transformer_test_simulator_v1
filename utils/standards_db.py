@@ -2,15 +2,16 @@
 Gerenciador de banco de dados para o módulo de consulta de normas técnicas.
 Implementa funções para criar, atualizar e consultar normas técnicas no SQLite.
 """
-import sqlite3
+import datetime
 import json
 import logging
 import os
-import datetime
-from typing import Dict, List, Optional, Tuple, Any, Union
+import sqlite3
+from typing import Dict, List, Optional
 
 # Configurar logger
 log = logging.getLogger(__name__)
+
 
 def get_db_path():
     """Retorna o caminho para o banco de dados SQLite."""
@@ -19,12 +20,14 @@ def get_db_path():
     os.makedirs(data_dir, exist_ok=True)
     return os.path.join(data_dir, "standards.db")
 
+
 def get_connection():
     """Estabelece e retorna uma conexão com o banco de dados."""
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row  # Para acessar colunas pelo nome
     return conn
+
 
 def create_standards_tables(conn=None):
     """
@@ -42,7 +45,8 @@ def create_standards_tables(conn=None):
         cursor = conn.cursor()
 
         # Tabela de Metadados
-        cursor.execute('''
+        cursor.execute(
+            """
         CREATE TABLE IF NOT EXISTS standards_metadata (
             id TEXT PRIMARY KEY,  -- ID seguro da norma (ex: 'nbr_5356_3')
             title TEXT NOT NULL,
@@ -55,25 +59,30 @@ def create_standards_tables(conn=None):
             error_message TEXT,
             last_updated TEXT NOT NULL
         )
-        ''')
+        """
+        )
 
         # Tabela Virtual FTS5 para busca no conteúdo
-        cursor.execute('''
+        cursor.execute(
+            """
         CREATE VIRTUAL TABLE IF NOT EXISTS standards_content_fts USING fts5(
             doc_id UNINDEXED, -- FK para standards_metadata.id (não indexado no FTS)
             content,          -- Conteúdo Markdown para indexação
             tokenize='porter unicode61'
         )
-        ''')
+        """
+        )
 
         # Triggers para manter FTS sincronizado
-        cursor.execute('''
+        cursor.execute(
+            """
         CREATE TRIGGER IF NOT EXISTS standards_metadata_delete
         AFTER DELETE ON standards_metadata
         BEGIN
             DELETE FROM standards_content_fts WHERE doc_id = old.id;
         END;
-        ''')
+        """
+        )
 
         conn.commit()
         log.info("Tabelas 'standards_metadata' e 'standards_content_fts' criadas/verificadas.")
@@ -85,6 +94,7 @@ def create_standards_tables(conn=None):
         if close_conn and conn:
             conn.close()
 
+
 def add_or_update_standard_metadata(
     id: str,
     title: str,
@@ -93,9 +103,9 @@ def add_or_update_standard_metadata(
     year: int,
     categories: List[str],
     md_file_path: str,
-    processing_status: str = 'pending',
+    processing_status: str = "pending",
     error_message: str = None,
-    conn=None
+    conn=None,
 ) -> bool:
     """
     Insere ou atualiza metadados de uma norma técnica.
@@ -135,34 +145,63 @@ def add_or_update_standard_metadata(
 
         if exists:
             # Atualizar registro existente
-            cursor.execute('''
+            cursor.execute(
+                """
             UPDATE standards_metadata
             SET title = ?, standard_number = ?, organization = ?, year = ?,
                 categories = ?, md_file_path = ?, processing_status = ?,
                 error_message = ?, last_updated = ?
             WHERE id = ?
-            ''', (title, standard_number, organization, year, categories_json,
-                  md_file_path, processing_status, error_message, now, id))
+            """,
+                (
+                    title,
+                    standard_number,
+                    organization,
+                    year,
+                    categories_json,
+                    md_file_path,
+                    processing_status,
+                    error_message,
+                    now,
+                    id,
+                ),
+            )
         else:
             # Inserir novo registro
-            cursor.execute('''
+            cursor.execute(
+                """
             INSERT INTO standards_metadata
             (id, title, standard_number, organization, year, categories,
              md_file_path, processing_status, error_message, last_updated)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (id, title, standard_number, organization, year, categories_json,
-                  md_file_path, processing_status, error_message, now))
+            """,
+                (
+                    id,
+                    title,
+                    standard_number,
+                    organization,
+                    year,
+                    categories_json,
+                    md_file_path,
+                    processing_status,
+                    error_message,
+                    now,
+                ),
+            )
 
         conn.commit()
         log.info(f"{'Atualizado' if exists else 'Inserido'} metadados para norma {id}")
         return True
     except Exception as e:
-        log.exception(f"Erro ao {'atualizar' if exists else 'inserir'} metadados da norma {id}: {e}")
+        log.exception(
+            f"Erro ao {'atualizar' if exists else 'inserir'} metadados da norma {id}: {e}"
+        )
         conn.rollback()
         return False
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def update_processing_status(id: str, status: str, error_message: str = None, conn=None) -> bool:
     """
@@ -186,11 +225,14 @@ def update_processing_status(id: str, status: str, error_message: str = None, co
         cursor = conn.cursor()
         now = datetime.datetime.now().isoformat()
 
-        cursor.execute('''
+        cursor.execute(
+            """
         UPDATE standards_metadata
         SET processing_status = ?, error_message = ?, last_updated = ?
         WHERE id = ?
-        ''', (status, error_message, now, id))
+        """,
+            (status, error_message, now, id),
+        )
 
         conn.commit()
         log.info(f"Atualizado status de processamento da norma {id} para {status}")
@@ -202,6 +244,7 @@ def update_processing_status(id: str, status: str, error_message: str = None, co
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def index_standard_content(doc_id: str, md_content: str, conn=None) -> bool:
     """
@@ -229,15 +272,21 @@ def index_standard_content(doc_id: str, md_content: str, conn=None) -> bool:
 
         if exists:
             # Atualizar conteúdo existente
-            cursor.execute('''
+            cursor.execute(
+                """
             DELETE FROM standards_content_fts WHERE doc_id = ?
-            ''', (doc_id,))
+            """,
+                (doc_id,),
+            )
 
         # Inserir conteúdo
-        cursor.execute('''
+        cursor.execute(
+            """
         INSERT INTO standards_content_fts (doc_id, content)
         VALUES (?, ?)
-        ''', (doc_id, md_content))
+        """,
+            (doc_id, md_content),
+        )
 
         conn.commit()
         log.info(f"{'Atualizado' if exists else 'Indexado'} conteúdo para norma {doc_id}")
@@ -249,6 +298,7 @@ def index_standard_content(doc_id: str, md_content: str, conn=None) -> bool:
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def search_standards_fts(query: str, limit: int = 20, conn=None) -> List[Dict]:
     """
@@ -271,7 +321,8 @@ def search_standards_fts(query: str, limit: int = 20, conn=None) -> List[Dict]:
         cursor = conn.cursor()
 
         # Busca com snippet para destacar os termos encontrados
-        cursor.execute('''
+        cursor.execute(
+            """
         SELECT
             m.id,
             m.title,
@@ -287,17 +338,21 @@ def search_standards_fts(query: str, limit: int = 20, conn=None) -> List[Dict]:
         ORDER BY
             rank
         LIMIT ?
-        ''', (query, limit))
+        """,
+            (query, limit),
+        )
 
         results = []
         for row in cursor.fetchall():
-            results.append({
-                'id': row['id'],
-                'title': row['title'],
-                'standard_number': row['standard_number'],
-                'organization': row['organization'],
-                'snippet': row['snippet']
-            })
+            results.append(
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "standard_number": row["standard_number"],
+                    "organization": row["organization"],
+                    "snippet": row["snippet"],
+                }
+            )
 
         log.info(f"Busca por '{query}' retornou {len(results)} resultados")
         return results
@@ -307,6 +362,7 @@ def search_standards_fts(query: str, limit: int = 20, conn=None) -> List[Dict]:
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def get_standard_metadata_by_id(doc_id: str, conn=None) -> Optional[Dict]:
     """
@@ -327,9 +383,12 @@ def get_standard_metadata_by_id(doc_id: str, conn=None) -> Optional[Dict]:
     try:
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
         SELECT * FROM standards_metadata WHERE id = ?
-        ''', (doc_id,))
+        """,
+            (doc_id,),
+        )
 
         row = cursor.fetchone()
         if not row:
@@ -339,8 +398,8 @@ def get_standard_metadata_by_id(doc_id: str, conn=None) -> Optional[Dict]:
         metadata = dict(row)
 
         # Converter categorias de JSON para lista
-        if metadata.get('categories'):
-            metadata['categories'] = json.loads(metadata['categories'])
+        if metadata.get("categories"):
+            metadata["categories"] = json.loads(metadata["categories"])
 
         return metadata
     except Exception as e:
@@ -349,6 +408,7 @@ def get_standard_metadata_by_id(doc_id: str, conn=None) -> Optional[Dict]:
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def get_standard_content_path(doc_id: str, conn=None) -> Optional[str]:
     """
@@ -369,19 +429,23 @@ def get_standard_content_path(doc_id: str, conn=None) -> Optional[str]:
     try:
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
         SELECT md_file_path FROM standards_metadata
         WHERE id = ? AND processing_status = 'completed'
-        ''', (doc_id,))
+        """,
+            (doc_id,),
+        )
 
         row = cursor.fetchone()
-        return row['md_file_path'] if row else None
+        return row["md_file_path"] if row else None
     except Exception as e:
         log.exception(f"Erro ao buscar caminho do conteúdo da norma {doc_id}: {e}")
         return None
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def get_all_standards_metadata(status: str = None, conn=None) -> List[Dict]:
     """
@@ -403,24 +467,29 @@ def get_all_standards_metadata(status: str = None, conn=None) -> List[Dict]:
         cursor = conn.cursor()
 
         if status:
-            cursor.execute('''
+            cursor.execute(
+                """
             SELECT * FROM standards_metadata
             WHERE processing_status = ?
             ORDER BY organization, standard_number
-            ''', (status,))
+            """,
+                (status,),
+            )
         else:
-            cursor.execute('''
+            cursor.execute(
+                """
             SELECT * FROM standards_metadata
             ORDER BY organization, standard_number
-            ''')
+            """
+            )
 
         results = []
         for row in cursor.fetchall():
             metadata = dict(row)
 
             # Converter categorias de JSON para lista
-            if metadata.get('categories'):
-                metadata['categories'] = json.loads(metadata['categories'])
+            if metadata.get("categories"):
+                metadata["categories"] = json.loads(metadata["categories"])
 
             results.append(metadata)
 
@@ -431,6 +500,7 @@ def get_all_standards_metadata(status: str = None, conn=None) -> List[Dict]:
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def delete_standard(doc_id: str, conn=None) -> bool:
     """
@@ -473,6 +543,7 @@ def delete_standard(doc_id: str, conn=None) -> bool:
         if close_conn and conn:
             conn.close()
 
+
 def create_safe_id(standard_number, organization):
     """
     Cria um ID seguro para a norma a partir do número e organização.
@@ -503,6 +574,7 @@ def create_safe_id(standard_number, organization):
 
     return safe_id
 
+
 def get_categories_list(conn=None) -> List[str]:
     """
     Retorna uma lista de todas as categorias únicas usadas nas normas.
@@ -525,8 +597,8 @@ def get_categories_list(conn=None) -> List[str]:
 
         all_categories = set()
         for row in cursor.fetchall():
-            if row['categories']:
-                categories = json.loads(row['categories'])
+            if row["categories"]:
+                categories = json.loads(row["categories"])
                 all_categories.update(categories)
 
         return sorted(list(all_categories))
@@ -536,6 +608,7 @@ def get_categories_list(conn=None) -> List[str]:
     finally:
         if close_conn and conn:
             conn.close()
+
 
 def filter_standards_by_category(category: str, conn=None) -> List[Dict]:
     """
@@ -557,21 +630,24 @@ def filter_standards_by_category(category: str, conn=None) -> List[Dict]:
         cursor = conn.cursor()
 
         # Busca normas onde a categoria está na lista JSON
-        cursor.execute('''
+        cursor.execute(
+            """
         SELECT * FROM standards_metadata
         WHERE json_extract(categories, '$') LIKE ?
         ORDER BY organization, standard_number
-        ''', (f'%{category}%',))
+        """,
+            (f"%{category}%",),
+        )
 
         results = []
         for row in cursor.fetchall():
             metadata = dict(row)
 
             # Verificar se a categoria realmente está na lista
-            categories = json.loads(metadata['categories'])
+            categories = json.loads(metadata["categories"])
             if category in categories:
                 # Manter a lista de categorias como lista Python
-                metadata['categories'] = categories
+                metadata["categories"] = categories
                 results.append(metadata)
 
         return results

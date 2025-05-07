@@ -3,10 +3,9 @@ Fórmulas matemáticas para cálculos relacionados a transformadores.
 Centraliza todos os cálculos de parâmetros de transformadores.
 """
 
-import math
-import numpy as np
 import logging
-from typing import Tuple, Dict, List, Optional, Union, Any
+
+import numpy as np
 
 # Configuração de logging
 log = logging.getLogger(__name__)
@@ -14,23 +13,31 @@ log = logging.getLogger(__name__)
 # Constantes
 DEFAULT_FREQUENCY = 60  # Hz
 
-def calculate_transformer_inductance(voltage_kv: float, power_mva: float, impedance_percent: float, freq_hz: float = DEFAULT_FREQUENCY) -> float:
+
+def calculate_transformer_inductance(
+    voltage_kv: float,
+    power_mva: float,
+    impedance_percent: float,
+    freq_hz: float = DEFAULT_FREQUENCY,
+) -> float:
     """
     Calcula a indutância de curto-circuito (Lcc) do transformador.
-    
+
     Args:
         voltage_kv: Tensão nominal em kV
         power_mva: Potência nominal em MVA
         impedance_percent: Impedância percentual
         freq_hz: Frequência em Hz
-        
+
     Returns:
         Indutância em Henries
     """
     # Valor padrão típico se dados faltarem
     default_inductance = 0.05
     if voltage_kv is None or power_mva is None or impedance_percent is None or freq_hz is None:
-        log.warning(f"Dados insuficientes para calcular Lcc do trafo. Usando padrão {default_inductance} H.")
+        log.warning(
+            f"Dados insuficientes para calcular Lcc do trafo. Usando padrão {default_inductance} H."
+        )
         return default_inductance
     try:
         voltage_v = float(voltage_kv) * 1000
@@ -39,7 +46,9 @@ def calculate_transformer_inductance(voltage_kv: float, power_mva: float, impeda
         freq_hz_f = float(freq_hz)
 
         if voltage_v <= 0 or power_va <= 0 or freq_hz_f <= 0 or impedance_pu <= 0:
-            log.warning(f"Valores inválidos (<=0) para cálculo de Lcc: V={voltage_v}, P={power_va}, f={freq_hz_f}, Z%={impedance_pu*100}. Usando padrão {default_inductance} H.")
+            log.warning(
+                f"Valores inválidos (<=0) para cálculo de Lcc: V={voltage_v}, P={power_va}, f={freq_hz_f}, Z%={impedance_pu*100}. Usando padrão {default_inductance} H."
+            )
             return default_inductance
 
         omega = 2 * np.pi * freq_hz_f
@@ -50,8 +59,10 @@ def calculate_transformer_inductance(voltage_kv: float, power_mva: float, impeda
 
         # Limita a indutância a um valor razoável (ex: > 1 mH)
         if l_cc < 1e-4:
-             log.warning(f"Indutância calculada muito baixa ({l_cc:.4e} H), pode indicar erro nos dados. Retornando padrão {default_inductance} H.")
-             return default_inductance
+            log.warning(
+                f"Indutância calculada muito baixa ({l_cc:.4e} H), pode indicar erro nos dados. Retornando padrão {default_inductance} H."
+            )
+            return default_inductance
 
         log.info(f"Indutância do transformador calculada: {l_cc:.4f} H")
         return l_cc
@@ -59,15 +70,18 @@ def calculate_transformer_inductance(voltage_kv: float, power_mva: float, impeda
         log.exception(f"Erro ao calcular indutância do transformador: {e}")
         return default_inductance
 
-def calculate_short_circuit_params(corrente_nominal_a: float, impedancia_pu: float, k_peak_factor: float) -> tuple[float, float]:
+
+def calculate_short_circuit_params(
+    corrente_nominal_a: float, impedancia_pu: float, k_peak_factor: float
+) -> tuple[float, float]:
     """
     Calcula correntes de curto-circuito simétricas e de pico.
-    
+
     Args:
         corrente_nominal_a: Corrente nominal em A
         impedancia_pu: Impedância em pu
         k_peak_factor: Fator de pico k*sqrt(2)
-        
+
     Returns:
         Tupla com (Isc_simetrica_kA, Isc_pico_kA)
     """
@@ -92,20 +106,23 @@ def calculate_short_circuit_params(corrente_nominal_a: float, impedancia_pu: flo
         isc_peak_a = isc_sym_a * k_sqrt2
         isc_peak_ka = isc_peak_a / 1000
 
-        log.info(f"Correntes de curto-circuito calculadas: Isc_sym={isc_sym_ka:.2f} kA, Isc_peak={isc_peak_ka:.2f} kA")
+        log.info(
+            f"Correntes de curto-circuito calculadas: Isc_sym={isc_sym_ka:.2f} kA, Isc_peak={isc_peak_ka:.2f} kA"
+        )
         return isc_sym_ka, isc_peak_ka
     except Exception as e:
         log.exception(f"Erro ao calcular correntes de curto-circuito: {e}")
         return None, None
 
+
 def calculate_impedance_variation(z_before: float, z_after: float) -> float:
     """
     Calcula a variação percentual da impedância.
-    
+
     Args:
         z_before: Impedância antes do ensaio em %
         z_after: Impedância após o ensaio em %
-        
+
     Returns:
         Variação percentual da impedância
     """
@@ -120,7 +137,9 @@ def calculate_impedance_variation(z_before: float, z_after: float) -> float:
             return None
 
         delta_z = ((z_a - z_b) / z_b) * 100.0
-        log.info(f"Cálculo Variação Z: Z_antes={z_b:.4f}%, Z_depois={z_a:.4f}% => ΔZ={delta_z:.2f}%")
+        log.info(
+            f"Cálculo Variação Z: Z_antes={z_b:.4f}%, Z_depois={z_a:.4f}% => ΔZ={delta_z:.2f}%"
+        )
         return delta_z
     except (ValueError, TypeError, ZeroDivisionError) as e:
         log.error(f"Erro ao calcular variação de impedância: {e}")

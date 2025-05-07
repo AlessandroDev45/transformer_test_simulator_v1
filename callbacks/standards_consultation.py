@@ -1,25 +1,25 @@
 """
 Callbacks para o módulo de consulta de normas técnicas.
 """
-import os
-import json
 import logging
-from dash import Input, Output, State, ALL, ctx, html, dcc
+import os
+
 import dash_bootstrap_components as dbc
+from dash import ALL, Input, Output, State, ctx, html
 from dash.exceptions import PreventUpdate
 
 # Importar funções do banco de dados
 from utils.standards_db import (
+    filter_standards_by_category,
     get_all_standards_metadata,
-    get_standard_metadata_by_id,
-    get_standard_content_path,
-    search_standards_fts,
     get_categories_list,
-    filter_standards_by_category
+    get_standard_metadata_by_id,
+    search_standards_fts,
 )
 
 # Configurar logger
 log = logging.getLogger(__name__)
+
 
 def register_standards_consultation_callbacks(app):
     """
@@ -32,8 +32,7 @@ def register_standards_consultation_callbacks(app):
 
     @app.callback(
         Output("standards-nav-sidebar", "children"),
-        [Input("url", "pathname"),
-         Input("standards-current-category", "data")]
+        [Input("url", "pathname"), Input("standards-current-category", "data")],
     )
     def populate_standards_sidebar(pathname, current_category):
         """Popula a barra lateral com a lista de normas disponíveis."""
@@ -64,18 +63,12 @@ def register_standards_consultation_callbacks(app):
             items = []
 
             # Adicionar cabeçalho com contagem
-            items.append(html.Div(
-                f"{header} ({len(standards)})",
-                className="fw-bold mb-2"
-            ))
+            items.append(html.Div(f"{header} ({len(standards)})", className="fw-bold mb-2"))
 
             # Adicionar normas agrupadas por organização
             for org, org_standards in sorted(standards_by_org.items()):
                 # Adicionar cabeçalho da organização
-                items.append(html.Div(
-                    org,
-                    className="fw-bold mt-3 mb-2 text-primary"
-                ))
+                items.append(html.Div(org, className="fw-bold mt-3 mb-2 text-primary"))
 
                 # Adicionar normas desta organização
                 for std in sorted(org_standards, key=lambda x: x.get("standard_number", "")):
@@ -86,7 +79,7 @@ def register_standards_consultation_callbacks(app):
                             color="link",
                             className="text-start p-1 d-block w-100 text-truncate",
                             title=std.get("title", ""),
-                            style={"textDecoration": "none"}
+                            style={"textDecoration": "none"},
                         )
                     )
 
@@ -96,10 +89,7 @@ def register_standards_consultation_callbacks(app):
             log.exception(f"Erro ao popular barra lateral de normas: {e}")
             return html.Div(f"Erro ao carregar normas: {str(e)}", className="text-danger p-3")
 
-    @app.callback(
-        Output("standards-categories-container", "children"),
-        [Input("url", "pathname")]
-    )
+    @app.callback(Output("standards-categories-container", "children"), [Input("url", "pathname")])
     def populate_categories_list(pathname):
         """Popula a lista de categorias disponíveis."""
         if not pathname or not pathname.endswith("/consulta-normas"):
@@ -122,7 +112,7 @@ def register_standards_consultation_callbacks(app):
                         color="light",
                         outline=True,
                         size="sm",
-                        className="m-1"
+                        className="m-1",
                     )
                 )
 
@@ -134,7 +124,7 @@ def register_standards_consultation_callbacks(app):
                     color="secondary",
                     outline=True,
                     size="sm",
-                    className="m-1"
+                    className="m-1",
                 )
             )
 
@@ -146,8 +136,10 @@ def register_standards_consultation_callbacks(app):
 
     @app.callback(
         Output("standards-current-category", "data"),
-        [Input({"type": "select-category-btn", "index": ALL}, "n_clicks"),
-         Input("clear-category-filter", "n_clicks")]
+        [
+            Input({"type": "select-category-btn", "index": ALL}, "n_clicks"),
+            Input("clear-category-filter", "n_clicks"),
+        ],
     )
     def update_selected_category(category_clicks, clear_clicks):
         """Atualiza a categoria selecionada."""
@@ -167,16 +159,21 @@ def register_standards_consultation_callbacks(app):
         raise PreventUpdate
 
     @app.callback(
-        [Output("standards-metadata-display", "children"),
-         Output("standards-content-display", "children"),
-         Output("standards-viewer-title", "children"),
-         Output("standards-current-standard", "data")],
-        [Input({"type": "select-standard-btn", "index": ALL}, "n_clicks"),
-         Input({"type": "search-result-btn", "index": ALL}, "n_clicks")],
-        [State("standards-current-search", "data"),
-         State("standards-current-standard", "data")]
+        [
+            Output("standards-metadata-display", "children"),
+            Output("standards-content-display", "children"),
+            Output("standards-viewer-title", "children"),
+            Output("standards-current-standard", "data"),
+        ],
+        [
+            Input({"type": "select-standard-btn", "index": ALL}, "n_clicks"),
+            Input({"type": "search-result-btn", "index": ALL}, "n_clicks"),
+        ],
+        [State("standards-current-search", "data"), State("standards-current-standard", "data")],
     )
-    def display_standard_content(std_clicks, search_result_clicks, current_search, current_standard):
+    def display_standard_content(
+        std_clicks, search_result_clicks, current_search, current_standard
+    ):
         """Exibe o conteúdo da norma selecionada."""
         if not ctx.triggered:
             raise PreventUpdate
@@ -203,7 +200,7 @@ def register_standards_consultation_callbacks(app):
                     html.Div("Norma não encontrada", className="text-danger"),
                     "Norma não encontrada ou não processada corretamente.",
                     "Erro",
-                    None
+                    None,
                 )
 
             # Obter caminho do arquivo Markdown
@@ -213,7 +210,7 @@ def register_standards_consultation_callbacks(app):
                     html.Div("Arquivo Markdown não encontrado", className="text-danger"),
                     "Conteúdo da norma não disponível.",
                     "Erro",
-                    None
+                    None,
                 )
 
             # Caminho completo do arquivo
@@ -223,11 +220,11 @@ def register_standards_consultation_callbacks(app):
                     html.Div(f"Arquivo não encontrado: {md_path}", className="text-danger"),
                     "Arquivo da norma não encontrado no servidor.",
                     "Erro",
-                    None
+                    None,
                 )
 
             # Ler conteúdo do arquivo
-            with open(full_path, 'r', encoding='utf-8') as f:
+            with open(full_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             # Se houver um termo de busca ativo, destacar no conteúdo
@@ -236,25 +233,40 @@ def register_standards_consultation_callbacks(app):
                 # Substituir o termo de busca por uma versão destacada
                 # Isso é simplificado e pode não funcionar perfeitamente para todos os casos
                 content = content.replace(
-                    search_term,
-                    f'<span class="search-highlight">{search_term}</span>'
+                    search_term, f'<span class="search-highlight">{search_term}</span>'
                 )
 
             # Criar exibição de metadados
-            metadata_display = dbc.Card([
-                dbc.CardBody([
-                    html.H5(metadata.get("title", "Sem título"), className="card-title"),
-                    html.Div([
-                        html.Span(f"{metadata.get('organization', 'N/A')} ", className="fw-bold"),
-                        html.Span(f"{metadata.get('standard_number', 'N/A')} ", className="text-primary"),
-                        html.Span(f"({metadata.get('year', 'N/A')})")
-                    ]),
-                    html.Div([
-                        html.Span("Categorias: ", className="fw-bold"),
-                        html.Span(", ".join(metadata.get("categories", [])))
-                    ], className="mt-2")
-                ])
-            ], className="mb-3")
+            metadata_display = dbc.Card(
+                [
+                    dbc.CardBody(
+                        [
+                            html.H5(metadata.get("title", "Sem título"), className="card-title"),
+                            html.Div(
+                                [
+                                    html.Span(
+                                        f"{metadata.get('organization', 'N/A')} ",
+                                        className="fw-bold",
+                                    ),
+                                    html.Span(
+                                        f"{metadata.get('standard_number', 'N/A')} ",
+                                        className="text-primary",
+                                    ),
+                                    html.Span(f"({metadata.get('year', 'N/A')})"),
+                                ]
+                            ),
+                            html.Div(
+                                [
+                                    html.Span("Categorias: ", className="fw-bold"),
+                                    html.Span(", ".join(metadata.get("categories", []))),
+                                ],
+                                className="mt-2",
+                            ),
+                        ]
+                    )
+                ],
+                className="mb-3",
+            )
 
             # Título para o visualizador
             viewer_title = f"Visualizador: {metadata.get('standard_number', 'Norma')}"
@@ -267,16 +279,18 @@ def register_standards_consultation_callbacks(app):
                 html.Div(f"Erro ao carregar norma: {str(e)}", className="text-danger"),
                 f"Ocorreu um erro ao carregar o conteúdo da norma: {str(e)}",
                 "Erro",
-                None
+                None,
             )
 
     @app.callback(
-        [Output("standards-search-results", "children"),
-         Output("standards-search-results-container", "style"),
-         Output("standards-current-search", "data"),
-         Output("standards-search-info", "children")],
+        [
+            Output("standards-search-results", "children"),
+            Output("standards-search-results-container", "style"),
+            Output("standards-current-search", "data"),
+            Output("standards-search-info", "children"),
+        ],
         [Input("standards-search-button", "n_clicks")],
-        [State("standards-search-input", "value")]
+        [State("standards-search-input", "value")],
     )
     def search_standards(n_clicks, search_term):
         """Realiza busca nas normas técnicas."""
@@ -294,44 +308,65 @@ def register_standards_consultation_callbacks(app):
                     html.Div("Nenhum resultado encontrado", className="text-muted p-3"),
                     {"display": "block"},
                     search_term,
-                    html.Span(f"Nenhum resultado para '{search_term}'", className="text-danger")
+                    html.Span(f"Nenhum resultado para '{search_term}'", className="text-danger"),
                 )
 
             # Criar lista de resultados
             items = []
             for result in results:
                 items.append(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5([
-                                html.Span(f"{result.get('organization', '')} ", className="text-muted"),
-                                html.Span(result.get('standard_number', 'N/A'), className="text-primary")
-                            ], className="card-title"),
-                            html.P(result.get('title', ''), className="card-subtitle mb-2"),
-                            html.Div([
-                                html.P(
-                                    html.Span(
-                                        [html.Raw(result.get('snippet', ''))],
-                                        className="search-snippet"
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H5(
+                                        [
+                                            html.Span(
+                                                f"{result.get('organization', '')} ",
+                                                className="text-muted",
+                                            ),
+                                            html.Span(
+                                                result.get("standard_number", "N/A"),
+                                                className="text-primary",
+                                            ),
+                                        ],
+                                        className="card-title",
                                     ),
-                                    className="mb-2"
-                                ),
-                                dbc.Button(
-                                    "Ver Norma",
-                                    id={"type": "search-result-btn", "index": result.get('id')},
-                                    color="primary",
-                                    size="sm"
-                                )
-                            ])
-                        ])
-                    ], className="mb-3")
+                                    html.P(result.get("title", ""), className="card-subtitle mb-2"),
+                                    html.Div(
+                                        [
+                                            html.P(
+                                                html.Span(
+                                                    [html.Raw(result.get("snippet", ""))],
+                                                    className="search-snippet",
+                                                ),
+                                                className="mb-2",
+                                            ),
+                                            dbc.Button(
+                                                "Ver Norma",
+                                                id={
+                                                    "type": "search-result-btn",
+                                                    "index": result.get("id"),
+                                                },
+                                                color="primary",
+                                                size="sm",
+                                            ),
+                                        ]
+                                    ),
+                                ]
+                            )
+                        ],
+                        className="mb-3",
+                    )
                 )
 
             return (
                 items,
                 {"display": "block"},
                 search_term,
-                html.Span(f"{len(results)} resultados para '{search_term}'", className="text-success")
+                html.Span(
+                    f"{len(results)} resultados para '{search_term}'", className="text-success"
+                ),
             )
 
         except Exception as e:
@@ -340,13 +375,13 @@ def register_standards_consultation_callbacks(app):
                 html.Div(f"Erro na busca: {str(e)}", className="text-danger p-3"),
                 {"display": "block"},
                 search_term,
-                html.Span(f"Erro na busca: {str(e)}", className="text-danger")
+                html.Span(f"Erro na busca: {str(e)}", className="text-danger"),
             )
 
     @app.callback(
         Output("standards-fullscreen-button", "n_clicks"),
         [Input("standards-fullscreen-button", "n_clicks")],
-        [State("standards-content-container", "style")]
+        [State("standards-content-container", "style")],
     )
     def toggle_fullscreen(n_clicks, current_style):
         """Alterna o modo de tela cheia do visualizador."""

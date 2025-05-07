@@ -3,11 +3,12 @@
 Utilitários para manipulação do MCP (Master Control Program).
 Fornece funções para manipular dados do MCP de forma segura.
 """
-import logging
-from typing import Dict, Any, Optional
 import copy
+import logging
+from typing import Any, Dict
 
 log = logging.getLogger(__name__)
+
 
 def patch_mcp(store_id: str, data: Dict[str, Any], app=None) -> bool:
     """
@@ -28,8 +29,8 @@ def patch_mcp(store_id: str, data: Dict[str, Any], app=None) -> bool:
     app_instance = app or global_app
 
     # Verificar se o MCP está disponível
-    if not hasattr(app_instance, 'mcp') or app_instance.mcp is None:
-        log.error(f"[patch_mcp] MCP não inicializado ou não disponível")
+    if not hasattr(app_instance, "mcp") or app_instance.mcp is None:
+        log.error("[patch_mcp] MCP não inicializado ou não disponível")
         return False
 
     # Obter os dados atuais do store

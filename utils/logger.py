@@ -1,9 +1,9 @@
 # utils/logger.py
-import logging
 import datetime
+import json
+import logging
 import sys
 import time
-import json
 import traceback
 from functools import wraps
 
@@ -21,8 +21,8 @@ log_filename = f"app_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 LOG_LEVEL = logging.DEBUG
 
 # Define o formato das mensagens de log
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # Remove handlers existentes para evitar duplicação se este módulo for recarregado
 # (Importante em ambientes de desenvolvimento com recarregamento automático)
@@ -38,12 +38,12 @@ logging.basicConfig(
     datefmt=DATE_FORMAT,
     handlers=[
         # Handler para escrever logs em um arquivo
-        logging.FileHandler(log_filename, mode='a', encoding='utf-8'),
+        logging.FileHandler(log_filename, mode="a", encoding="utf-8"),
         # Handler para exibir logs no console
-        logging.StreamHandler(sys.stdout) # Usar sys.stdout explicitamente
+        logging.StreamHandler(sys.stdout),  # Usar sys.stdout explicitamente
     ],
     # força a reconfiguração caso já tenha sido configurado em outro lugar (menos provável agora)
-    force=True
+    force=True,
 )
 
 # Exemplo de como obter um logger em outro módulo:
@@ -52,12 +52,15 @@ logging.basicConfig(
 # log.info("Esta é uma mensagem de informação.")
 
 # Adiciona uma mensagem inicial ao log para confirmar a configuração
-logging.getLogger(__name__).info(f"Logging configurado. Nível: {logging.getLevelName(LOG_LEVEL)}. Arquivo: {log_filename}")
+logging.getLogger(__name__).info(
+    f"Logging configurado. Nível: {logging.getLevelName(LOG_LEVEL)}. Arquivo: {log_filename}"
+)
 
 # Não há necessidade de exportar nada explicitamente daqui.
 # A configuração é aplicada globalmente ao módulo logging.
 
 # --- Funções de Log Aprimoradas ---
+
 
 def log_detailed(logger, level, message, module=None, function=None, data=None, exception=None):
     """
@@ -72,19 +75,16 @@ def log_detailed(logger, level, message, module=None, function=None, data=None, 
         data: Dados adicionais para incluir no log (opcional)
         exception: Exceção a ser registrada (opcional)
     """
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
     # Prepara os dados para o log
-    log_data = {
-        'timestamp': timestamp,
-        'message': message
-    }
+    log_data = {"timestamp": timestamp, "message": message}
 
     if module:
-        log_data['module'] = module
+        log_data["module"] = module
 
     if function:
-        log_data['function'] = function
+        log_data["function"] = function
 
     if data:
         # Tenta converter dados complexos para string
@@ -97,15 +97,15 @@ def log_detailed(logger, level, message, module=None, function=None, data=None, 
                         limited_data[k] = f"{str(v)[:1000]}... (truncado)"
                     else:
                         limited_data[k] = v
-                log_data['data'] = limited_data
+                log_data["data"] = limited_data
             else:
-                log_data['data'] = str(data)[:2000] + "..." if len(str(data)) > 2000 else data
+                log_data["data"] = str(data)[:2000] + "..." if len(str(data)) > 2000 else data
         except Exception as e:
-            log_data['data_error'] = f"Erro ao serializar dados: {str(e)}"
+            log_data["data_error"] = f"Erro ao serializar dados: {str(e)}"
 
     if exception:
-        log_data['exception'] = str(exception)
-        log_data['traceback'] = traceback.format_exc()
+        log_data["exception"] = str(exception)
+        log_data["traceback"] = traceback.format_exc()
 
     # Formata a mensagem de log
     try:
@@ -115,18 +115,19 @@ def log_detailed(logger, level, message, module=None, function=None, data=None, 
         log_message = f"{timestamp} - {message} - Erro ao serializar dados adicionais"
 
     # Registra a mensagem no nível apropriado
-    if level == 'debug':
+    if level == "debug":
         logger.debug(log_message)
-    elif level == 'info':
+    elif level == "info":
         logger.info(log_message)
-    elif level == 'warning':
+    elif level == "warning":
         logger.warning(log_message)
-    elif level == 'error':
+    elif level == "error":
         logger.error(log_message)
-    elif level == 'critical':
+    elif level == "critical":
         logger.critical(log_message)
     else:
         logger.info(log_message)
+
 
 def log_callback(logger):
     """
@@ -138,6 +139,7 @@ def log_callback(logger):
     Returns:
         Decorador que registra informações sobre a execução do callback
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -148,11 +150,11 @@ def log_callback(logger):
             # Log de início
             log_detailed(
                 logger,
-                'debug',
+                "debug",
                 f"Iniciando callback {function_name}",
                 module=module_name,
                 function=function_name,
-                data={'args_count': len(args), 'kwargs_keys': list(kwargs.keys())}
+                data={"args_count": len(args), "kwargs_keys": list(kwargs.keys())},
             )
 
             try:
@@ -165,14 +167,14 @@ def log_callback(logger):
                 # Log de sucesso
                 log_detailed(
                     logger,
-                    'debug',
+                    "debug",
                     f"Callback {function_name} concluído com sucesso",
                     module=module_name,
                     function=function_name,
                     data={
-                        'execution_time_ms': round(execution_time * 1000, 2),
-                        'result_type': type(result).__name__
-                    }
+                        "execution_time_ms": round(execution_time * 1000, 2),
+                        "result_type": type(result).__name__,
+                    },
                 )
 
                 return result
@@ -183,15 +185,15 @@ def log_callback(logger):
                 # Log de erro
                 log_detailed(
                     logger,
-                    'error',
+                    "error",
                     f"Erro no callback {function_name}",
                     module=module_name,
                     function=function_name,
                     data={
-                        'execution_time_ms': round(execution_time * 1000, 2),
-                        'error_type': type(e).__name__
+                        "execution_time_ms": round(execution_time * 1000, 2),
+                        "error_type": type(e).__name__,
                     },
-                    exception=e
+                    exception=e,
                 )
 
                 # Re-lança a exceção
@@ -200,6 +202,7 @@ def log_callback(logger):
         return wrapper
 
     return decorator
+
 
 # Função para verificar a existência de stores
 def check_store_exists(store_data, store_name):

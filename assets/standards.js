@@ -17,12 +17,12 @@ window.addEventListener('DOMContentLoaded', function() {
 // Função para alternar o modo de tela cheia
 function toggleFullscreen() {
     const contentContainer = document.getElementById('standards-content-container');
-    
+
     if (!contentContainer) return;
-    
+
     // Verificar se já está em modo de tela cheia
     const isFullscreen = contentContainer.classList.contains('fullscreen-mode');
-    
+
     if (isFullscreen) {
         // Sair do modo de tela cheia
         contentContainer.classList.remove('fullscreen-mode');
@@ -35,7 +35,7 @@ function toggleFullscreen() {
         contentContainer.style.zIndex = '';
         contentContainer.style.background = '';
         contentContainer.style.padding = '';
-        
+
         // Atualizar ícone do botão
         const button = document.getElementById('standards-fullscreen-button');
         if (button) {
@@ -58,7 +58,7 @@ function toggleFullscreen() {
         contentContainer.style.background = 'white';
         contentContainer.style.padding = '20px';
         contentContainer.style.overflow = 'auto';
-        
+
         // Atualizar ícone do botão
         const button = document.getElementById('standards-fullscreen-button');
         if (button) {
@@ -75,22 +75,22 @@ function toggleFullscreen() {
 function highlightSearchTerms() {
     // Verificar se estamos na página de consulta de normas
     if (!window.location.pathname.includes('/consulta-normas')) return;
-    
+
     // Obter o termo de busca da URL
     const urlParams = new URLSearchParams(window.location.search);
     const searchTerm = urlParams.get('search');
-    
+
     if (!searchTerm) return;
-    
+
     // Obter o conteúdo da norma
     const contentElement = document.getElementById('standards-content-display');
     if (!contentElement) return;
-    
+
     // Destacar o termo de busca
     const content = contentElement.innerHTML;
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     const highlightedContent = content.replace(regex, '<span class="search-highlight">$1</span>');
-    
+
     // Atualizar o conteúdo
     contentElement.innerHTML = highlightedContent;
 }

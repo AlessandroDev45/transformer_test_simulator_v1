@@ -1,10 +1,8 @@
 """
 Configurações e fixtures para testes com pytest.
 """
-import json
-import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -20,7 +18,7 @@ def mock_app():
         "tensao_at": 138,
         "tensao_bt": 13.8,
         "frequencia": 60,
-        "impedancia_nominal": 12.5
+        "impedancia_nominal": 12.5,
     }
     mock.mcp.set_data.return_value = True
     return mock

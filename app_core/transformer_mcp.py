@@ -5,13 +5,58 @@ Centralizes data management and logic between different modules.
 """
 import copy
 import logging
-import math  # Para sqrt em calculate_nominal_currents
+import time
 from typing import Any, Dict, List, Optional
 
 # Import database functions
 from utils.db_manager import get_test_session_details, save_test_session, session_name_exists
 
+# Import disk persistence functions
+from utils.mcp_disk_persistence import (
+    load_mcp_state_from_disk,
+    save_mcp_state_to_disk,
+)
+
+# Default values for transformer inputs
+DEFAULT_TRANSFORMER_INPUTS = {
+    "tipo_transformador": "Trifásico",
+    "potencia_mva": 30,
+    "tensao_at": 138,
+    "tensao_bt": 13.8,
+    "tensao_terciario": None,
+    "frequencia": 60,
+    "impedancia": 12.5,
+    "conexao_at": "estrela",
+    "conexao_bt": "triangulo",
+    "conexao_terciario": "",
+    "liquido_isolante": "Mineral",
+    "tipo_isolamento": "uniforme",
+    "corrente_nominal_at": None,  # Será calculado
+    "corrente_nominal_bt": None,  # Será calculado
+    "corrente_nominal_terciario": None,  # Será calculado se aplicável
+    "corrente_nominal_at_tap_maior": None,  # Será calculado se aplicável
+    "corrente_nominal_at_tap_menor": None,  # Será calculado se aplicável
+}
+
+# List of all store IDs used in the application
+STORE_IDS = [
+    "transformer-inputs-store",
+    "losses-store",
+    "impulse-store",
+    "dieletric-analysis-store",
+    "applied-voltage-store",
+    "induced-voltage-store",
+    "short-circuit-store",
+    "temperature-rise-store",
+    "comprehensive-analysis-store",
+    "simulation-status",
+    "global-updates",
+    "limit-status-store",
+    "theme-store",
+]
+
 # Import utility functions for data preparation
+from utils.elec import calculate_nominal_currents as elec_calculate_nominal_currents
 from utils.store_diagnostics import convert_numpy_types, is_json_serializable
 
 log = logging.getLogger(__name__)
@@ -95,12 +140,26 @@ class TransformerMCP:
     Centralizes data management and logic between different modules.
     """
 
-    def __init__(self):
-        """Initialize the MCP with empty data stores."""
+    def __init__(self, load_from_disk=True):
+        """
+        Initialize the MCP with empty data stores or load from disk.
+
+        Args:
+            load_from_disk: If True, try to load data from disk
+        """
         log.info("Initializing Transformer MCP")
         self._data = {}
         self._listeners = {}  # Dictionary to store event listeners
-        self._initialize_stores()
+        self._last_save_time = 0
+        self._auto_save_interval = 60  # seconds
+
+        # Initialize stores with default values or load from disk
+        if load_from_disk:
+            loaded = self._load_from_disk()
+            if not loaded:
+                self._initialize_stores()
+        else:
+            self._initialize_stores()
 
     def _initialize_stores(self):
         """Initialize all data stores with empty dictionaries or defaults."""
@@ -188,6 +247,12 @@ class TransformerMCP:
             self._notify_listeners(store_id, copy.deepcopy(self._data[store_id]))
             log.info(f"[MCP SET] Notificação de listeners concluída para store: {store_id}")
 
+            # Auto-save to disk after updating data
+            try:
+                self.save_to_disk()
+            except Exception as save_error:
+                log.error(f"[MCP SET] Error during auto-save to disk: {save_error}", exc_info=True)
+
         except Exception as e:
             log.error(
                 f"[MCP SET] Error during conversion/setting data for {store_id}: {e}", exc_info=True
@@ -219,6 +284,12 @@ class TransformerMCP:
             )  # Notify after clear
         else:
             log.warning(f"[MCP CLEAR] Attempted to clear non-existent store: {store_id}")
+
+        # Auto-save to disk after clearing data
+        try:
+            self.save_to_disk(force=True)
+        except Exception as save_error:
+            log.error(f"[MCP CLEAR] Error during auto-save to disk: {save_error}", exc_info=True)
 
         # Return a copy of the entire current data state
         return copy.deepcopy(self._data)
@@ -360,11 +431,8 @@ class TransformerMCP:
 
         log.debug("[MCP] Calculating nominal currents...")
 
-        # Importar a função centralizada
-        from utils.elec import calculate_nominal_currents as calc_currents
-
-        # Calcular as correntes usando a função centralizada
-        result = calc_currents(transformer_data)
+        # Usar a função centralizada já importada no início do arquivo
+        result = elec_calculate_nominal_currents(transformer_data)
 
         # Registrar o resultado
         log.info(f"[MCP Calc Currents] Resumo das correntes calculadas: {result}")
@@ -472,6 +540,112 @@ class TransformerMCP:
                     log.error(
                         f"[MCP NOTIFY] Erro em listener para store {store_id}: {e}", exc_info=True
                     )
+
+    # --- Disk Persistence Methods ---
+
+    def _load_from_disk(self) -> bool:
+        """
+        Load MCP state from disk.
+
+        Returns:
+            bool: True if loading was successful, False otherwise
+        """
+        log.info("[MCP] Attempting to load MCP state from disk...")
+
+        try:
+            # Load data from disk
+            stores_data, success = load_mcp_state_from_disk()
+
+            if not success or not stores_data:
+                log.warning("[MCP] Failed to load MCP state from disk or data is empty")
+                return False
+
+            # Check if data has the expected format
+            if not isinstance(stores_data, dict):
+                log.error("[MCP] Data loaded from disk is not a dictionary")
+                return False
+
+            # Update stores with loaded data
+            self._data = stores_data
+
+            # Check if the main store exists
+            if "transformer-inputs-store" not in self._data:
+                log.warning("[MCP] Main store 'transformer-inputs-store' not found in loaded data")
+                self._data["transformer-inputs-store"] = DEFAULT_TRANSFORMER_INPUTS.copy()
+
+            # Check if there is data in the main store
+            transformer_data = self._data["transformer-inputs-store"]
+            if not transformer_data or not isinstance(transformer_data, dict):
+                log.warning("[MCP] Transformer data is empty or invalid in loaded data")
+                self._data["transformer-inputs-store"] = DEFAULT_TRANSFORMER_INPUTS.copy()
+                return False
+
+            # Ensure all expected stores exist
+            for store_id in STORE_IDS:
+                if store_id not in self._data:
+                    log.info(
+                        f"[MCP] Store '{store_id}' not found in loaded data, initializing empty"
+                    )
+                    if store_id == "transformer-inputs-store":
+                        self._data[store_id] = DEFAULT_TRANSFORMER_INPUTS.copy()
+                    elif store_id == "simulation-status":
+                        self._data[store_id] = {"running": False}
+                    elif store_id == "limit-status-store":
+                        self._data[store_id] = {"limit_reached": False}
+                    elif store_id == "theme-store":
+                        self._data[store_id] = {"theme": "dark"}
+                    else:
+                        self._data[store_id] = {}
+
+            log.info(f"[MCP] MCP state loaded from disk successfully: {list(self._data.keys())}")
+            return True
+
+        except Exception as e:
+            log.error(f"[MCP] Error loading MCP state from disk: {e}", exc_info=True)
+            return False
+
+    def save_to_disk(self, force=False) -> bool:
+        """
+        Save current MCP state to disk.
+
+        Args:
+            force: If True, force saving even if auto-save interval has not been reached
+
+        Returns:
+            bool: True if saving was successful, False otherwise
+        """
+        current_time = time.time()
+
+        # Check if saving is needed (auto-save interval or forced)
+        if not force and (current_time - self._last_save_time) < self._auto_save_interval:
+            log.debug("[MCP] Skipping disk save (auto-save interval not reached)")
+            return False
+
+        log.info("[MCP] Saving MCP state to disk...")
+
+        try:
+            # Create a copy of the data to avoid modifications during saving
+            stores_data = copy.deepcopy(self._data)
+
+            # Convert numpy types to native Python types
+            for store_id, store_data in stores_data.items():
+                if isinstance(store_data, dict):
+                    stores_data[store_id] = convert_numpy_types(store_data)
+
+            # Save data to disk
+            success = save_mcp_state_to_disk(stores_data)
+
+            if success:
+                self._last_save_time = current_time
+                log.info("[MCP] MCP state saved to disk successfully")
+            else:
+                log.error("[MCP] Failed to save MCP state to disk")
+
+            return success
+
+        except Exception as e:
+            log.error(f"[MCP] Error saving MCP state to disk: {e}", exc_info=True)
+            return False
 
     # --- Data Validation Method Stub ---
 

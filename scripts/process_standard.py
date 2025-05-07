@@ -7,16 +7,14 @@ Baseado na documentação oficial: https://github.com/docling-project/docling
 
 # Versão do script para depuração
 SCRIPT_VERSION = "1.3 - Implementação oficial Docling 2.31.0"
-import os
-import sys
+import argparse
 import json
 import logging
-import argparse
-import time
+import os
 import shutil
-import signal
+import sys
 import threading
-from pathlib import Path
+import time
 
 # Configurar logging
 log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
@@ -25,11 +23,8 @@ log_file = os.path.join(log_dir, "standards_processing.log")
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_file, encoding="utf-8"), logging.StreamHandler(sys.stdout)],
 )
 
 logger = logging.getLogger("standards_processor")
@@ -45,12 +40,16 @@ os.makedirs(temp_dir, exist_ok=True)
 # Timeout para processamento (em segundos)
 PROCESSING_TIMEOUT = 300  # 5 minutos
 
+
 class TimeoutError(Exception):
     """Exceção para timeout."""
+
     pass
+
 
 class ProcessTimeout:
     """Classe para gerenciar timeout de processamento."""
+
     def __init__(self, seconds, error_message="Timeout excedido"):
         self.seconds = seconds
         self.error_message = error_message
@@ -72,6 +71,7 @@ class ProcessTimeout:
         if self.timer:
             self.timer.cancel()
 
+
 def cleanup_temp_files(standard_id, current_pdf=None):
     """
     Limpa arquivos temporários relacionados a uma norma.
@@ -87,10 +87,12 @@ def cleanup_temp_files(standard_id, current_pdf=None):
                 file_path = os.path.join(temp_dir, file)
 
                 # Verificar se é um arquivo de bloqueio
-                if file_path.endswith('.lock'):
+                if file_path.endswith(".lock"):
                     # Não remover arquivos de bloqueio de arquivos em uso
                     if os.path.exists(file_path[:-5]):  # Caminho do PDF sem o .lock
-                        logger.debug(f"Ignorando arquivo de bloqueio para arquivo em uso: {file_path}")
+                        logger.debug(
+                            f"Ignorando arquivo de bloqueio para arquivo em uso: {file_path}"
+                        )
                         continue
                     else:
                         # Se o PDF não existe mais, podemos remover o arquivo de bloqueio
@@ -98,7 +100,9 @@ def cleanup_temp_files(standard_id, current_pdf=None):
                             os.remove(file_path)
                             logger.info(f"Arquivo de bloqueio órfão removido: {file_path}")
                         except Exception as e:
-                            logger.warning(f"Não foi possível remover arquivo de bloqueio: {file_path}: {e}")
+                            logger.warning(
+                                f"Não foi possível remover arquivo de bloqueio: {file_path}: {e}"
+                            )
                         continue
 
                 # Não remover o arquivo que está sendo processado atualmente
@@ -124,16 +128,18 @@ def cleanup_temp_files(standard_id, current_pdf=None):
     except Exception as e:
         logger.warning(f"Erro ao limpar arquivos temporários: {e}")
 
+
 # Importar funções do banco de dados
 try:
     from utils.standards_db import (
         add_or_update_standard_metadata,
+        index_standard_content,
         update_processing_status,
-        index_standard_content
     )
 except ImportError as e:
     logger.error(f"Erro ao importar módulos do projeto: {e}")
     sys.exit(1)
+
 
 def create_safe_id(standard_number, organization):
     """
@@ -165,6 +171,7 @@ def create_safe_id(standard_number, organization):
 
     return safe_id
 
+
 def process_pdf(pdf_path, metadata, output_base):
     """
     Processa um PDF de norma técnica usando Docling.
@@ -185,14 +192,15 @@ def process_pdf(pdf_path, metadata, output_base):
         try:
             # Tentativa de importar docling para verificar se está instalado
             import importlib
-            importlib.import_module('docling')
+
+            importlib.import_module("docling")
             logger.info("Biblioteca Docling está instalada")
-        except ImportError as e:
-            logger.error(f"Biblioteca Docling não está instalada. Instale com: pip install docling")
-            return False, f"Biblioteca Docling não está instalada", None
+        except ImportError:
+            logger.error("Biblioteca Docling não está instalada. Instale com: pip install docling")
+            return False, "Biblioteca Docling não está instalada", None
 
         # Criar ID seguro para a norma
-        standard_id = create_safe_id(metadata['standard_number'], metadata['organization'])
+        standard_id = create_safe_id(metadata["standard_number"], metadata["organization"])
         logger.info(f"ID seguro criado para a norma: {standard_id}")
 
         # Definir caminhos de saída
@@ -205,7 +213,7 @@ def process_pdf(pdf_path, metadata, output_base):
         os.makedirs(images_output_dir, exist_ok=True)
 
         # Atualizar status no banco de dados
-        update_processing_status(standard_id, 'processing')
+        update_processing_status(standard_id, "processing")
 
         # Configurar Docling
         logger.info(f"Iniciando processamento do PDF: {pdf_path}")
@@ -214,6 +222,7 @@ def process_pdf(pdf_path, metadata, output_base):
         use_gpu = False
         try:
             import torch
+
             use_gpu = torch.cuda.is_available()
             logger.info(f"GPU disponível: {use_gpu}")
         except ImportError:
@@ -222,6 +231,7 @@ def process_pdf(pdf_path, metadata, output_base):
         # Verificar se pytesseract está instalado
         try:
             import pytesseract
+
             # Definir caminho do Tesseract (ajuste conforme a localização na sua máquina)
             tesseract_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
             if os.path.exists(tesseract_path):
@@ -233,7 +243,7 @@ def process_pdf(pdf_path, metadata, output_base):
                 alt_paths = [
                     r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
                     r"C:\Users\Administrator\AppData\Local\Programs\Tesseract-OCR\tesseract.exe",
-                    r"C:\Users\Administrator\AppData\Local\Tesseract-OCR\tesseract.exe"
+                    r"C:\Users\Administrator\AppData\Local\Tesseract-OCR\tesseract.exe",
                 ]
                 for path in alt_paths:
                     if os.path.exists(path):
@@ -249,10 +259,13 @@ def process_pdf(pdf_path, metadata, output_base):
             # Verificar se o Docling está instalado
             try:
                 from docling.document_converter import DocumentConverter
+
                 logger.info("Biblioteca Docling encontrada")
-            except ImportError as e:
-                logger.error(f"Biblioteca Docling não está instalada. Instale com: pip install docling")
-                return False, f"Biblioteca Docling não está instalada", None
+            except ImportError:
+                logger.error(
+                    "Biblioteca Docling não está instalada. Instale com: pip install docling"
+                )
+                return False, "Biblioteca Docling não está instalada", None
 
             # Criar o conversor com configurações padrão conforme documentação oficial
             parser = DocumentConverter()
@@ -282,7 +295,7 @@ def process_pdf(pdf_path, metadata, output_base):
                 markdown_content = result.document.export_to_markdown()
 
                 # Salvar o conteúdo Markdown
-                with open(markdown_output_path, 'w', encoding='utf-8') as f:
+                with open(markdown_output_path, "w", encoding="utf-8") as f:
                     f.write(markdown_content)
 
                 # Tentar exportar imagens se disponíveis
@@ -291,19 +304,19 @@ def process_pdf(pdf_path, metadata, output_base):
                     has_figures = False
 
                     # Verificar se o documento tem páginas com figuras
-                    if hasattr(result.document, 'pages'):
+                    if hasattr(result.document, "pages"):
                         for page in result.document.pages:
-                            if hasattr(page, 'figures') and page.figures:
+                            if hasattr(page, "figures") and page.figures:
                                 has_figures = True
                                 break
 
                     if has_figures:
                         logger.info(f"Exportando imagens para {images_output_dir}")
                         # Usar o método export_figures se disponível
-                        if hasattr(result.document, 'export_figures'):
+                        if hasattr(result.document, "export_figures"):
                             result.document.export_figures(images_output_dir)
                         # Tentar método alternativo se o primeiro não estiver disponível
-                        elif hasattr(result.document, 'export_images'):
+                        elif hasattr(result.document, "export_images"):
                             result.document.export_images(images_output_dir)
                         else:
                             logger.warning("Métodos de exportação de imagens não disponíveis")
@@ -328,7 +341,7 @@ def process_pdf(pdf_path, metadata, output_base):
 O processamento desta norma foi interrompido devido a um timeout.
 Por favor, tente novamente ou contate o administrador do sistema.
 """
-            with open(markdown_output_path, 'w', encoding='utf-8') as f:
+            with open(markdown_output_path, "w", encoding="utf-8") as f:
                 f.write(minimal_content)
             markdown_content = minimal_content
 
@@ -348,8 +361,8 @@ Por favor, tente novamente ou contate o administrador do sistema.
             return False, "Falha ao gerar arquivo Markdown", None
 
         # Ler o conteúdo Markdown gerado (se ainda não tivermos o conteúdo)
-        if 'markdown_content' not in locals():
-            with open(markdown_output_path, 'r', encoding='utf-8') as f:
+        if "markdown_content" not in locals():
+            with open(markdown_output_path, "r", encoding="utf-8") as f:
                 markdown_content = f.read()
 
         # Adicionar cabeçalho com metadados ao Markdown
@@ -365,7 +378,7 @@ Por favor, tente novamente ou contate o administrador do sistema.
 """
 
         # Atualizar o arquivo com o cabeçalho
-        with open(markdown_output_path, 'w', encoding='utf-8') as f:
+        with open(markdown_output_path, "w", encoding="utf-8") as f:
             f.write(header + markdown_content)
 
         # Caminho relativo para o banco de dados
@@ -392,14 +405,17 @@ Por favor, tente novamente ou contate o administrador do sistema.
         logger.exception(f"Erro durante o processamento do PDF: {e}")
         return False, f"Erro: {str(e)}", None
 
+
 def main():
     """Função principal do script."""
-    parser = argparse.ArgumentParser(description='Processa PDF de norma técnica para Markdown.')
-    parser.add_argument('--pdf', required=True, help='Caminho do arquivo PDF')
-    parser.add_argument('--metadata', required=True, help='JSON com metadados da norma')
-    parser.add_argument('--output', required=True, help='Diretório base para saída')
-    parser.add_argument('--db', help='Caminho do banco de dados (opcional)')
-    parser.add_argument('--fallback', action='store_true', help='Usar processador simplificado em vez de Docling')
+    parser = argparse.ArgumentParser(description="Processa PDF de norma técnica para Markdown.")
+    parser.add_argument("--pdf", required=True, help="Caminho do arquivo PDF")
+    parser.add_argument("--metadata", required=True, help="JSON com metadados da norma")
+    parser.add_argument("--output", required=True, help="Diretório base para saída")
+    parser.add_argument("--db", help="Caminho do banco de dados (opcional)")
+    parser.add_argument(
+        "--fallback", action="store_true", help="Usar processador simplificado em vez de Docling"
+    )
 
     args = parser.parse_args()
 
@@ -421,26 +437,31 @@ def main():
             sys.exit(1)
 
         # Validar metadados
-        required_fields = ['title', 'standard_number', 'organization', 'year', 'categories']
+        required_fields = ["title", "standard_number", "organization", "year", "categories"]
         for field in required_fields:
             if field not in metadata:
                 logger.error(f"Campo obrigatório ausente nos metadados: {field}")
                 sys.exit(1)
 
         # Criar ID seguro para a norma
-        standard_id = create_safe_id(metadata['standard_number'], metadata['organization'])
+        standard_id = create_safe_id(metadata["standard_number"], metadata["organization"])
 
         # Verificar se já existe uma norma com o mesmo ID em processamento
         try:
             import sqlite3
-            conn = sqlite3.connect(os.path.join(project_root, 'data', 'standards.db'))
+
+            conn = sqlite3.connect(os.path.join(project_root, "data", "standards.db"))
             cursor = conn.cursor()
-            cursor.execute("SELECT processing_status FROM standards_metadata WHERE id = ?", (standard_id,))
+            cursor.execute(
+                "SELECT processing_status FROM standards_metadata WHERE id = ?", (standard_id,)
+            )
             result = cursor.fetchone()
             conn.close()
 
-            if result and result[0] == 'processing':
-                logger.warning(f"Norma {standard_id} já está em processamento. Limpando arquivos temporários.")
+            if result and result[0] == "processing":
+                logger.warning(
+                    f"Norma {standard_id} já está em processamento. Limpando arquivos temporários."
+                )
                 cleanup_temp_files(standard_id, args.pdf)
         except Exception as db_err:
             logger.warning(f"Erro ao verificar status da norma no banco de dados: {db_err}")
@@ -449,26 +470,34 @@ def main():
         cleanup_temp_files(standard_id, args.pdf)
 
         # Atualizar status no banco de dados
-        update_processing_status(standard_id, 'processing')
+        update_processing_status(standard_id, "processing")
 
         # Verificar se devemos usar o processador simplificado
         if args.fallback:
             logger.info("Usando processador simplificado conforme solicitado")
             # Importar o processador simplificado
             try:
-                simple_processor_path = os.path.join(os.path.dirname(__file__), "simple_pdf_processor.py")
+                simple_processor_path = os.path.join(
+                    os.path.dirname(__file__), "simple_pdf_processor.py"
+                )
                 if not os.path.exists(simple_processor_path):
-                    logger.error(f"Processador simplificado não encontrado: {simple_processor_path}")
+                    logger.error(
+                        f"Processador simplificado não encontrado: {simple_processor_path}"
+                    )
                     sys.exit(1)
 
                 # Executar o processador simplificado como um processo separado
                 import subprocess
+
                 cmd = [
                     sys.executable,
                     simple_processor_path,
-                    "--pdf", args.pdf,
-                    "--metadata", args.metadata,
-                    "--output", args.output
+                    "--pdf",
+                    args.pdf,
+                    "--metadata",
+                    args.metadata,
+                    "--output",
+                    args.output,
                 ]
                 logger.info(f"Executando processador simplificado: {' '.join(cmd)}")
                 result = subprocess.run(cmd, capture_output=True, text=True)
@@ -490,13 +519,13 @@ def main():
             # Atualizar metadados no banco de dados
             add_or_update_standard_metadata(
                 id=standard_id,
-                title=metadata['title'],
-                standard_number=metadata['standard_number'],
-                organization=metadata['organization'],
-                year=metadata['year'],
-                categories=metadata['categories'],
+                title=metadata["title"],
+                standard_number=metadata["standard_number"],
+                organization=metadata["organization"],
+                year=metadata["year"],
+                categories=metadata["categories"],
                 md_file_path=md_path,
-                processing_status='completed'
+                processing_status="completed",
             )
 
             # Indexar conteúdo para busca
@@ -504,23 +533,27 @@ def main():
                 # Primeiro, tentar abrir o arquivo no caminho relativo à raiz do projeto
                 full_path = os.path.join(project_root, "assets", md_path)
                 if os.path.exists(full_path):
-                    with open(full_path, 'r', encoding='utf-8') as f:
+                    with open(full_path, "r", encoding="utf-8") as f:
                         markdown_content = f.read()
                 else:
                     # Se não existir, tentar abrir o arquivo no caminho absoluto
                     absolute_path = os.path.join(output_base, standard_id, "content.md")
                     if os.path.exists(absolute_path):
-                        with open(absolute_path, 'r', encoding='utf-8') as f:
+                        with open(absolute_path, "r", encoding="utf-8") as f:
                             markdown_content = f.read()
                     else:
                         # Se ainda não existir, usar o conteúdo que já temos em memória
-                        logger.warning(f"Arquivo não encontrado em {full_path} nem em {absolute_path}. Usando conteúdo em memória.")
-                        if 'markdown_content' not in locals():
+                        logger.warning(
+                            f"Arquivo não encontrado em {full_path} nem em {absolute_path}. Usando conteúdo em memória."
+                        )
+                        if "markdown_content" not in locals():
                             logger.error("Conteúdo Markdown não disponível em memória")
                             markdown_content = f"# {metadata['title']}\n\nConteúdo não disponível"
             except Exception as read_err:
-                logger.warning(f"Erro ao ler arquivo Markdown: {read_err}. Usando conteúdo em memória.")
-                if 'markdown_content' not in locals():
+                logger.warning(
+                    f"Erro ao ler arquivo Markdown: {read_err}. Usando conteúdo em memória."
+                )
+                if "markdown_content" not in locals():
                     logger.error("Conteúdo Markdown não disponível em memória")
                     markdown_content = f"# {metadata['title']}\n\nConteúdo não disponível"
 
@@ -530,7 +563,7 @@ def main():
             logger.info(f"Norma {standard_id} processada e indexada com sucesso")
         else:
             # Atualizar status de erro
-            update_processing_status(standard_id, 'error', message)
+            update_processing_status(standard_id, "error", message)
             logger.error(f"Falha no processamento da norma {standard_id}: {message}")
 
         # Remover arquivo de bloqueio se existir
@@ -558,7 +591,7 @@ def main():
 
         # Tentar remover o arquivo de bloqueio em caso de erro
         try:
-            if 'args' in locals() and isinstance(args, argparse.Namespace) and hasattr(args, 'pdf'):
+            if "args" in locals() and isinstance(args, argparse.Namespace) and hasattr(args, "pdf"):
                 lock_file = f"{args.pdf}.lock"
                 if os.path.exists(lock_file):
                     os.remove(lock_file)
@@ -568,15 +601,16 @@ def main():
 
         # Tentar limpar arquivos temporários mesmo em caso de erro
         try:
-            if 'standard_id' in locals():
+            if "standard_id" in locals():
                 # Agora é seguro remover todos os arquivos, incluindo o PDF
                 cleanup_temp_files(standard_id)
                 # Atualizar status para erro
-                update_processing_status(standard_id, 'error', str(e))
+                update_processing_status(standard_id, "error", str(e))
         except Exception as cleanup_err:
             logger.warning(f"Erro ao limpar arquivos temporários após falha: {cleanup_err}")
 
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

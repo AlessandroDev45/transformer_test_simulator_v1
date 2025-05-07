@@ -137,7 +137,9 @@ log.info(f"Pasta assets: {config.ASSETS_DIR}")
 try:
     from app_core.transformer_mcp import TransformerMCP
 
-    app.mcp = TransformerMCP(load_from_disk=True)  # Atribui à instância do app e carrega dados do disco
+    app.mcp = TransformerMCP(
+        load_from_disk=True
+    )  # Atribui à instância do app e carrega dados do disco
     log.info("TransformerMCP (app.mcp) inicializado com sucesso.")
 
     # Inicializar o MCP com dados padrão do arquivo transformer.json
@@ -149,7 +151,9 @@ try:
         if seed_success:
             log.info("MCP inicializado com dados padrão do arquivo transformer.json")
         else:
-            log.warning("Não foi possível inicializar o MCP com dados padrão do arquivo transformer.json")
+            log.warning(
+                "Não foi possível inicializar o MCP com dados padrão do arquivo transformer.json"
+            )
     except ImportError as e:
         log.error(f"Erro ao importar módulo de startup: {e}", exc_info=True)
     except Exception as e:
@@ -407,7 +411,7 @@ if __name__ == "__main__":
             import atexit
 
             def save_mcp_on_exit():
-                if hasattr(app, 'mcp') and app.mcp is not None:
+                if hasattr(app, "mcp") and app.mcp is not None:
                     log.info("Saving MCP state to disk before exit...")
                     try:
                         app.mcp.save_to_disk(force=True)

@@ -2,17 +2,18 @@
 """
 Versão corrigida do módulo transformer_inputs que usa o padrão de registro centralizado.
 """
-import dash
-from dash import Input, Output, State, callback, ctx, no_update, html
-import dash_bootstrap_components as dbc
-import numpy as np
 import logging
+
+import dash_bootstrap_components as dbc
+from dash import Input, Output, html
 from dash.exceptions import PreventUpdate
 
 print("\n\n")
 print("*" * 100)
 print("*" * 100)
-print("**** IMPORTANDO MÓDULO TRANSFORMER_INPUTS - ESTE LOG DEVE APARECER SE O MÓDULO FOR CARREGADO ****")
+print(
+    "**** IMPORTANDO MÓDULO TRANSFORMER_INPUTS - ESTE LOG DEVE APARECER SE O MÓDULO FOR CARREGADO ****"
+)
 print("*" * 100)
 print("*" * 100)
 print("\n\n")
@@ -20,17 +21,15 @@ print("\n\n")
 # Não importar app diretamente para evitar importações circulares
 # from app import app  # REMOVIDO
 
-from app_core.standards import TabelaTransformadorNBR
-from app_core.transformer_mcp import DEFAULT_TRANSFORMER_INPUTS
-from utils.store_diagnostics import convert_numpy_types
-from utils.routes import normalize_pathname, ROUTE_HOME
 from utils.mcp_utils import patch_mcp
+from utils.store_diagnostics import convert_numpy_types
 
 log = logging.getLogger(__name__)
 log.info("============ MÓDULO TRANSFORMER_INPUTS CARREGADO ============")
 log.info(f"Nível de log: {logging.getLevelName(log.getEffectiveLevel())}")
 log.info(f"Handlers configurados: {[h.__class__.__name__ for h in log.handlers]}")
 log.info("=============================================================")
+
 
 def register_transformer_inputs_callbacks(app_instance):
     """
@@ -48,7 +47,7 @@ def register_transformer_inputs_callbacks(app_instance):
             Output("corrente_nominal_bt", "value"),
             Output("corrente_nominal_terciario", "value"),
             Output("corrente_nominal_at_tap_maior", "value"),
-            Output("corrente_nominal_at_tap_menor", "value")
+            Output("corrente_nominal_at_tap_menor", "value"),
         ],
         [
             # Dados básicos
@@ -60,13 +59,11 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("elevacao_enrol", "value"),
             Input("tipo_transformador", "value"),
             Input("tipo_isolamento", "value"),
-
             # Pesos
             Input("peso_total", "value"),
             Input("peso_parte_ativa", "value"),
             Input("peso_oleo", "value"),
             Input("peso_tanque_acessorios", "value"),
-
             # Alta Tensão (AT)
             Input("tensao_at", "value"),
             Input("classe_tensao_at", "value"),
@@ -76,17 +73,14 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("conexao_at", "value"),
             Input("tensao_bucha_neutro_at", "value"),
             Input("nbi_neutro_at", "value"),
-
             # Taps AT
             Input("tensao_at_tap_maior", "value"),
             Input("impedancia_tap_maior", "value"),
             Input("tensao_at_tap_menor", "value"),
             Input("impedancia_tap_menor", "value"),
-
             # Tensões de ensaio AT
             Input("teste_tensao_aplicada_at", "value"),
             Input("teste_tensao_induzida", "value"),
-
             # Baixa Tensão (BT)
             Input("tensao_bt", "value"),
             Input("classe_tensao_bt", "value"),
@@ -96,7 +90,6 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("tensao_bucha_neutro_bt", "value"),
             Input("nbi_neutro_bt", "value"),
             Input("teste_tensao_aplicada_bt", "value"),
-
             # Terciário
             Input("tensao_terciario", "value"),
             Input("classe_tensao_terciario", "value"),
@@ -105,34 +98,61 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("conexao_terciario", "value"),
             Input("tensao_bucha_neutro_terciario", "value"),
             Input("nbi_neutro_terciario", "value"),
-            Input("teste_tensao_aplicada_terciario", "value")
+            Input("teste_tensao_aplicada_terciario", "value"),
         ],
-        prevent_initial_call=False, # Permite rodar na carga inicial para garantir que o MCP seja atualizado
-        priority=1000 # Alta prioridade para garantir que este callback seja executado antes de outros
+        prevent_initial_call=False,  # Permite rodar na carga inicial para garantir que o MCP seja atualizado
+        priority=1000,  # Alta prioridade para garantir que este callback seja executado antes de outros
     )
     def update_transformer_calculations_and_mcp(
         # Dados básicos
-        potencia_mva, frequencia, grupo_ligacao, liquido_isolante, elevacao_oleo_topo, elevacao_enrol,
-        tipo_transformador, tipo_isolamento,
-
+        potencia_mva,
+        frequencia,
+        grupo_ligacao,
+        liquido_isolante,
+        elevacao_oleo_topo,
+        elevacao_enrol,
+        tipo_transformador,
+        tipo_isolamento,
         # Pesos
-        peso_total, peso_parte_ativa, peso_oleo, peso_tanque_acessorios,
-
+        peso_total,
+        peso_parte_ativa,
+        peso_oleo,
+        peso_tanque_acessorios,
         # Alta Tensão (AT)
-        tensao_at, classe_tensao_at, impedancia, nbi_at, sil_at, conexao_at, tensao_bucha_neutro_at, nbi_neutro_at,
-
+        tensao_at,
+        classe_tensao_at,
+        impedancia,
+        nbi_at,
+        sil_at,
+        conexao_at,
+        tensao_bucha_neutro_at,
+        nbi_neutro_at,
         # Taps AT
-        tensao_at_tap_maior, impedancia_tap_maior, tensao_at_tap_menor, impedancia_tap_menor,
-
+        tensao_at_tap_maior,
+        impedancia_tap_maior,
+        tensao_at_tap_menor,
+        impedancia_tap_menor,
         # Tensões de ensaio AT
-        teste_tensao_aplicada_at, teste_tensao_induzida,
-
+        teste_tensao_aplicada_at,
+        teste_tensao_induzida,
         # Baixa Tensão (BT)
-        tensao_bt, classe_tensao_bt, nbi_bt, sil_bt, conexao_bt, tensao_bucha_neutro_bt, nbi_neutro_bt, teste_tensao_aplicada_bt,
-
+        tensao_bt,
+        classe_tensao_bt,
+        nbi_bt,
+        sil_bt,
+        conexao_bt,
+        tensao_bucha_neutro_bt,
+        nbi_neutro_bt,
+        teste_tensao_aplicada_bt,
         # Terciário
-        tensao_terciario, classe_tensao_terciario, nbi_terciario, sil_terciario, conexao_terciario,
-        tensao_bucha_neutro_terciario, nbi_neutro_terciario, teste_tensao_aplicada_terciario
+        tensao_terciario,
+        classe_tensao_terciario,
+        nbi_terciario,
+        sil_terciario,
+        conexao_terciario,
+        tensao_bucha_neutro_terciario,
+        nbi_neutro_terciario,
+        teste_tensao_aplicada_terciario,
     ):
         """
         Calcula as correntes nominais do transformador e atualiza o MCP.
@@ -202,8 +222,12 @@ def register_transformer_inputs_callbacks(app_instance):
 
         # Verificar os tipos de dados principais para cálculo de corrente
         print("\n--- VERIFICAÇÃO DE TIPOS DE DADOS ---")
-        print(f"[Update Callback] Tipos de dados: potencia_mva={type(potencia_mva)}, tensao_at={type(tensao_at)}, tensao_bt={type(tensao_bt)}, tensao_terciario={type(tensao_terciario)}")
-        print(f"[Update Callback] Valores None ou vazios: potencia_mva={potencia_mva is None}, tensao_at={tensao_at is None}, tensao_bt={tensao_bt is None}, tensao_terciario={tensao_terciario is None}")
+        print(
+            f"[Update Callback] Tipos de dados: potencia_mva={type(potencia_mva)}, tensao_at={type(tensao_at)}, tensao_bt={type(tensao_bt)}, tensao_terciario={type(tensao_terciario)}"
+        )
+        print(
+            f"[Update Callback] Valores None ou vazios: potencia_mva={potencia_mva is None}, tensao_at={tensao_at is None}, tensao_bt={tensao_bt is None}, tensao_terciario={tensao_terciario is None}"
+        )
 
         # Verificar se os valores principais são numéricos
         try:
@@ -229,7 +253,9 @@ def register_transformer_inputs_callbacks(app_instance):
             print(f"[Update Callback] Erro ao converter valor para float: {e}")
 
         # Log resumido para o arquivo de log
-        log.info(f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}")
+        log.info(
+            f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}"
+        )
 
         # Valores padrão para retorno
         corrente_at = None
@@ -246,110 +272,151 @@ def register_transformer_inputs_callbacks(app_instance):
         # Cálculo das correntes
         try:
             # Cálculo da corrente AT
-            if potencia_mva is not None and tensao_at is not None and float(potencia_mva) > 0 and float(tensao_at) > 0:
+            if (
+                potencia_mva is not None
+                and tensao_at is not None
+                and float(potencia_mva) > 0
+                and float(tensao_at) > 0
+            ):
                 potencia = float(potencia_mva)
                 tensao = float(tensao_at)
-                corrente_at = round((potencia * 1000) / (tensao * fator), 2)  # Arredondado para 2 casas decimais
+                corrente_at = round(
+                    (potencia * 1000) / (tensao * fator), 2
+                )  # Arredondado para 2 casas decimais
                 log.info(f"[Update Callback] Corrente AT calculada: {corrente_at}A")
 
             # Cálculo da corrente BT
-            if potencia_mva is not None and tensao_bt is not None and float(potencia_mva) > 0 and float(tensao_bt) > 0:
+            if (
+                potencia_mva is not None
+                and tensao_bt is not None
+                and float(potencia_mva) > 0
+                and float(tensao_bt) > 0
+            ):
                 potencia = float(potencia_mva)
                 tensao = float(tensao_bt)
-                corrente_bt = round((potencia * 1000) / (tensao * fator), 2)  # Arredondado para 2 casas decimais
+                corrente_bt = round(
+                    (potencia * 1000) / (tensao * fator), 2
+                )  # Arredondado para 2 casas decimais
                 log.info(f"[Update Callback] Corrente BT calculada: {corrente_bt}A")
 
             # Cálculo da corrente Terciário (se aplicável)
-            if potencia_mva is not None and tensao_terciario is not None and float(potencia_mva) > 0 and float(tensao_terciario) > 0:
+            if (
+                potencia_mva is not None
+                and tensao_terciario is not None
+                and float(potencia_mva) > 0
+                and float(tensao_terciario) > 0
+            ):
                 # Para o terciário, geralmente usa-se uma fração da potência nominal
                 potencia_terciario = float(potencia_mva) * 0.33  # Assumindo 1/3 da potência nominal
                 tensao = float(tensao_terciario)
-                corrente_terciario = round((potencia_terciario * 1000) / (tensao * fator), 2)  # Arredondado para 2 casas decimais
+                corrente_terciario = round(
+                    (potencia_terciario * 1000) / (tensao * fator), 2
+                )  # Arredondado para 2 casas decimais
                 log.info(f"[Update Callback] Corrente Terciário calculada: {corrente_terciario}A")
 
             # Cálculo da corrente AT no tap maior (se aplicável)
-            if potencia_mva is not None and tensao_at_tap_maior is not None and float(potencia_mva) > 0 and float(tensao_at_tap_maior) > 0:
+            if (
+                potencia_mva is not None
+                and tensao_at_tap_maior is not None
+                and float(potencia_mva) > 0
+                and float(tensao_at_tap_maior) > 0
+            ):
                 potencia = float(potencia_mva)
                 tensao = float(tensao_at_tap_maior)
-                corrente_at_tap_maior = round((potencia * 1000) / (tensao * fator), 2)  # Arredondado para 2 casas decimais
-                log.info(f"[Update Callback] Corrente AT Tap Maior calculada: {corrente_at_tap_maior}A")
+                corrente_at_tap_maior = round(
+                    (potencia * 1000) / (tensao * fator), 2
+                )  # Arredondado para 2 casas decimais
+                log.info(
+                    f"[Update Callback] Corrente AT Tap Maior calculada: {corrente_at_tap_maior}A"
+                )
 
             # Cálculo da corrente AT no tap menor (se aplicável)
-            if potencia_mva is not None and tensao_at_tap_menor is not None and float(potencia_mva) > 0 and float(tensao_at_tap_menor) > 0:
+            if (
+                potencia_mva is not None
+                and tensao_at_tap_menor is not None
+                and float(potencia_mva) > 0
+                and float(tensao_at_tap_menor) > 0
+            ):
                 potencia = float(potencia_mva)
                 tensao = float(tensao_at_tap_menor)
-                corrente_at_tap_menor = round((potencia * 1000) / (tensao * fator), 2)  # Arredondado para 2 casas decimais
-                log.info(f"[Update Callback] Corrente AT Tap Menor calculada: {corrente_at_tap_menor}A")
+                corrente_at_tap_menor = round(
+                    (potencia * 1000) / (tensao * fator), 2
+                )  # Arredondado para 2 casas decimais
+                log.info(
+                    f"[Update Callback] Corrente AT Tap Menor calculada: {corrente_at_tap_menor}A"
+                )
 
             # Atualizar o MCP com os valores calculados
-            if hasattr(app_instance, 'mcp') and app_instance.mcp is not None:
+            if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
                 # Obter os dados atuais do MCP
-                current_data = app_instance.mcp.get_data('transformer-inputs-store')
+                current_data = app_instance.mcp.get_data("transformer-inputs-store")
                 if current_data:
                     # Atualizar todos os valores do formulário no MCP
 
                     # Dados básicos
-                    current_data['potencia_mva'] = potencia_mva
-                    current_data['frequencia'] = frequencia
-                    current_data['grupo_ligacao'] = grupo_ligacao
-                    current_data['liquido_isolante'] = liquido_isolante
-                    current_data['elevacao_oleo_topo'] = elevacao_oleo_topo
-                    current_data['elevacao_enrol'] = elevacao_enrol
-                    current_data['tipo_transformador'] = tipo_transformador
-                    current_data['tipo_isolamento'] = tipo_isolamento
+                    current_data["potencia_mva"] = potencia_mva
+                    current_data["frequencia"] = frequencia
+                    current_data["grupo_ligacao"] = grupo_ligacao
+                    current_data["liquido_isolante"] = liquido_isolante
+                    current_data["elevacao_oleo_topo"] = elevacao_oleo_topo
+                    current_data["elevacao_enrol"] = elevacao_enrol
+                    current_data["tipo_transformador"] = tipo_transformador
+                    current_data["tipo_isolamento"] = tipo_isolamento
 
                     # Pesos
-                    current_data['peso_total'] = peso_total
-                    current_data['peso_parte_ativa'] = peso_parte_ativa
-                    current_data['peso_oleo'] = peso_oleo
-                    current_data['peso_tanque_acessorios'] = peso_tanque_acessorios
+                    current_data["peso_total"] = peso_total
+                    current_data["peso_parte_ativa"] = peso_parte_ativa
+                    current_data["peso_oleo"] = peso_oleo
+                    current_data["peso_tanque_acessorios"] = peso_tanque_acessorios
 
                     # Alta Tensão (AT)
-                    current_data['tensao_at'] = tensao_at
-                    current_data['classe_tensao_at'] = classe_tensao_at
-                    current_data['impedancia'] = impedancia
-                    current_data['nbi_at'] = nbi_at
-                    current_data['sil_at'] = sil_at
-                    current_data['conexao_at'] = conexao_at
-                    current_data['tensao_bucha_neutro_at'] = tensao_bucha_neutro_at
-                    current_data['nbi_neutro_at'] = nbi_neutro_at
+                    current_data["tensao_at"] = tensao_at
+                    current_data["classe_tensao_at"] = classe_tensao_at
+                    current_data["impedancia"] = impedancia
+                    current_data["nbi_at"] = nbi_at
+                    current_data["sil_at"] = sil_at
+                    current_data["conexao_at"] = conexao_at
+                    current_data["tensao_bucha_neutro_at"] = tensao_bucha_neutro_at
+                    current_data["nbi_neutro_at"] = nbi_neutro_at
 
                     # Taps AT
-                    current_data['tensao_at_tap_maior'] = tensao_at_tap_maior
-                    current_data['impedancia_tap_maior'] = impedancia_tap_maior
-                    current_data['tensao_at_tap_menor'] = tensao_at_tap_menor
-                    current_data['impedancia_tap_menor'] = impedancia_tap_menor
+                    current_data["tensao_at_tap_maior"] = tensao_at_tap_maior
+                    current_data["impedancia_tap_maior"] = impedancia_tap_maior
+                    current_data["tensao_at_tap_menor"] = tensao_at_tap_menor
+                    current_data["impedancia_tap_menor"] = impedancia_tap_menor
 
                     # Tensões de ensaio AT
-                    current_data['teste_tensao_aplicada_at'] = teste_tensao_aplicada_at
-                    current_data['teste_tensao_induzida'] = teste_tensao_induzida
+                    current_data["teste_tensao_aplicada_at"] = teste_tensao_aplicada_at
+                    current_data["teste_tensao_induzida"] = teste_tensao_induzida
 
                     # Baixa Tensão (BT)
-                    current_data['tensao_bt'] = tensao_bt
-                    current_data['classe_tensao_bt'] = classe_tensao_bt
-                    current_data['nbi_bt'] = nbi_bt
-                    current_data['sil_bt'] = sil_bt
-                    current_data['conexao_bt'] = conexao_bt
-                    current_data['tensao_bucha_neutro_bt'] = tensao_bucha_neutro_bt
-                    current_data['nbi_neutro_bt'] = nbi_neutro_bt
-                    current_data['teste_tensao_aplicada_bt'] = teste_tensao_aplicada_bt
+                    current_data["tensao_bt"] = tensao_bt
+                    current_data["classe_tensao_bt"] = classe_tensao_bt
+                    current_data["nbi_bt"] = nbi_bt
+                    current_data["sil_bt"] = sil_bt
+                    current_data["conexao_bt"] = conexao_bt
+                    current_data["tensao_bucha_neutro_bt"] = tensao_bucha_neutro_bt
+                    current_data["nbi_neutro_bt"] = nbi_neutro_bt
+                    current_data["teste_tensao_aplicada_bt"] = teste_tensao_aplicada_bt
 
                     # Terciário
-                    current_data['tensao_terciario'] = tensao_terciario
-                    current_data['classe_tensao_terciario'] = classe_tensao_terciario
-                    current_data['nbi_terciario'] = nbi_terciario
-                    current_data['sil_terciario'] = sil_terciario
-                    current_data['conexao_terciario'] = conexao_terciario
-                    current_data['tensao_bucha_neutro_terciario'] = tensao_bucha_neutro_terciario
-                    current_data['nbi_neutro_terciario'] = nbi_neutro_terciario
-                    current_data['teste_tensao_aplicada_terciario'] = teste_tensao_aplicada_terciario
+                    current_data["tensao_terciario"] = tensao_terciario
+                    current_data["classe_tensao_terciario"] = classe_tensao_terciario
+                    current_data["nbi_terciario"] = nbi_terciario
+                    current_data["sil_terciario"] = sil_terciario
+                    current_data["conexao_terciario"] = conexao_terciario
+                    current_data["tensao_bucha_neutro_terciario"] = tensao_bucha_neutro_terciario
+                    current_data["nbi_neutro_terciario"] = nbi_neutro_terciario
+                    current_data[
+                        "teste_tensao_aplicada_terciario"
+                    ] = teste_tensao_aplicada_terciario
 
                     # Atualizar os valores de corrente calculados
-                    current_data['corrente_nominal_at'] = corrente_at
-                    current_data['corrente_nominal_bt'] = corrente_bt
-                    current_data['corrente_nominal_terciario'] = corrente_terciario
-                    current_data['corrente_nominal_at_tap_maior'] = corrente_at_tap_maior
-                    current_data['corrente_nominal_at_tap_menor'] = corrente_at_tap_menor
+                    current_data["corrente_nominal_at"] = corrente_at
+                    current_data["corrente_nominal_bt"] = corrente_bt
+                    current_data["corrente_nominal_terciario"] = corrente_terciario
+                    current_data["corrente_nominal_at_tap_maior"] = corrente_at_tap_maior
+                    current_data["corrente_nominal_at_tap_menor"] = corrente_at_tap_menor
 
                     # Imprimir os valores que serão salvos no MCP
                     print("\n--- VALORES SALVOS NO MCP ---")
@@ -357,7 +424,9 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"FREQUÊNCIA SALVA NO MCP: {current_data.get('frequencia')}")
                     print(f"GRUPO LIGAÇÃO SALVO NO MCP: {current_data.get('grupo_ligacao')}")
                     print(f"LÍQUIDO ISOLANTE SALVO NO MCP: {current_data.get('liquido_isolante')}")
-                    print(f"TIPO TRANSFORMADOR SALVO NO MCP: {current_data.get('tipo_transformador')}")
+                    print(
+                        f"TIPO TRANSFORMADOR SALVO NO MCP: {current_data.get('tipo_transformador')}"
+                    )
                     print(f"TIPO ISOLAMENTO SALVO NO MCP: {current_data.get('tipo_isolamento')}")
 
                     print("\nTENSÕES SALVAS NO MCP:")
@@ -371,8 +440,12 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"CORRENTE AT: {current_data.get('corrente_nominal_at')}")
                     print(f"CORRENTE BT: {current_data.get('corrente_nominal_bt')}")
                     print(f"CORRENTE TERCIÁRIO: {current_data.get('corrente_nominal_terciario')}")
-                    print(f"CORRENTE AT TAP MAIOR: {current_data.get('corrente_nominal_at_tap_maior')}")
-                    print(f"CORRENTE AT TAP MENOR: {current_data.get('corrente_nominal_at_tap_menor')}")
+                    print(
+                        f"CORRENTE AT TAP MAIOR: {current_data.get('corrente_nominal_at_tap_maior')}"
+                    )
+                    print(
+                        f"CORRENTE AT TAP MENOR: {current_data.get('corrente_nominal_at_tap_menor')}"
+                    )
 
                     print("\nIMPEDÂNCIAS SALVAS NO MCP:")
                     print(f"IMPEDÂNCIA NOMINAL: {current_data.get('impedancia')}")
@@ -391,9 +464,13 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"NBI NEUTRO TERCIÁRIO: {current_data.get('nbi_neutro_terciario')}")
 
                     # Serializar e salvar no MCP usando patch_mcp
-                    serializable_data = convert_numpy_types(current_data, debug_path="update_transformer_inputs_with_currents")
-                    if patch_mcp('transformer-inputs-store', serializable_data, app_instance):
-                        log.info("[Update Callback] MCP atualizado com valores não vazios do formulário")
+                    serializable_data = convert_numpy_types(
+                        current_data, debug_path="update_transformer_inputs_with_currents"
+                    )
+                    if patch_mcp("transformer-inputs-store", serializable_data, app_instance):
+                        log.info(
+                            "[Update Callback] MCP atualizado com valores não vazios do formulário"
+                        )
                     else:
                         log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
 
@@ -401,97 +478,104 @@ def register_transformer_inputs_callbacks(app_instance):
                     try:
                         # Propagar dados para o store de perdas
                         losses_transformer_data = {
-                            'potencia_mva': potencia_mva,
-                            'tensao_at': tensao_at,
-                            'tensao_bt': tensao_bt,
-                            'corrente_nominal_at': corrente_at,
-                            'corrente_nominal_bt': corrente_bt,
-                            'tipo_transformador': tipo_transformador,
-                            'frequencia': frequencia
+                            "potencia_mva": potencia_mva,
+                            "tensao_at": tensao_at,
+                            "tensao_bt": tensao_bt,
+                            "corrente_nominal_at": corrente_at,
+                            "corrente_nominal_bt": corrente_bt,
+                            "tipo_transformador": tipo_transformador,
+                            "frequencia": frequencia,
                         }
 
                         # Usar patch_mcp para atualizar apenas campos não vazios
-                        if patch_mcp('losses-store', {'transformer_data': losses_transformer_data}, app_instance):
+                        if patch_mcp(
+                            "losses-store",
+                            {"transformer_data": losses_transformer_data},
+                            app_instance,
+                        ):
                             log.info("[Update Callback] Dados propagados para losses-store")
 
                         # Propagar dados para o store de impulso
                         impulse_transformer_data = {
-                            'potencia_mva': potencia_mva,
-                            'tensao_at': tensao_at,
-                            'impedancia': impedancia,
-                            'frequencia': frequencia
+                            "potencia_mva": potencia_mva,
+                            "tensao_at": tensao_at,
+                            "impedancia": impedancia,
+                            "frequencia": frequencia,
                         }
 
-                        if patch_mcp('impulse-store', {'transformer_data': impulse_transformer_data}, app_instance):
+                        if patch_mcp(
+                            "impulse-store",
+                            {"transformer_data": impulse_transformer_data},
+                            app_instance,
+                        ):
                             log.info("[Update Callback] Dados propagados para impulse-store")
 
                         # Propagar dados para outros stores
                         other_stores_transformer_data = {
-                            'potencia_mva': potencia_mva,
-                            'tensao_at': tensao_at,
-                            'tensao_bt': tensao_bt,
-                            'corrente_nominal_at': corrente_at,
-                            'corrente_nominal_bt': corrente_bt,
-                            'tipo_transformador': tipo_transformador,
-                            'frequencia': frequencia,
-                            'impedancia': impedancia
+                            "potencia_mva": potencia_mva,
+                            "tensao_at": tensao_at,
+                            "tensao_bt": tensao_bt,
+                            "corrente_nominal_at": corrente_at,
+                            "corrente_nominal_bt": corrente_bt,
+                            "tipo_transformador": tipo_transformador,
+                            "frequencia": frequencia,
+                            "impedancia": impedancia,
                         }
 
-                        for store_id in ['dieletric-analysis-store', 'applied-voltage-store', 'induced-voltage-store',
-                                        'short-circuit-store', 'temperature-rise-store', 'comprehensive-analysis-store']:
-                            if patch_mcp(store_id, {'transformer_data': other_stores_transformer_data}, app_instance):
+                        for store_id in [
+                            "dieletric-analysis-store",
+                            "applied-voltage-store",
+                            "induced-voltage-store",
+                            "short-circuit-store",
+                            "temperature-rise-store",
+                            "comprehensive-analysis-store",
+                        ]:
+                            if patch_mcp(
+                                store_id,
+                                {"transformer_data": other_stores_transformer_data},
+                                app_instance,
+                            ):
                                 log.info(f"[Update Callback] Dados propagados para {store_id}")
                     except Exception as e:
-                        log.error(f"[Update Callback] Erro ao propagar dados para outros stores: {e}", exc_info=True)
+                        log.error(
+                            f"[Update Callback] Erro ao propagar dados para outros stores: {e}",
+                            exc_info=True,
+                        )
 
                     # Verificar se os valores principais foram salvos corretamente
                     print("\n--- VERIFICAÇÃO DE VALORES NO MCP ---")
-                    saved_data = app_instance.mcp.get_data('transformer-inputs-store')
+                    saved_data = app_instance.mcp.get_data("transformer-inputs-store")
                     print(f"POTÊNCIA VERIFICADA NO MCP: {saved_data.get('potencia_mva')}")
                     print(f"TENSÃO AT VERIFICADA NO MCP: {saved_data.get('tensao_at')}")
                     print(f"TENSÃO BT VERIFICADA NO MCP: {saved_data.get('tensao_bt')}")
-                    print(f"TENSÃO TERCIÁRIO VERIFICADA NO MCP: {saved_data.get('tensao_terciario')}")
-                    print(f"TENSÃO AT TAP MAIOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_maior')}")
-                    print(f"TENSÃO AT TAP MENOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_menor')}")
+                    print(
+                        f"TENSÃO TERCIÁRIO VERIFICADA NO MCP: {saved_data.get('tensao_terciario')}"
+                    )
+                    print(
+                        f"TENSÃO AT TAP MAIOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_maior')}"
+                    )
+                    print(
+                        f"TENSÃO AT TAP MENOR VERIFICADA NO MCP: {saved_data.get('tensao_at_tap_menor')}"
+                    )
                     print(f"TOTAL DE CAMPOS NO MCP: {len(saved_data)}")
 
         except Exception as e:
             log.error(f"[Update Callback] Erro: {e}")
 
-        return corrente_at, corrente_bt, corrente_terciario, corrente_at_tap_maior, corrente_at_tap_menor
+        return (
+            corrente_at,
+            corrente_bt,
+            corrente_terciario,
+            corrente_at_tap_maior,
+            corrente_at_tap_menor,
+        )
 
     # Os callbacks para forçar atualização do MCP e limpar cache local foram removidos
 
-    log.info(f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}.")
+    log.info(
+        f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}."
+    )
     return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Callback para limpar o cache local do navegador - Usando padrão de registro centralizado
@@ -500,10 +584,11 @@ def register_clear_local_storage_callback(app_instance):
     Registra o callback para limpar o cache local do navegador.
     Esta função é chamada por app.py durante a inicialização.
     """
+
     @app_instance.callback(
         Output("clear-local-storage-output", "children"),
         Input("clear-local-storage-button", "n_clicks"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def clear_local_storage(n_clicks):
         """Limpa o cache local do navegador."""
@@ -513,20 +598,29 @@ def register_clear_local_storage_callback(app_instance):
         log.info(f"[Clear Local Storage] Botão de limpar cache local clicado ({n_clicks} vezes)")
 
         # Retorna um script JavaScript para limpar o localStorage
-        return html.Div([
-            html.Script("""
+        return html.Div(
+            [
+                html.Script(
+                    """
                 localStorage.clear();
                 console.log('Local storage cleared!');
                 alert('Cache local limpo com sucesso! A página será recarregada.');
                 setTimeout(function() {
                     window.location.reload();
                 }, 500);
-            """),
-            dbc.Alert("Cache local limpo com sucesso! A página será recarregada.", color="success", duration=3000)
-        ])
+            """
+                ),
+                dbc.Alert(
+                    "Cache local limpo com sucesso! A página será recarregada.",
+                    color="success",
+                    duration=3000,
+                ),
+            ]
+        )
 
     log.info("Callback clear_local_storage registrado com sucesso!")
     return True
+
 
 # Função de registro explícito
 def register_transformer_inputs_callbacks(app_instance):
@@ -543,5 +637,7 @@ def register_transformer_inputs_callbacks(app_instance):
     register_force_mcp_update_callback(app_instance)
     register_clear_local_storage_callback(app_instance)
 
-    log.info(f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}.")
+    log.info(
+        f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}."
+    )
     return True

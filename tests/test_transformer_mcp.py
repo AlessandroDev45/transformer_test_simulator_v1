@@ -1,11 +1,7 @@
 """
 Testes para o módulo app_core.transformer_mcp.
 """
-import json
-import os
-import pathlib
-import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -22,12 +18,8 @@ def mock_disk_persistence():
                 mock_load.return_value = ({}, True)
                 mock_save.return_value = True
                 mock_backup.return_value = True
-                
-                yield {
-                    "load": mock_load,
-                    "save": mock_save,
-                    "backup": mock_backup
-                }
+
+                yield {"load": mock_load, "save": mock_save, "backup": mock_backup}
 
 
 @pytest.fixture
@@ -42,12 +34,14 @@ def test_mcp_initialization(mcp_instance):
     assert mcp_instance is not None
     assert isinstance(mcp_instance._data, dict)
     assert "transformer-inputs-store" in mcp_instance._data
-    
+
     # Verificar se os dados padrão foram carregados
     transformer_data = mcp_instance.get_data("transformer-inputs-store")
     assert transformer_data is not None
     assert isinstance(transformer_data, dict)
-    assert transformer_data["tipo_transformador"] == DEFAULT_TRANSFORMER_INPUTS["tipo_transformador"]
+    assert (
+        transformer_data["tipo_transformador"] == DEFAULT_TRANSFORMER_INPUTS["tipo_transformador"]
+    )
     assert transformer_data["frequencia"] == DEFAULT_TRANSFORMER_INPUTS["frequencia"]
 
 
@@ -60,15 +54,15 @@ def test_mcp_set_get_data(mcp_instance):
         "tensao_at": 138,
         "tensao_bt": 13.8,
         "frequencia": 60,
-        "impedancia": 12.5
+        "impedancia": 12.5,
     }
-    
+
     # Definir dados no MCP
     mcp_instance.set_data("transformer-inputs-store", test_data)
-    
+
     # Obter dados do MCP
     retrieved_data = mcp_instance.get_data("transformer-inputs-store")
-    
+
     # Verificar se os dados foram armazenados corretamente
     assert retrieved_data is not None
     assert retrieved_data["potencia_mva"] == test_data["potencia_mva"]
@@ -88,20 +82,24 @@ def test_mcp_calculate_nominal_currents(mcp_instance):
         "frequencia": 60,
         "conexao_at": "estrela",
         "conexao_bt": "triangulo",
-        "conexao_terciario": ""
+        "conexao_terciario": "",
     }
-    
+
     # Calcular correntes nominais
     currents = mcp_instance.calculate_nominal_currents(test_data)
-    
+
     # Verificar se as correntes foram calculadas corretamente
     assert currents is not None
     assert "corrente_nominal_at" in currents
     assert "corrente_nominal_bt" in currents
-    
+
     # Verificar valores específicos (aproximados)
-    assert abs(currents["corrente_nominal_at"] - 125.5) < 1.0  # ~125.5 A para 30 MVA, 138 kV, trifásico
-    assert abs(currents["corrente_nominal_bt"] - 1255.1) < 1.0  # ~1255.1 A para 30 MVA, 13.8 kV, trifásico
+    assert (
+        abs(currents["corrente_nominal_at"] - 125.5) < 1.0
+    )  # ~125.5 A para 30 MVA, 138 kV, trifásico
+    assert (
+        abs(currents["corrente_nominal_bt"] - 1255.1) < 1.0
+    )  # ~1255.1 A para 30 MVA, 13.8 kV, trifásico
 
 
 def test_mcp_clear_data(mcp_instance):
@@ -111,23 +109,23 @@ def test_mcp_clear_data(mcp_instance):
         "tipo_transformador": "Trifásico",
         "potencia_mva": 50,
         "tensao_at": 138,
-        "tensao_bt": 13.8
+        "tensao_bt": 13.8,
     }
-    
+
     # Definir dados no MCP
     mcp_instance.set_data("transformer-inputs-store", test_data)
     mcp_instance.set_data("losses-store", {"perdas": 100})
-    
+
     # Limpar dados específicos
     mcp_instance.clear_data("losses-store")
-    
+
     # Verificar se apenas os dados específicos foram limpos
     assert mcp_instance.get_data("transformer-inputs-store")["potencia_mva"] == 50
     assert mcp_instance.get_data("losses-store") == {}
-    
+
     # Limpar todos os dados
     mcp_instance.clear_data()
-    
+
     # Verificar se todos os dados foram limpos
     assert mcp_instance.get_data("transformer-inputs-store") == DEFAULT_TRANSFORMER_INPUTS
     assert mcp_instance.get_data("losses-store") == {}
@@ -137,27 +135,27 @@ def test_mcp_save_load_disk(mock_disk_persistence):
     """Testa o salvamento e carregamento de dados do disco."""
     # Criar instância do MCP
     mcp = TransformerMCP(load_from_disk=True)
-    
+
     # Verificar se o método de carregamento foi chamado
     mock_disk_persistence["load"].assert_called_once()
-    
+
     # Dados de teste
     test_data = {
         "tipo_transformador": "Trifásico",
         "potencia_mva": 50,
         "tensao_at": 138,
-        "tensao_bt": 13.8
+        "tensao_bt": 13.8,
     }
-    
+
     # Definir dados no MCP
     mcp.set_data("transformer-inputs-store", test_data)
-    
+
     # Salvar dados no disco
     mcp.save_to_disk(force=True)
-    
+
     # Verificar se o método de salvamento foi chamado
     mock_disk_persistence["save"].assert_called_once()
-    
+
     # Verificar argumentos do método de salvamento
     args, kwargs = mock_disk_persistence["save"].call_args
     assert "transformer-inputs-store" in args[0]

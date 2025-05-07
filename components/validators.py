@@ -7,7 +7,10 @@ import math
 
 log = logging.getLogger(__name__)
 
-def is_valid_number(value, min_val=None, max_val=None, allow_none=False, field_name="Campo") -> tuple[bool, str]:
+
+def is_valid_number(
+    value, min_val=None, max_val=None, allow_none=False, field_name="Campo"
+) -> tuple[bool, str]:
     """
     Verifica se um valor é um número válido (int ou float), não NaN/Inf,
     e opcionalmente dentro de um intervalo [min_val, max_val].
@@ -29,7 +32,7 @@ def is_valid_number(value, min_val=None, max_val=None, allow_none=False, field_n
             return False, f"{field_name}: Valor é obrigatório."
 
     try:
-        num = float(value) # Tenta converter para float
+        num = float(value)  # Tenta converter para float
         if math.isnan(num) or math.isinf(num):
             return False, f"{field_name}: Valor numérico inválido (NaN ou Infinito)."
     except (ValueError, TypeError):
@@ -42,7 +45,10 @@ def is_valid_number(value, min_val=None, max_val=None, allow_none=False, field_n
 
     return True, ""
 
-def is_positive_number(value, allow_zero=False, allow_none=False, field_name="Campo") -> tuple[bool, str]:
+
+def is_positive_number(
+    value, allow_zero=False, allow_none=False, field_name="Campo"
+) -> tuple[bool, str]:
     """
     Verifica se um valor é um número positivo (ou opcionalmente não negativo).
 
@@ -62,7 +68,7 @@ def is_positive_number(value, allow_zero=False, allow_none=False, field_name="Ca
         return is_num, msg
 
     if value is None and allow_none:
-        return True, "" # Já validado por is_valid_number
+        return True, ""  # Já validado por is_valid_number
 
     # Se chegou aqui, value é um número válido (não None, NaN, Inf)
     num = float(value)
@@ -75,6 +81,7 @@ def is_positive_number(value, allow_zero=False, allow_none=False, field_name="Ca
             return False, f"{field_name}: Valor ({num}) deve ser estritamente positivo."
 
     return True, ""
+
 
 def is_required(value, field_name="Campo") -> tuple[bool, str]:
     """
@@ -94,6 +101,7 @@ def is_required(value, field_name="Campo") -> tuple[bool, str]:
     # Adicionar outras verificações se necessário (ex: lista vazia?)
 
     return True, ""
+
 
 def validate_dict_inputs(data: dict, validations: dict) -> list[str]:
     """
@@ -118,55 +126,65 @@ def validate_dict_inputs(data: dict, validations: dict) -> list[str]:
     if not isinstance(data, dict):
         return ["Erro interno: Dados de entrada para validação não são um dicionário."]
     if not isinstance(validations, dict):
-         return ["Erro interno: Definição de validação inválida."]
+        return ["Erro interno: Definição de validação inválida."]
 
     for field, rules in validations.items():
-        value = data.get(field) # Pega o valor do dicionário de dados
-        label = rules.get('label', field) # Usa label fornecido ou o nome do campo
+        value = data.get(field)  # Pega o valor do dicionário de dados
+        label = rules.get("label", field)  # Usa label fornecido ou o nome do campo
 
         # 1. Validação de Obrigatoriedade
-        if rules.get('required', False):
+        if rules.get("required", False):
             is_valid, msg = is_required(value, field_name=label)
             if not is_valid:
                 errors.append(msg)
-                continue # Pula outras validações se for obrigatório e ausente
+                continue  # Pula outras validações se for obrigatório e ausente
 
         # Pula validações adicionais se o valor for None e não for obrigatório
-        if value is None and not rules.get('required', False):
-             continue
+        if value is None and not rules.get("required", False):
+            continue
 
         # 2. Validação de Tipo (Exemplo: número)
-        is_numeric_type = 'min' in rules or 'max' in rules or rules.get('positive', False) or rules.get('allow_zero', False)
+        is_numeric_type = (
+            "min" in rules
+            or "max" in rules
+            or rules.get("positive", False)
+            or rules.get("allow_zero", False)
+        )
         if is_numeric_type:
             # Pode ser positivo ou apenas número com range
-            if rules.get('positive', False):
-                is_valid, msg = is_positive_number(value,
-                                                   allow_zero=rules.get('allow_zero', False),
-                                                   allow_none=not rules.get('required', False), # Permite None se não obrigatório
-                                                   field_name=label)
-            else: # Apenas verifica se é número e dentro do range
-                is_valid, msg = is_valid_number(value,
-                                                min_val=rules.get('min'),
-                                                max_val=rules.get('max'),
-                                                allow_none=not rules.get('required', False), # Permite None se não obrigatório
-                                                field_name=label)
+            if rules.get("positive", False):
+                is_valid, msg = is_positive_number(
+                    value,
+                    allow_zero=rules.get("allow_zero", False),
+                    allow_none=not rules.get("required", False),  # Permite None se não obrigatório
+                    field_name=label,
+                )
+            else:  # Apenas verifica se é número e dentro do range
+                is_valid, msg = is_valid_number(
+                    value,
+                    min_val=rules.get("min"),
+                    max_val=rules.get("max"),
+                    allow_none=not rules.get("required", False),  # Permite None se não obrigatório
+                    field_name=label,
+                )
             if not is_valid:
                 errors.append(msg)
-                continue # Pula outras validações numéricas se esta falhar
+                continue  # Pula outras validações numéricas se esta falhar
 
         # 3. Validação de Valores Permitidos (Dropdowns, RadioItems)
-        allowed_values = rules.get('allowed')
+        allowed_values = rules.get("allowed")
         if allowed_values and isinstance(allowed_values, list):
-             # Converte valor para string para comparação segura se não for None
-             value_str = str(value) if value is not None else None
-             if value_str not in map(str, allowed_values): # Compara como strings
-                 allowed_str = ", ".join(map(str, allowed_values))
-                 errors.append(f"{label}: Valor '{value}' inválido. Permitidos: {allowed_str}.")
-                 continue
+            # Converte valor para string para comparação segura se não for None
+            value_str = str(value) if value is not None else None
+            if value_str not in map(str, allowed_values):  # Compara como strings
+                allowed_str = ", ".join(map(str, allowed_values))
+                errors.append(f"{label}: Valor '{value}' inválido. Permitidos: {allowed_str}.")
+                continue
 
         # Adicionar mais tipos de validação aqui (regex, etc.)
 
     return errors
+
 
 # Exemplo de uso da função validate_dict_inputs em um callback:
 #

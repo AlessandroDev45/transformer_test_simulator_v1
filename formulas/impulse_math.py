@@ -3,10 +3,10 @@ Fórmulas matemáticas para simulação e análise de impulsos.
 Centraliza todos os cálculos relacionados a impulsos atmosféricos, de manobra e cortados.
 """
 
-import math
-import numpy as np
 import logging
-from typing import Tuple, Dict, List, Optional, Union, Any
+import math
+
+import numpy as np
 
 # Configuração de logging
 log = logging.getLogger(__name__)
@@ -43,6 +43,7 @@ LI_INDUCTOR_MAX_UH = 70.0  # Indutância máxima para LI em µH
 TEST_OBJECT_MIN_PF = 1600.0  # Capacitância mínima típica em pF
 TEST_OBJECT_MAX_PF = 3500.0  # Capacitância máxima típica em pF
 
+
 def double_exp_func(t_sec: np.ndarray, V0_norm: float, alpha: float, beta: float) -> np.ndarray:
     """
     Função de dupla exponencial normalizada V(t) = K * [exp(-alpha*t) - exp(-beta*t)],
@@ -60,10 +61,14 @@ def double_exp_func(t_sec: np.ndarray, V0_norm: float, alpha: float, beta: float
     """
     v_out = np.zeros_like(t_sec)
     if alpha <= 0 or beta <= 0:
-        log.warning(f"Alpha ({alpha}) ou Beta ({beta}) inválido (não positivo) para dupla exponencial.")
+        log.warning(
+            f"Alpha ({alpha}) ou Beta ({beta}) inválido (não positivo) para dupla exponencial."
+        )
         return v_out
     if beta <= alpha + 1e-9 * alpha:  # Adiciona tolerância relativa
-        log.warning(f"Beta ({beta:.3e}) deve ser maior que Alpha ({alpha:.3e}) para dupla exponencial.")
+        log.warning(
+            f"Beta ({beta:.3e}) deve ser maior que Alpha ({alpha:.3e}) para dupla exponencial."
+        )
         return v_out
 
     try:
@@ -72,7 +77,9 @@ def double_exp_func(t_sec: np.ndarray, V0_norm: float, alpha: float, beta: float
             t_peak = math.log(beta / alpha) / (beta - alpha) if beta > alpha else 0
 
             # Valor no pico para normalização
-            norm_factor = (math.exp(-alpha * t_peak) - math.exp(-beta * t_peak)) if t_peak >= 0 else 0
+            norm_factor = (
+                (math.exp(-alpha * t_peak) - math.exp(-beta * t_peak)) if t_peak >= 0 else 0
+            )
             if abs(norm_factor) < 1e-12:
                 log.warning("Fator de normalização da dupla exponencial próximo de zero.")
                 return v_out
@@ -91,7 +98,10 @@ def double_exp_func(t_sec: np.ndarray, V0_norm: float, alpha: float, beta: float
         log.error(f"Erro no cálculo da dupla exponencial: {e}")
         return np.zeros_like(t_sec)
 
-def rlc_solution(t_sec: np.ndarray, v0: float, r_total: float, l_total: float, c_eq: float) -> np.ndarray:
+
+def rlc_solution(
+    t_sec: np.ndarray, v0: float, r_total: float, l_total: float, c_eq: float
+) -> np.ndarray:
     """
     Solução analítica do circuito RLC série para descarga de capacitor.
 
@@ -109,7 +119,9 @@ def rlc_solution(t_sec: np.ndarray, v0: float, r_total: float, l_total: float, c
 
     # Validação de parâmetros
     if l_total <= 0 or c_eq <= 0:
-        log.warning(f"Parâmetros L ({l_total}) ou C ({c_eq}) inválidos (não positivos) para solução RLC.")
+        log.warning(
+            f"Parâmetros L ({l_total}) ou C ({c_eq}) inválidos (não positivos) para solução RLC."
+        )
         return v_out
 
     try:
@@ -117,7 +129,7 @@ def rlc_solution(t_sec: np.ndarray, v0: float, r_total: float, l_total: float, c
         omega0_sq = 1.0 / (l_total * c_eq)
 
         # Fator de amortecimento
-        alpha_damp = r_total / (2.0 * l_total) if l_total > 1e-12 else float('inf')
+        alpha_damp = r_total / (2.0 * l_total) if l_total > 1e-12 else float("inf")
 
         if alpha_damp < 0:  # Amortecimento não pode ser negativo
             log.warning(f"Fator de amortecimento alpha_damp ({alpha_damp}) negativo inválido.")
@@ -160,7 +172,10 @@ def rlc_solution(t_sec: np.ndarray, v0: float, r_total: float, l_total: float, c
         log.exception(f"Erro na solução RLC: {e}")
         return np.zeros_like(t_sec)
 
-def calculate_k_factor_transform(v_rlc_kv: np.ndarray, t_us: np.ndarray, return_params: bool = False) -> tuple:
+
+def calculate_k_factor_transform(
+    v_rlc_kv: np.ndarray, t_us: np.ndarray, return_params: bool = False
+) -> tuple:
     """
     Aplica a transformação K-factor para ajustar a forma de onda RLC para uma dupla exponencial.
 
@@ -188,6 +203,7 @@ def calculate_k_factor_transform(v_rlc_kv: np.ndarray, t_us: np.ndarray, return_
     else:
         return v_test, v_base, k_factor, overshoot
 
+
 def analyze_lightning_impulse(t_us: np.ndarray, v_kv: np.ndarray) -> dict:
     """
     Analisa parâmetros de Impulso Atmosférico (LI) usando K-Factor.
@@ -202,20 +218,32 @@ def analyze_lightning_impulse(t_us: np.ndarray, v_kv: np.ndarray) -> dict:
     log.info("Analisando Impulso Atmosférico (LI)...")
     results = {
         "waveform_type": "LI",
-        "peak_value_measured": None, "peak_value_base": None, "peak_value_test": None,
-        "peak_time_test_us": None, "t_30_us": None, "t_90_us": None,
-        "t_0_virtual_us": None, "t_front_us": None, "t_50_us": None,
-        "t_tail_us": None, "overshoot_percent": 0.0,
-        "params_base_alpha": None, "params_base_beta": None,
-        "conforme_frente": False, "conforme_cauda": False,
-        "conforme_overshoot": True, "conforme_pico": False,
-        "status_geral": "Indeterminado", "error": None
+        "peak_value_measured": None,
+        "peak_value_base": None,
+        "peak_value_test": None,
+        "peak_time_test_us": None,
+        "t_30_us": None,
+        "t_90_us": None,
+        "t_0_virtual_us": None,
+        "t_front_us": None,
+        "t_50_us": None,
+        "t_tail_us": None,
+        "overshoot_percent": 0.0,
+        "params_base_alpha": None,
+        "params_base_beta": None,
+        "conforme_frente": False,
+        "conforme_cauda": False,
+        "conforme_overshoot": True,
+        "conforme_pico": False,
+        "status_geral": "Indeterminado",
+        "error": None,
     }
 
     # Implementação da análise
     # ...
 
     return results
+
 
 def analyze_switching_impulse(t_us: np.ndarray, v_kv: np.ndarray) -> dict:
     """
@@ -230,17 +258,31 @@ def analyze_switching_impulse(t_us: np.ndarray, v_kv: np.ndarray) -> dict:
     """
     log.info("Analisando Impulso de Manobra (SI)...")
     results = {
-        "waveform_type": "SI", "peak_value_measured": None, "peak_time_us": None,
-        "t_p_us": None, "t_d_us": None, "t_half_us": None, "t_2_us": None,
-        "t_z_us": None, "t_zero_us": None, "t_ab_us": None, "t_30_us": None, "t_90_us": None,
-        "conforme_tp": False, "conforme_t2": False, "conforme_td": False, "conforme_tzero": False,
-        "status_geral": "Indeterminado", "error": None
+        "waveform_type": "SI",
+        "peak_value_measured": None,
+        "peak_time_us": None,
+        "t_p_us": None,
+        "t_d_us": None,
+        "t_half_us": None,
+        "t_2_us": None,
+        "t_z_us": None,
+        "t_zero_us": None,
+        "t_ab_us": None,
+        "t_30_us": None,
+        "t_90_us": None,
+        "conforme_tp": False,
+        "conforme_t2": False,
+        "conforme_td": False,
+        "conforme_tzero": False,
+        "status_geral": "Indeterminado",
+        "error": None,
     }
 
     # Implementação da análise
     # ...
 
     return results
+
 
 def simulate_hybrid_impulse(
     t_sec: np.ndarray,
@@ -251,7 +293,7 @@ def simulate_hybrid_impulse(
     c_gen: float,
     c_load: float,
     impulse_type: str,
-    gap_distance_cm: float = None
+    gap_distance_cm: float = None,
 ) -> tuple:
     """
     Simula o circuito de impulso usando a abordagem híbrida RLC + K-Factor + Dupla Exponencial.
@@ -285,7 +327,9 @@ def simulate_hybrid_impulse(
         t_us = t_sec * 1e6  # Converte para µs para K-factor
 
         # Transformação K-factor
-        v_test, v_base, _, overshoot, (alpha_fit, beta_fit) = calculate_k_factor_transform(v_rlc_kv, t_us, return_params=True)
+        v_test, v_base, _, overshoot, (alpha_fit, beta_fit) = calculate_k_factor_transform(
+            v_rlc_kv, t_us, return_params=True
+        )
 
         # Usa parâmetros ajustados ou estimativas
         if alpha_fit is None or beta_fit is None:
@@ -320,7 +364,9 @@ def simulate_hybrid_impulse(
                 chop_idx = times_above_threshold[0]
                 if chop_idx < len(t_sec):
                     chop_time_sec = t_sec[chop_idx]
-                    log.info(f"Corte detectado: t={chop_time_sec*1e6:.2f} µs, V={v_final[chop_idx]/1000:.1f} kV")
+                    log.info(
+                        f"Corte detectado: t={chop_time_sec*1e6:.2f} µs, V={v_final[chop_idx]/1000:.1f} kV"
+                    )
 
                     # Processa a forma de onda após o corte
                     collapse_time = 0.1e-6  # 0.1 µs para colapso da tensão
@@ -338,7 +384,9 @@ def simulate_hybrid_impulse(
 
                         # Colapso linear da tensão
                         if len(idx_collapse) > 0:
-                            v_final[idx_collapse] = chop_voltage_final * (1 - (t_sec[idx_collapse] - chop_time_sec) / collapse_time)
+                            v_final[idx_collapse] = chop_voltage_final * (
+                                1 - (t_sec[idx_collapse] - chop_time_sec) / collapse_time
+                            )
 
                         # Oscilação amortecida após o colapso
                         if len(idx_osc) > 0:
@@ -347,16 +395,24 @@ def simulate_hybrid_impulse(
                             undershoot_ratio = 0.25  # 25% de undershoot
 
                             time_after_collapse = t_sec[idx_osc] - chop_time_sec - collapse_time
-                            amp = -chop_voltage_final * undershoot_ratio * np.exp(-damp_factor * time_after_collapse * 1e6)
+                            amp = (
+                                -chop_voltage_final
+                                * undershoot_ratio
+                                * np.exp(-damp_factor * time_after_collapse * 1e6)
+                            )
                             osc = amp * np.cos(2 * np.pi * freq_osc * time_after_collapse)
 
                             v_final[idx_osc] = osc
 
                             # Limita o undershoot e zera após algumas oscilações
-                            v_final[idx_osc] = np.clip(v_final[idx_osc], -0.3 * abs(chop_voltage_final), float('inf'))
-                            v_final[idx_osc[time_after_collapse > 3/freq_osc]] = 0
+                            v_final[idx_osc] = np.clip(
+                                v_final[idx_osc], -0.3 * abs(chop_voltage_final), float("inf")
+                            )
+                            v_final[idx_osc[time_after_collapse > 3 / freq_osc]] = 0
             else:
-                log.warning(f"Tensão não atingiu breakdown ({breakdown_voltage/1000:.1f} kV) para gap={gap_distance_cm} cm")
+                log.warning(
+                    f"Tensão não atingiu breakdown ({breakdown_voltage/1000:.1f} kV) para gap={gap_distance_cm} cm"
+                )
 
         # Calcula corrente na carga (derivada da tensão)
         i_load = c_load * np.gradient(v_final, t_sec)
@@ -367,7 +423,10 @@ def simulate_hybrid_impulse(
         log.exception(f"Erro na simulação de impulso híbrido: {e}")
         return np.zeros_like(t_sec), np.zeros_like(t_sec), np.zeros_like(t_sec), 0, 0, None
 
-def get_resistors_and_inductor(cap_load_pf: float, impulse_type: str, n_stages: int = 12, n_parallel: int = 1) -> tuple:
+
+def get_resistors_and_inductor(
+    cap_load_pf: float, impulse_type: str, n_stages: int = 12, n_parallel: int = 1
+) -> tuple:
     """
     Calcula dinamicamente os valores de resistores e indutor com base na capacitância do objeto sob teste
     e no tipo de impulso, conforme especificações do manual CDYH-2400kV.
@@ -410,7 +469,13 @@ def get_resistors_and_inductor(cap_load_pf: float, impulse_type: str, n_stages: 
 
             # Ajuste fino da indutância com base na capacitância
             # Interpola entre LI_INDUCTOR_MIN_UH e LI_INDUCTOR_MAX_UH
-            cap_factor = min(1.0, max(0.0, (cap_load_pf - TEST_OBJECT_MIN_PF) / (TEST_OBJECT_MAX_PF - TEST_OBJECT_MIN_PF)))
+            cap_factor = min(
+                1.0,
+                max(
+                    0.0,
+                    (cap_load_pf - TEST_OBJECT_MIN_PF) / (TEST_OBJECT_MAX_PF - TEST_OBJECT_MIN_PF),
+                ),
+            )
             l_uh = LI_INDUCTOR_MAX_UH - cap_factor * (LI_INDUCTOR_MAX_UH - LI_INDUCTOR_MIN_UH)
 
             # Converte para Henries
@@ -436,10 +501,12 @@ def get_resistors_and_inductor(cap_load_pf: float, impulse_type: str, n_stages: 
             return default_rf, default_rt, default_l
 
         # Calcula valores totais considerando número de estágios e colunas em paralelo
-        rf_total = (rf_per_column * n_stages) / n_parallel if n_parallel > 0 else float('inf')
-        rt_total = (rt_per_column * n_stages) / n_parallel if n_parallel > 0 else float('inf')
+        rf_total = (rf_per_column * n_stages) / n_parallel if n_parallel > 0 else float("inf")
+        rt_total = (rt_per_column * n_stages) / n_parallel if n_parallel > 0 else float("inf")
 
-        log.info(f"Resistores e indutor calculados para {impulse_type}, C={cap_load_pf:.0f}pF: Rf={rf_total:.1f}Ω, Rt={rt_total:.1f}Ω, L={l_total_h*1e6:.1f}µH")
+        log.info(
+            f"Resistores e indutor calculados para {impulse_type}, C={cap_load_pf:.0f}pF: Rf={rf_total:.1f}Ω, Rt={rt_total:.1f}Ω, L={l_total_h*1e6:.1f}µH"
+        )
         return rf_total, rt_total, l_total_h
 
     except Exception as e:
@@ -458,7 +525,7 @@ def parallel_resistors(resistor_values: list) -> float:
         Resistência equivalente em Ohms
     """
     if not resistor_values:
-        return float('inf')
+        return float("inf")
 
     # Soma dos inversos
     sum_inverse = sum(1.0 / r for r in resistor_values if r > 0)
@@ -467,10 +534,12 @@ def parallel_resistors(resistor_values: list) -> float:
     if sum_inverse > 0:
         return 1.0 / sum_inverse
     else:
-        return float('inf')
+        return float("inf")
 
 
-def calculate_gap_chopping(tensao_kV: float, polaridade: str = "positiva", tempo_corte_desejado: float = 4.0) -> float:
+def calculate_gap_chopping(
+    tensao_kV: float, polaridade: str = "positiva", tempo_corte_desejado: float = 4.0
+) -> float:
     """
     Calcula a distância do gap de corte para obter um tempo de corte específico,
     baseado na norma IEC 60060-1 e manual do equipamento CDYH-2400kV.
@@ -520,6 +589,8 @@ def calculate_gap_chopping(tensao_kV: float, polaridade: str = "positiva", tempo
     # Arredondamento para precisão prática
     gap_cm = round(gap_cm, 1)
 
-    log.info(f"Gap calculado: {gap_cm} cm para tensão de {tensao_kV} kV (polaridade {polaridade}, tempo de corte {tempo_corte_desejado} μs)")
+    log.info(
+        f"Gap calculado: {gap_cm} cm para tensão de {tensao_kV} kV (polaridade {polaridade}, tempo de corte {tempo_corte_desejado} μs)"
+    )
 
     return gap_cm

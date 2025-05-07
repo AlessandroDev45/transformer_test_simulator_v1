@@ -4,10 +4,9 @@ Módulo para melhorar a experiência do usuário e evitar erros de navegação.
 Também inclui callbacks para sincronizar o MCP com os stores.
 """
 import logging
-import dash
-from dash import ClientsideFunction, Output, Input, State
 
 log = logging.getLogger(__name__)
+
 
 def register_client_side_callbacks(app_instance):
     """
@@ -18,12 +17,14 @@ def register_client_side_callbacks(app_instance):
 
     # Em vez de usar um callback do lado do cliente, vamos modificar os callbacks existentes
     # para verificar o pathname antes de atualizar os stores
-    log.info("Abordagem de callback do lado do cliente substituída por verificações de pathname nos callbacks existentes.")
+    log.info(
+        "Abordagem de callback do lado do cliente substituída por verificações de pathname nos callbacks existentes."
+    )
 
     # Registrar callbacks para sincronizar o MCP com os stores
     try:
         # Verificar se o MCP está disponível
-        if hasattr(app_instance, 'mcp') and app_instance.mcp is not None:
+        if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
             log.info("Registrando callbacks para sincronizar o MCP com os stores...")
 
             # Registrar um callback para atualizar o MCP quando o store transformer-inputs-store muda
@@ -45,7 +46,9 @@ def register_client_side_callbacks(app_instance):
             # Remover completamente o callback que estava causando conflitos
             # Não precisamos de um callback específico para sincronizar o MCP,
             # pois o MCP já é atualizado automaticamente quando o store muda
-            log.info("Callback de sincronização do MCP removido. O MCP já é atualizado automaticamente.")
+            log.info(
+                "Callback de sincronização do MCP removido. O MCP já é atualizado automaticamente."
+            )
 
             log.info("Callbacks para sincronizar o MCP com os stores registrados com sucesso.")
         else:

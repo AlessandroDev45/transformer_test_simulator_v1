@@ -236,13 +236,13 @@ Combine os callbacks que atualizam o mesmo componente em um único callback, usa
 \`\`\`python
 @app.callback(
     Output("componente-id", "propriedade"),
-    [Input("input1", "value"), 
+    [Input("input1", "value"),
      Input("input2", "value")]
 )
 def callback_combinado(input1_value, input2_value):
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    
+
     if trigger_id == "input1":
         # Lógica para input1
         return resultado1
@@ -300,7 +300,7 @@ Implemente um padrão de registro centralizado de callbacks para evitar duplicid
    )
    def callback1(input1_value):
        return resultado1
-   
+
    # Callback 2
    @app.callback(
        Output("componente-id", "propriedade"),
@@ -314,7 +314,7 @@ Implemente um padrão de registro centralizado de callbacks para evitar duplicid
    \`\`\`python
    @app.callback(
        Output("componente-id", "propriedade"),
-       [Input("input1", "value"), 
+       [Input("input1", "value"),
         Input("input2", "value")]
    )
    def callback_combinado(input1_value, input2_value):
@@ -322,9 +322,9 @@ Implemente um padrão de registro centralizado de callbacks para evitar duplicid
        if not ctx.triggered:
            # Chamada inicial
            return valor_inicial
-       
+
        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-       
+
        if trigger_id == "input1":
            # Lógica do callback1
            return resultado1
@@ -412,24 +412,24 @@ Este guia fornece uma abordagem sistemática para identificar e resolver problem
         function generateTOC(html) {
             const container = document.createElement('div');
             container.innerHTML = html;
-            
+
             const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
             const toc = document.getElementById('toc');
-            
+
             headings.forEach((heading, index) => {
                 // Create an ID for the heading if it doesn't have one
                 if (!heading.id) {
                     heading.id = `heading-${index}`;
                 }
-                
+
                 const level = parseInt(heading.tagName.substring(1));
                 const tocItem = document.createElement('li');
                 tocItem.className = `toc-h${level}`;
-                
+
                 const link = document.createElement('a');
                 link.href = `#${heading.id}`;
                 link.textContent = heading.textContent;
-                
+
                 tocItem.appendChild(link);
                 toc.appendChild(tocItem);
             });
@@ -438,7 +438,7 @@ Este guia fornece uma abordagem sistemática para identificar e resolver problem
         // Function to highlight search terms
         function highlightSearchTerms(content, term) {
             if (!term) return content;
-            
+
             const regex = new RegExp(`(${term})`, 'gi');
             return content.replace(regex, '<span class="highlight">$1</span>');
         }
@@ -447,24 +447,24 @@ Este guia fornece uma abordagem sistemática para identificar e resolver problem
         function renderMarkdown() {
             const searchTerm = document.getElementById('search-input').value.trim();
             let content = markdownContent;
-            
+
             // Render markdown to HTML
             const renderedHTML = marked.parse(content);
-            
+
             // Apply search highlighting if there's a search term
             const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
-            
+
             // Update content
             document.getElementById('markdown-content').innerHTML = finalHTML;
-            
+
             // Generate TOC
             generateTOC(finalHTML);
-            
+
             // Initialize syntax highlighting
             document.querySelectorAll('pre code').forEach((block) => {
                 hljs.highlightBlock(block);
             });
-            
+
             // Render math expressions
             if (window.MathJax) {
                 MathJax.typesetPromise();
@@ -474,11 +474,11 @@ Este guia fornece uma abordagem sistemática para identificar e resolver problem
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             renderMarkdown();
-            
+
             // Set up search
             document.getElementById('search-input').addEventListener('input', (e) => {
                 renderMarkdown();
-                
+
                 // Scroll to first highlight if there is one
                 const firstHighlight = document.querySelector('.highlight');
                 if (firstHighlight) {

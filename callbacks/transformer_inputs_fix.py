@@ -201,7 +201,9 @@ def register_transformer_inputs_callbacks(app_instance):
             corrente_at_tap_menor = calculated_currents.get("corrente_nominal_at_tap_menor")
 
             # Log dos valores calculados
-            log.info(f"[Update Callback] Correntes calculadas: AT={corrente_at}A, BT={corrente_bt}A, Terciário={corrente_terciario}A, AT Tap Maior={corrente_at_tap_maior}A, AT Tap Menor={corrente_at_tap_menor}A")
+            log.info(
+                f"[Update Callback] Correntes calculadas: AT={corrente_at}A, BT={corrente_bt}A, Terciário={corrente_terciario}A, AT Tap Maior={corrente_at_tap_maior}A, AT Tap Menor={corrente_at_tap_menor}A"
+            )
 
             # Atualizar o MCP com os valores calculados
             if hasattr(app_instance, "mcp") and app_instance.mcp is not None:

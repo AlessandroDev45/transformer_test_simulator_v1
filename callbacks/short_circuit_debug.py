@@ -7,6 +7,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def add_short_circuit_debug_logs(original_inputs, results, current_store_data):
     """
     Adiciona logs detalhados para diagnóstico do store de curto-circuito.
@@ -16,7 +17,7 @@ def add_short_circuit_debug_logs(original_inputs, results, current_store_data):
         results: Dicionário com os resultados calculados
         current_store_data: Dicionário com os dados atuais do store
     """
-    print(f"\n--- [SHORT CIRCUIT STORE SAVE DEBUG] ---")
+    print("\n--- [SHORT CIRCUIT STORE SAVE DEBUG] ---")
     log.info("--- [SHORT CIRCUIT STORE SAVE DEBUG] ---")
 
     print(f"  Tipo de original_inputs: {type(original_inputs)}")
@@ -32,10 +33,11 @@ def add_short_circuit_debug_logs(original_inputs, results, current_store_data):
             print(f"    {key}: {type(value).__name__} = {value}")
 
     # Atualizar o store com os novos dados
-    current_store_data['inputs_curto_circuito'] = original_inputs
-    current_store_data['resultados_curto_circuito'] = results
+    current_store_data["inputs_curto_circuito"] = original_inputs
+    current_store_data["resultados_curto_circuito"] = results
     import datetime
-    current_store_data['timestamp'] = datetime.datetime.now().isoformat()
+
+    current_store_data["timestamp"] = datetime.datetime.now().isoformat()
 
     print(f"  Tipo de current_store_data após update: {type(current_store_data)}")
     if isinstance(current_store_data, dict):
@@ -43,6 +45,6 @@ def add_short_circuit_debug_logs(original_inputs, results, current_store_data):
     else:
         print(f"  Conteúdo de current_store_data após update: {repr(current_store_data)[:100]}")
 
-    print(f"--- Fim [SHORT CIRCUIT STORE SAVE DEBUG] ---")
+    print("--- Fim [SHORT CIRCUIT STORE SAVE DEBUG] ---")
 
     return current_store_data

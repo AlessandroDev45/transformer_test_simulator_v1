@@ -288,16 +288,16 @@ Este é o padrão mais robusto para evitar problemas com o reloader:
    \`\`\`python
    # Importar a função de registro, não o módulo inteiro
    from callbacks.module import register_callbacks
-   
+
    # Criar a aplicação Dash
    app = dash.Dash(__name__)
-   
+
    # Definir o layout
    app.layout = html.Div([...])
-   
+
    # Registrar os callbacks APÓS definir o layout
    register_callbacks(app)
-   
+
    # Executar o servidor
    if __name__ == '__main__':
        app.run_server(debug=True)
@@ -378,12 +378,12 @@ log.debug("Importando callbacks")
 try:
     # Método 1: Importação direta (pode causar problemas)
     # from callbacks import module
-    
+
     # Método 2: Registro centralizado (recomendado)
     from callbacks.module import register_callbacks
     register_callbacks(app)
     log.debug(f"Callbacks registrados. Total: {len(app.callback_map)}")
-    
+
     # Verificar se um callback específico está registrado
     output_id = f'{dash.Output("resultado", "children").component_id}.{dash.Output("resultado", "children").component_property}'
     if output_id in app.callback_map:
@@ -411,7 +411,7 @@ log.debug("Módulo de callbacks carregado")
 def register_callbacks(app_instance):
     """Registra todos os callbacks deste módulo."""
     log.debug(f"Registrando callbacks com app_instance: {type(app_instance)}")
-    
+
     @app_instance.callback(
         Output("resultado", "children"),
         Input("botao", "n_clicks"),
@@ -422,7 +422,7 @@ def register_callbacks(app_instance):
         if n_clicks:
             return f"Botão clicado {n_clicks} vezes"
         return "Clique no botão"
-    
+
     log.debug("Callbacks registrados com sucesso")
 \`\`\`
 
@@ -441,24 +441,24 @@ Usando o padrão de registro centralizado de callbacks, você pode evitar a maio
         function generateTOC(html) {
             const container = document.createElement('div');
             container.innerHTML = html;
-            
+
             const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
             const toc = document.getElementById('toc');
-            
+
             headings.forEach((heading, index) => {
                 // Create an ID for the heading if it doesn't have one
                 if (!heading.id) {
                     heading.id = `heading-${index}`;
                 }
-                
+
                 const level = parseInt(heading.tagName.substring(1));
                 const tocItem = document.createElement('li');
                 tocItem.className = `toc-h${level}`;
-                
+
                 const link = document.createElement('a');
                 link.href = `#${heading.id}`;
                 link.textContent = heading.textContent;
-                
+
                 tocItem.appendChild(link);
                 toc.appendChild(tocItem);
             });
@@ -467,7 +467,7 @@ Usando o padrão de registro centralizado de callbacks, você pode evitar a maio
         // Function to highlight search terms
         function highlightSearchTerms(content, term) {
             if (!term) return content;
-            
+
             const regex = new RegExp(`(${term})`, 'gi');
             return content.replace(regex, '<span class="highlight">$1</span>');
         }
@@ -476,24 +476,24 @@ Usando o padrão de registro centralizado de callbacks, você pode evitar a maio
         function renderMarkdown() {
             const searchTerm = document.getElementById('search-input').value.trim();
             let content = markdownContent;
-            
+
             // Render markdown to HTML
             const renderedHTML = marked.parse(content);
-            
+
             // Apply search highlighting if there's a search term
             const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
-            
+
             // Update content
             document.getElementById('markdown-content').innerHTML = finalHTML;
-            
+
             // Generate TOC
             generateTOC(finalHTML);
-            
+
             // Initialize syntax highlighting
             document.querySelectorAll('pre code').forEach((block) => {
                 hljs.highlightBlock(block);
             });
-            
+
             // Render math expressions
             if (window.MathJax) {
                 MathJax.typesetPromise();
@@ -503,11 +503,11 @@ Usando o padrão de registro centralizado de callbacks, você pode evitar a maio
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             renderMarkdown();
-            
+
             // Set up search
             document.getElementById('search-input').addEventListener('input', (e) => {
                 renderMarkdown();
-                
+
                 // Scroll to first highlight if there is one
                 const firstHighlight = document.querySelector('.highlight');
                 if (firstHighlight) {

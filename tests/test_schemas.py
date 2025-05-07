@@ -18,7 +18,7 @@ def test_transformer_inputs_default_values():
     """Testa os valores padrão do esquema TransformerInputs."""
     # Criar modelo com valores padrão
     model = TransformerInputs()
-    
+
     # Verificar valores padrão
     assert model.tipo_transformador == TipoTransformador.TRIFASICO
     assert model.frequencia == 60.0
@@ -41,12 +41,12 @@ def test_transformer_inputs_custom_values():
         "impedancia_nominal": 12.5,
         "conexao_at": "estrela",
         "conexao_bt": "triangulo",
-        "liquido_isolante": "Vegetal"
+        "liquido_isolante": "Vegetal",
     }
-    
+
     # Criar modelo com valores personalizados
     model = TransformerInputs(**test_data)
-    
+
     # Verificar valores personalizados
     assert model.tipo_transformador == TipoTransformador.MONOFASICO
     assert model.potencia_mva == 30
@@ -68,9 +68,9 @@ def test_transformer_inputs_invalid_values():
         "tensao_at": "inválido",
         "frequencia": 0,
         "impedancia_nominal": -12.5,
-        "conexao_at": "inválido"
+        "conexao_at": "inválido",
     }
-    
+
     # Verificar se a validação falha
     with pytest.raises(ValidationError):
         TransformerInputs(**test_data)
@@ -84,12 +84,12 @@ def test_transformer_inputs_type_conversion():
         "tensao_at": "138",
         "tensao_bt": "13.8",
         "frequencia": "60",
-        "impedancia_nominal": "12.5"
+        "impedancia_nominal": "12.5",
     }
-    
+
     # Criar modelo com valores que precisam ser convertidos
     model = TransformerInputs(**test_data)
-    
+
     # Verificar se os valores foram convertidos corretamente
     assert isinstance(model.potencia_mva, float)
     assert model.potencia_mva == 30.0
@@ -115,12 +115,12 @@ def test_validate_transformer_inputs_valid_data():
         "impedancia_nominal": 12.5,
         "conexao_at": "estrela",
         "conexao_bt": "triangulo",
-        "liquido_isolante": "Mineral"
+        "liquido_isolante": "Mineral",
     }
-    
+
     # Validar dados
     validated_data = validate_transformer_inputs(test_data)
-    
+
     # Verificar se os dados foram validados corretamente
     assert validated_data is not None
     assert validated_data["tipo_transformador"] == "Trifásico"
@@ -143,11 +143,11 @@ def test_validate_transformer_inputs_invalid_data():
         "tensao_at": "inválido",
         "frequencia": 0,
         "impedancia_nominal": -12.5,
-        "conexao_at": "inválido"
+        "conexao_at": "inválido",
     }
-    
+
     # Validar dados (deve retornar os dados originais em caso de erro)
     validated_data = validate_transformer_inputs(test_data)
-    
+
     # Verificar se os dados originais foram retornados
     assert validated_data is test_data

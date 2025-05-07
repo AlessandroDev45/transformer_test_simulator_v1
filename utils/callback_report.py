@@ -3,8 +3,9 @@ Script para gerar um relatório completo de todos os callbacks e inputs em cada 
 """
 import os
 import sys
-import json
+
 from utils.callback_analyzer import analyze_all_modules
+
 
 def generate_report():
     """
@@ -104,7 +105,7 @@ def generate_report():
     """
 
     # Adiciona a tabela de callbacks por módulo
-    for module_name, module_info in result['modules'].items():
+    for module_name, module_info in result["modules"].items():
         html += f"""
                     <tr>
                         <td>{module_name}</td>
@@ -118,7 +119,7 @@ def generate_report():
                 <h3>Duplicidades</h3>
     """
 
-    if result['duplicates']:
+    if result["duplicates"]:
         html += """
                 <table>
                     <tr>
@@ -128,7 +129,7 @@ def generate_report():
                     </tr>
         """
 
-        for duplicate in result['duplicates']:
+        for duplicate in result["duplicates"]:
             html += f"""
                     <tr>
                         <td>{duplicate['output']}</td>
@@ -150,7 +151,7 @@ def generate_report():
     """
 
     # Adiciona os detalhes de cada módulo
-    for module_name, module_info in result['modules'].items():
+    for module_name, module_info in result["modules"].items():
         html += f"""
             <div class="module">
                 <h3>{module_name}</h3>
@@ -160,7 +161,7 @@ def generate_report():
                 <ul>
         """
 
-        for input_item in module_info['unique_inputs']:
+        for input_item in module_info["unique_inputs"]:
             html += f"<li>{input_item}</li>"
 
         html += """
@@ -169,7 +170,7 @@ def generate_report():
                 <h4>Callbacks:</h4>
         """
 
-        for callback in module_info['callbacks']:
+        for callback in module_info["callbacks"]:
             html += f"""
                 <div class="callback">
                     <h5>{callback['name']}</h5>
@@ -179,8 +180,10 @@ def generate_report():
                         <ul>
             """
 
-            for output in callback['outputs']:
-                allow_duplicate = " (allow_duplicate)" if output.get('allow_duplicate', False) else ""
+            for output in callback["outputs"]:
+                allow_duplicate = (
+                    " (allow_duplicate)" if output.get("allow_duplicate", False) else ""
+                )
                 html += f"<li class='item'>{output['component_id']}:{output['component_property']}{allow_duplicate}</li>"
 
             html += """
@@ -192,7 +195,7 @@ def generate_report():
                         <ul>
             """
 
-            for input_item in callback['inputs']:
+            for input_item in callback["inputs"]:
                 html += f"<li class='item'>{input_item['component_id']}:{input_item['component_property']}</li>"
 
             html += """
@@ -200,14 +203,14 @@ def generate_report():
                     </div>
             """
 
-            if callback['states']:
+            if callback["states"]:
                 html += """
                     <div class="states">
                         <h6>States:</h6>
                         <ul>
                 """
 
-                for state in callback['states']:
+                for state in callback["states"]:
                     html += f"<li class='item'>{state['component_id']}:{state['component_property']}</li>"
 
                 html += """
@@ -231,6 +234,7 @@ def generate_report():
 
     return html
 
+
 def save_report(html, output_path="callback_report.html"):
     """
     Salva o relatório em um arquivo HTML.
@@ -243,6 +247,7 @@ def save_report(html, output_path="callback_report.html"):
         f.write(html)
 
     print(f"Relatório salvo em {os.path.abspath(output_path)}")
+
 
 if __name__ == "__main__":
     # Gera o relatório

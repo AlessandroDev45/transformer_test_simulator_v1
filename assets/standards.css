@@ -49,13 +49,13 @@
     border-collapse: collapse;
 }
 
-.standards-markdown-content table, 
-.standards-markdown-content th, 
+.standards-markdown-content table,
+.standards-markdown-content th,
 .standards-markdown-content td {
     border: 1px solid #dee2e6;
 }
 
-.standards-markdown-content th, 
+.standards-markdown-content th,
 .standards-markdown-content td {
     padding: 8px 12px;
     text-align: left;
@@ -104,41 +104,41 @@
     .standards-markdown-content {
         color: #e9ecef;
     }
-    
+
     .standards-markdown-content h1,
     .standards-markdown-content h2,
     .standards-markdown-content h3 {
         color: #B9D1EA;
     }
-    
-    .standards-markdown-content table, 
-    .standards-markdown-content th, 
+
+    .standards-markdown-content table,
+    .standards-markdown-content th,
     .standards-markdown-content td {
         border-color: #495057;
     }
-    
+
     .standards-markdown-content th {
         background-color: #343a40;
     }
-    
+
     .standards-markdown-content tr:nth-child(even) {
         background-color: #343a40;
     }
-    
+
     .standards-markdown-content img {
         border-color: #495057;
     }
-    
+
     .standards-markdown-content blockquote {
         border-left-color: #B9D1EA;
         color: #adb5bd;
     }
-    
+
     .standards-markdown-content code,
     .standards-markdown-content pre {
         background-color: #343a40;
     }
-    
+
     .search-snippet {
         background-color: #343a40;
         color: #e9ecef;

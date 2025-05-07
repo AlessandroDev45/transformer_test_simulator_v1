@@ -4,7 +4,7 @@ Centraliza funções de validação para evitar duplicação de código.
 """
 import logging
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -165,6 +165,7 @@ def safe_float(value: Any, default: float = 0.0) -> float:
 
 # --- Funções de validação adicionais (migradas de components/validators.py) ---
 
+
 def is_valid_number(
     value, min_val=None, max_val=None, allow_none=False, field_name="Campo"
 ) -> Tuple[bool, str]:
@@ -300,7 +301,9 @@ def validate_transformer_inputs(data: Dict[str, Any]) -> Dict[str, List[str]]:
     return errors_dict
 
 
-def validate_dict_inputs_enhanced(data: Dict[str, Any], validations: Dict[str, Dict[str, Any]]) -> List[str]:
+def validate_dict_inputs_enhanced(
+    data: Dict[str, Any], validations: Dict[str, Dict[str, Any]]
+) -> List[str]:
     """
     Valida múltiplos campos dentro de um dicionário com base em regras especificadas.
     Versão melhorada que combina funcionalidades de ambas as implementações anteriores.
