@@ -172,13 +172,26 @@ def create_losses_layout():
     # Import app here to avoid circular imports
     try:
         from app import app
-        transformer_data = app.transformer_data_cache if hasattr(app, 'transformer_data_cache') and app.transformer_data_cache else {}
+        # Obter dados diretamente do MCP em vez de usar o cache
+        if hasattr(app, 'mcp') and app.mcp is not None:
+            # Primeiro, tentar obter dados do losses-store
+            losses_data = app.mcp.get_data('losses-store')
+            if losses_data and 'transformer_data' in losses_data:
+                transformer_data = losses_data['transformer_data']
+                log.info("[Losses Layout] Dados do transformador obtidos do losses-store.")
+            else:
+                # Se não houver dados no losses-store, obter do transformer-inputs-store
+                transformer_data = app.mcp.get_data('transformer-inputs-store')
+                log.info("[Losses Layout] Dados do transformador obtidos do transformer-inputs-store.")
+        else:
+            transformer_data = app.transformer_data_cache if hasattr(app, 'transformer_data_cache') and app.transformer_data_cache else {}
+            log.info("[Losses Layout] Dados do transformador obtidos do cache.")
     except (ImportError, AttributeError) as e:
-        log.warning(f"[Losses Layout] Erro ao acessar app.transformer_data_cache: {e}")
+        log.warning(f"[Losses Layout] Erro ao acessar MCP ou cache: {e}")
         transformer_data = {}
 
     if not transformer_data:
-        log.warning("[Losses Layout] Dados do transformador não encontrados no cache.")
+        log.warning("[Losses Layout] Dados do transformador não encontrados.")
 
     layout = dbc.Container([
         # Stores are now defined in components/global_stores.py and included in main_layout.py

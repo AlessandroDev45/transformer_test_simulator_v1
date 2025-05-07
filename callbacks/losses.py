@@ -204,7 +204,14 @@ def losses_handle_perdas_vazio(n_clicks, perdas_vazio, peso_nucleo, corrente_exc
     # Obter dados do transformador do MCP
     transformer_data = app.mcp.get_data('transformer-inputs-store')
     if not transformer_data:
+        log.error("Dados básicos do transformador não encontrados no MCP.")
         error_div = html.Div("Dados básicos do transformador não encontrados.", style=ERROR_STYLE)
+        return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+
+    # Verificar se os dados essenciais estão presentes
+    if not transformer_data.get('potencia_mva') or not transformer_data.get('tensao_at') or not transformer_data.get('tensao_bt'):
+        log.error(f"Dados essenciais ausentes no transformer-inputs-store: potencia={transformer_data.get('potencia_mva')}, tensao_at={transformer_data.get('tensao_at')}, tensao_bt={transformer_data.get('tensao_bt')}")
+        error_div = html.Div("Dados essenciais do transformador ausentes. Preencha os dados básicos na página 'Dados Básicos'.", style=ERROR_STYLE)
         return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
 
     # Obter dados de perdas existentes do MCP

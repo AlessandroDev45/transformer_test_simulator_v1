@@ -41,6 +41,9 @@ def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> 
         log.info(f"[ensure_mcp_data_propagation] Dados de corrente encontrados no store de origem {source_store}")
         has_essential_data = True
 
+    # Log detalhado dos dados disponíveis para debug
+    log.debug(f"[ensure_mcp_data_propagation] Dados disponíveis no store {source_store}: potencia_mva={source_data.get('potencia_mva')}, tensao_at={source_data.get('tensao_at')}, tensao_bt={source_data.get('tensao_bt')}, corrente_nominal_at={source_data.get('corrente_nominal_at')}")
+
     if not has_essential_data:
         log.warning(f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}")
         return {store: False for store in target_stores}

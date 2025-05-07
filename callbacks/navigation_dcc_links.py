@@ -117,6 +117,25 @@ def navigation_dcc_links_render_content(pathname, *args):
                 print(f"--- render_content: Tentando chamar função de layout para: {clean_path} ---") # Modified print
                 print(f"[DEBUG] Tentando carregar layout para: {clean_path}, função: {layout_function.__name__}")
                 try:
+                    # Verificar se estamos navegando para a página de perdas e garantir que os dados sejam propagados
+                    if clean_path == 'perdas':
+                        # Importar o utilitário de persistência do MCP
+                        try:
+                            from app import app
+                            from utils.mcp_persistence import ensure_mcp_data_propagation
+
+                            # Verificar se o MCP está disponível
+                            if hasattr(app, 'mcp') and app.mcp is not None:
+                                # Obter dados do transformer-inputs-store
+                                transformer_data = app.mcp.get_data('transformer-inputs-store')
+
+                                if transformer_data:
+                                    # Propagar dados para o losses-store
+                                    propagation_result = ensure_mcp_data_propagation(app, 'transformer-inputs-store', ['losses-store'])
+                                    log.info(f"Propagação de dados para losses-store: {propagation_result}")
+                        except Exception as e:
+                            log.error(f"Erro ao propagar dados para losses-store: {e}")
+
                     layout_content = layout_function() # Call the function
                     print(f"--- render_content: Função de layout '{layout_function.__name__}' retornou com sucesso. Tipo: {type(layout_content)} ---") # Modified print
                     print(f"[DEBUG] Layout carregado com sucesso para: {clean_path}")
