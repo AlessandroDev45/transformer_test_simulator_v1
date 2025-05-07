@@ -1,4 +1,4 @@
-# callbacks/transformer_inputs.py
+# callbacks/transformer_inputs_fix.py
 """
 Versão corrigida do módulo transformer_inputs que usa o padrão de registro centralizado.
 """
@@ -9,14 +9,6 @@ import numpy as np
 import logging
 from dash.exceptions import PreventUpdate
 
-print("\n\n")
-print("*" * 100)
-print("*" * 100)
-print("**** IMPORTANDO MÓDULO TRANSFORMER_INPUTS - ESTE LOG DEVE APARECER SE O MÓDULO FOR CARREGADO ****")
-print("*" * 100)
-print("*" * 100)
-print("\n\n")
-
 # Não importar app diretamente para evitar importações circulares
 # from app import app  # REMOVIDO
 
@@ -26,7 +18,7 @@ from utils.store_diagnostics import convert_numpy_types
 from utils.routes import normalize_pathname, ROUTE_HOME
 
 log = logging.getLogger(__name__)
-log.info("============ MÓDULO TRANSFORMER_INPUTS CARREGADO ============")
+log.info("============ MÓDULO TRANSFORMER_INPUTS_FIX CARREGADO ============")
 log.info(f"Nível de log: {logging.getLevelName(log.getEffectiveLevel())}")
 log.info(f"Handlers configurados: {[h.__class__.__name__ for h in log.handlers]}")
 log.info("=============================================================")
@@ -410,87 +402,6 @@ def register_transformer_inputs_callbacks(app_instance):
         return corrente_at, corrente_bt, corrente_terciario, corrente_at_tap_maior, corrente_at_tap_menor
 
     # Os callbacks para forçar atualização do MCP e limpar cache local foram removidos
-
-    log.info(f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}.")
-    return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Callback para limpar o cache local do navegador - Usando padrão de registro centralizado
-def register_clear_local_storage_callback(app_instance):
-    """
-    Registra o callback para limpar o cache local do navegador.
-    Esta função é chamada por app.py durante a inicialização.
-    """
-    @app_instance.callback(
-        Output("clear-local-storage-output", "children"),
-        Input("clear-local-storage-button", "n_clicks"),
-        prevent_initial_call=True
-    )
-    def clear_local_storage(n_clicks):
-        """Limpa o cache local do navegador."""
-        if n_clicks is None:
-            raise PreventUpdate
-
-        log.info(f"[Clear Local Storage] Botão de limpar cache local clicado ({n_clicks} vezes)")
-
-        # Retorna um script JavaScript para limpar o localStorage
-        return html.Div([
-            html.Script("""
-                localStorage.clear();
-                console.log('Local storage cleared!');
-                alert('Cache local limpo com sucesso! A página será recarregada.');
-                setTimeout(function() {
-                    window.location.reload();
-                }, 500);
-            """),
-            dbc.Alert("Cache local limpo com sucesso! A página será recarregada.", color="success", duration=3000)
-        ])
-
-    log.info("Callback clear_local_storage registrado com sucesso!")
-    return True
-
-# Função de registro explícito
-def register_transformer_inputs_callbacks(app_instance):
-    """
-    Função de registro explícito para callbacks de transformer_inputs.
-    Esta função é chamada por app.py durante a inicialização.
-
-    Registra os callbacks que foram convertidos para o padrão de registro centralizado.
-    """
-    log.info(f"Registrando callbacks do módulo transformer_inputs para app {app_instance.title}...")
-
-    # Registrar os callbacks que foram convertidos para o padrão de registro centralizado
-    register_transformer_calculations_callback(app_instance)
-    register_force_mcp_update_callback(app_instance)
-    register_clear_local_storage_callback(app_instance)
 
     log.info(f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}.")
     return True

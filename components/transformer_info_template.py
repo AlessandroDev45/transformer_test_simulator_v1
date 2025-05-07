@@ -75,6 +75,13 @@ def create_transformer_info_panel(transformer_data):
         top_row_style = {"backgroundColor": bg_color_header, "color": COLORS['text_light'],
                          "borderBottom": f"1px solid {COLORS['border']}", "fontSize": "0.65rem",
                          "borderRadius": "3px 3px 0 0"}
+
+        # Imprimir o valor de potência e corrente que serão exibidos no painel
+        potencia_valor = transformer_data.get('potencia_mva')
+        corrente_at_valor = transformer_data.get('corrente_nominal_at')
+        print(f"POTÊNCIA EXIBIDA NO PAINEL: {potencia_valor}")
+        print(f"CORRENTE AT EXIBIDA NO PAINEL: {corrente_at_valor}A")
+
         top_items = [
             ("Potência:", 'potencia_mva', "MVA"),
             ("Tipo:", 'tipo_transformador', ""),
@@ -113,6 +120,8 @@ def create_transformer_info_panel(transformer_data):
                 ("Classe Neutro:", 'tensao_bucha_neutro_at', "kV"),
                 ("NBI Neutro:", 'nbi_neutro_at', "kV")
             ], "style": col_style_with_border},
+
+
             {"title": "AT Tap+", "bg_color": bg_color_tap, "items": [("Tensão:", 'tensao_at_tap_maior', "kV"), ("Corrente:", 'corrente_nominal_at_tap_maior', "A"), ("Z:", 'impedancia_tap_maior', "%")], "style": col_style_with_border},
             {"title": "Baixa Tensão", "bg_color": bg_color_default, "items": [
                 ("Tensão:", 'tensao_bt', "kV"),

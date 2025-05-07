@@ -108,6 +108,9 @@ class TransformerMCP:
             log.warning(f"[MCP SET] Attempted to set data for non-registered store: {store_id}")
             return {}
 
+        log.info(f"[MCP SET] Iniciando atualização de dados para store: {store_id}")
+        log.info(f"[MCP SET] Dados recebidos: {data}")
+
         errors = {}
         if validate:
             errors = self.validate_data(store_id, data)
@@ -117,16 +120,32 @@ class TransformerMCP:
 
         # --- IMPORTANT: Convert types BEFORE storing ---
         try:
+            log.info(f"[MCP SET] Convertendo tipos para store: {store_id}")
             serializable_data = convert_numpy_types(data, debug_path=f"mcp_set.{store_id}")
+
             # Ensure the result is serializable (optional final check)
             if not is_json_serializable(serializable_data):
                  log.error(f"[MCP SET] Data for {store_id} FAILED serializability check AFTER conversion.")
                  errors['_serialization'] = ["Dados não puderam ser serializados."]
                  # Store diagnostic info instead? Or store the unconverted data? For now, store converted.
+
             # Store a deep copy of the serializable data
             self._data[store_id] = copy.deepcopy(serializable_data)
-            log.debug(f"[MCP SET] Updated data for store: {store_id}")
+
+            # Imprimir apenas o valor de potência quando for atualizado no transformer-inputs-store
+            if store_id == 'transformer-inputs-store' and 'potencia_mva' in serializable_data:
+                potencia = serializable_data.get('potencia_mva')
+                print(f"POTÊNCIA SALVA NO MCP: {potencia}")
+
+            # NOTA: O cálculo automático de correntes foi removido daqui.
+            # A responsabilidade de calcular as correntes e incluir nos dados
+            # passados para set_data é agora do callback que origina a atualização.
+
+            # Notificar listeners com os dados atualizados
+            log.info(f"[MCP SET] Notificando listeners para store: {store_id}")
             self._notify_listeners(store_id, copy.deepcopy(self._data[store_id]))
+            log.info(f"[MCP SET] Notificação de listeners concluída para store: {store_id}")
+
         except Exception as e:
              log.error(f"[MCP SET] Error during conversion/setting data for {store_id}: {e}", exc_info=True)
              errors['_conversion_error'] = [f"Erro interno ao processar dados: {e}"]
@@ -269,16 +288,10 @@ class TransformerMCP:
         log.debug("[MCP] Calculating nominal currents...")
         log.info(f"[MCP Calc Currents] Dados de entrada: {transformer_data}")
 
-        # Se transformer_data for None ou vazio, criar um dicionário com valores padrão
+        # Se transformer_data for None ou vazio, retornar resultado vazio
         if not transformer_data:
-            log.warning("[MCP Calc Currents] Dados vazios! Criando dicionário com valores padrão")
-            transformer_data = {
-                'tipo_transformador': 'Trifásico',
-                'potencia_mva': 10.0,
-                'tensao_at': 138.0,
-                'tensao_bt': 13.8,
-                'tensao_terciario': 0.0
-            }
+            log.warning("[MCP Calc Currents] Dados vazios! Não é possível calcular correntes.")
+            return {k: None for k in ['corrente_nominal_at', 'corrente_nominal_at_tap_maior', 'corrente_nominal_at_tap_menor', 'corrente_nominal_bt', 'corrente_nominal_terciario']}
 
         # Extrair valores
         tipo = transformer_data.get('tipo_transformador', 'Trifásico')  # Default para Trifásico
@@ -293,18 +306,34 @@ class TransformerMCP:
 
         def safe_float(value):
             if value is None or value == '':
-                return 0  # Retorna 0 em vez de None para garantir o cálculo
+                return 0  # Retorna 0 para garantir o cálculo se valor ausente
             try:
-                # Tenta converter para float, substituindo vírgula por ponto se necessário
+                if isinstance(value, (int, float)): # Se já for numérico
+                    return float(value)
                 if isinstance(value, str):
-                    # Remover espaços e substituir vírgula por ponto
-                    cleaned_value = value.strip().replace(',','.')
+                    cleaned_value = value.strip().replace(',', '.')
+                    # Tentar extrair a parte real se for um número complexo como string
+                    # (ex: "60.0+0.0j" que pode vir de stores persistidos)
+                    if 'j' in cleaned_value or 'J' in cleaned_value:
+                        try:
+                            # Remover parênteses se existirem (ex: "(1+2j)")
+                            if cleaned_value.startswith('(') and cleaned_value.endswith(')'):
+                                cleaned_value = cleaned_value[1:-1]
+                            complex_num = complex(cleaned_value)
+                            log.debug(f"[MCP Calc Currents] Convertendo string complexa: '{value}' -> real: {complex_num.real}")
+                            return float(complex_num.real)
+                        except ValueError:
+                            # Se falhar como complexo, tenta como float normal (pode ser uma string com 'j' por acaso)
+                            log.warning(f"[MCP Calc Currents] Tentativa de converter como complexo falhou para '{value}', tentando como float.")
+                            pass # Continua para tentar como float normal
+
                     log.debug(f"[MCP Calc Currents] Convertendo string: '{value}' -> '{cleaned_value}'")
                     return float(cleaned_value)
+                # Tentar converter outros tipos (ex: numpy types se não forem tratados antes por convert_numpy_types)
                 return float(value)
             except (ValueError, TypeError) as e:
-                log.warning(f"[MCP Calc Currents] Erro ao converter valor: {value}, erro: {e}")
-                return 0  # Retorna 0 em vez de None para garantir o cálculo
+                log.warning(f"[MCP Calc Currents] Erro final ao converter valor '{value}' para float: {e}")
+                return 0  # Retorna 0 em caso de falha de conversão
 
         potencia = safe_float(potencia_str)
         tensao_at = safe_float(tensao_at_str)
@@ -313,30 +342,29 @@ class TransformerMCP:
         tensao_bt = safe_float(tensao_bt_str)
         tensao_terciario = safe_float(tensao_terciario_str)
 
+        # Imprimir o valor de potência usado para cálculo
+        print(f"POTÊNCIA USADA PARA CÁLCULO: {potencia} (valor original: {potencia_str})")
+
         # Verificação mais detalhada dos dados
         log.info(f"[MCP Calc Currents] Valores originais: tipo={tipo}, potencia_str={potencia_str}, " +
                 f"tensao_at_str={tensao_at_str}, tensao_bt_str={tensao_bt_str}, tensao_terciario_str={tensao_terciario_str}")
         log.info(f"[MCP Calc Currents] Valores convertidos: tipo={tipo}, potencia={potencia}, " +
                 f"tensao_at={tensao_at}, tensao_bt={tensao_bt}, tensao_terciario={tensao_terciario}")
 
-        # Usar valores padrão se necessário
+        # Verificar se temos valores válidos para o cálculo
         if potencia <= 0:
-            log.warning("[MCP Calc Currents] Potência inválida ou ausente. Usando valor padrão de 10 MVA.")
-            potencia = 10.0  # Valor padrão para permitir cálculo
+            log.warning("[MCP Calc Currents] Potência inválida ou ausente.")
+            return {k: None for k in ['corrente_nominal_at', 'corrente_nominal_at_tap_maior', 'corrente_nominal_at_tap_menor', 'corrente_nominal_bt', 'corrente_nominal_terciario']}
 
         if tensao_at <= 0:
-            log.warning("[MCP Calc Currents] Tensão AT inválida ou ausente. Usando valor padrão de 138 kV.")
-            tensao_at = 138.0  # Valor padrão para permitir cálculo
-
-        if tensao_at_maior <= 0:
-            tensao_at_maior = tensao_at  # Usa tensão AT como fallback
-
-        if tensao_at_menor <= 0:
-            tensao_at_menor = tensao_at  # Usa tensão AT como fallback
+            log.warning("[MCP Calc Currents] Tensão AT inválida ou ausente.")
+            result['corrente_nominal_at'] = None
+            result['corrente_nominal_at_tap_maior'] = None
+            result['corrente_nominal_at_tap_menor'] = None
 
         if tensao_bt <= 0:
-            log.warning("[MCP Calc Currents] Tensão BT inválida ou ausente. Usando valor padrão de 13.8 kV.")
-            tensao_bt = 13.8  # Valor padrão para permitir cálculo
+            log.warning("[MCP Calc Currents] Tensão BT inválida ou ausente.")
+            result['corrente_nominal_bt'] = None
 
         log.debug(f"[MCP Calc Currents] Valores finais para cálculo: Potencia: {potencia}, Tensao AT: {tensao_at}, Tensao BT: {tensao_bt}, Tensao Terciario: {tensao_terciario}")
 
@@ -346,66 +374,79 @@ class TransformerMCP:
 
             # Cálculo das correntes com base no tipo de transformador
             if tipo == 'Trifásico':
-                # Para transformadores trifásicos: I = S * 1000 / (√3 * V)
-                # Agora sempre calculamos as correntes, pois garantimos que os valores são válidos
-                result['corrente_nominal_at'] = round((potencia * 1000) / (sqrt3 * tensao_at), 2)
-                log.info(f"[MCP Calc Currents] Corrente AT calculada: {result['corrente_nominal_at']}A")
+                if tensao_at > 0:
+                    result['corrente_nominal_at'] = round((potencia * 1000) / (sqrt3 * tensao_at), 2)  # Já arredondado para 2 casas decimais
+                    print(f"CORRENTE AT CALCULADA: {result['corrente_nominal_at']}A (Potência: {potencia}, Tensão AT: {tensao_at})")
+                else:
+                    log.warning("[MCP Calc Currents] Tensão AT é zero ou inválida. Não é possível calcular corrente AT.")
+                    result['corrente_nominal_at'] = None
 
-                result['corrente_nominal_at_tap_maior'] = round((potencia * 1000) / (sqrt3 * tensao_at_maior), 2)
-                log.info(f"[MCP Calc Currents] Corrente AT tap maior calculada: {result['corrente_nominal_at_tap_maior']}A")
+                if tensao_at_maior > 0:
+                    result['corrente_nominal_at_tap_maior'] = round((potencia * 1000) / (sqrt3 * tensao_at_maior), 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente AT tap maior calculada: {result['corrente_nominal_at_tap_maior']}A")
+                else:
+                    result['corrente_nominal_at_tap_maior'] = None
 
-                result['corrente_nominal_at_tap_menor'] = round((potencia * 1000) / (sqrt3 * tensao_at_menor), 2)
-                log.info(f"[MCP Calc Currents] Corrente AT tap menor calculada: {result['corrente_nominal_at_tap_menor']}A")
+                if tensao_at_menor > 0:
+                    result['corrente_nominal_at_tap_menor'] = round((potencia * 1000) / (sqrt3 * tensao_at_menor), 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente AT tap menor calculada: {result['corrente_nominal_at_tap_menor']}A")
+                else:
+                    result['corrente_nominal_at_tap_menor'] = None
 
-                result['corrente_nominal_bt'] = round((potencia * 1000) / (sqrt3 * tensao_bt), 2)
-                log.info(f"[MCP Calc Currents] Corrente BT calculada: {result['corrente_nominal_bt']}A")
+                if tensao_bt > 0:
+                    result['corrente_nominal_bt'] = round((potencia * 1000) / (sqrt3 * tensao_bt), 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente BT calculada: {result['corrente_nominal_bt']}A")
+                else:
+                    log.warning("[MCP Calc Currents] Tensão BT é zero ou inválida. Não é possível calcular corrente BT.")
+                    result['corrente_nominal_bt'] = None
 
-                # Só calcula para terciário se a tensão for maior que zero
                 if tensao_terciario > 0:
-                    result['corrente_nominal_terciario'] = round((potencia * 1000) / (sqrt3 * tensao_terciario), 2)
+                    result['corrente_nominal_terciario'] = round((potencia * 1000) / (sqrt3 * tensao_terciario), 2)  # Já arredondado para 2 casas decimais
                     log.info(f"[MCP Calc Currents] Corrente Terciário calculada: {result['corrente_nominal_terciario']}A")
-            else:
-                # Para transformadores monofásicos: I = S * 1000 / V
-                # Agora sempre calculamos as correntes, pois garantimos que os valores são válidos
-                result['corrente_nominal_at'] = round((potencia * 1000) / tensao_at, 2)
-                log.info(f"[MCP Calc Currents] Corrente AT calculada (monofásico): {result['corrente_nominal_at']}A")
+                else:
+                    result['corrente_nominal_terciario'] = None
+            else: # Monofásico
+                if tensao_at > 0:
+                    result['corrente_nominal_at'] = round((potencia * 1000) / tensao_at, 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente AT calculada (monofásico): {result['corrente_nominal_at']}A")
+                else:
+                    log.warning("[MCP Calc Currents] Tensão AT é zero ou inválida (monofásico). Não é possível calcular corrente AT.")
+                    result['corrente_nominal_at'] = None
 
-                result['corrente_nominal_at_tap_maior'] = round((potencia * 1000) / tensao_at_maior, 2)
-                log.info(f"[MCP Calc Currents] Corrente AT tap maior calculada (monofásico): {result['corrente_nominal_at_tap_maior']}A")
+                if tensao_at_maior > 0:
+                    result['corrente_nominal_at_tap_maior'] = round((potencia * 1000) / tensao_at_maior, 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente AT tap maior calculada (monofásico): {result['corrente_nominal_at_tap_maior']}A")
+                else:
+                    result['corrente_nominal_at_tap_maior'] = None
 
-                result['corrente_nominal_at_tap_menor'] = round((potencia * 1000) / tensao_at_menor, 2)
-                log.info(f"[MCP Calc Currents] Corrente AT tap menor calculada (monofásico): {result['corrente_nominal_at_tap_menor']}A")
+                if tensao_at_menor > 0:
+                    result['corrente_nominal_at_tap_menor'] = round((potencia * 1000) / tensao_at_menor, 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente AT tap menor calculada (monofásico): {result['corrente_nominal_at_tap_menor']}A")
+                else:
+                    result['corrente_nominal_at_tap_menor'] = None
 
-                result['corrente_nominal_bt'] = round((potencia * 1000) / tensao_bt, 2)
-                log.info(f"[MCP Calc Currents] Corrente BT calculada (monofásico): {result['corrente_nominal_bt']}A")
+                if tensao_bt > 0:
+                    result['corrente_nominal_bt'] = round((potencia * 1000) / tensao_bt, 2)  # Já arredondado para 2 casas decimais
+                    log.info(f"[MCP Calc Currents] Corrente BT calculada (monofásico): {result['corrente_nominal_bt']}A")
+                else:
+                    log.warning("[MCP Calc Currents] Tensão BT é zero ou inválida (monofásico). Não é possível calcular corrente BT.")
+                    result['corrente_nominal_bt'] = None
 
-                # Só calcula para terciário se a tensão for maior que zero
                 if tensao_terciario > 0:
-                    result['corrente_nominal_terciario'] = round((potencia * 1000) / tensao_terciario, 2)
+                    result['corrente_nominal_terciario'] = round((potencia * 1000) / tensao_terciario, 2)  # Já arredondado para 2 casas decimais
                     log.info(f"[MCP Calc Currents] Corrente Terciário calculada (monofásico): {result['corrente_nominal_terciario']}A")
+                else:
+                    result['corrente_nominal_terciario'] = None
 
             # Resumo dos resultados
             log.info(f"[MCP Calc Currents] Resumo das correntes calculadas: {result}")
 
         except Exception as e:
-            log.error(f"[MCP Calc Currents] Erro no cálculo: {e}", exc_info=True)
-            # Em caso de erro, tenta um cálculo mais simples
-            try:
-                # Valores padrão para garantir algum resultado
-                if tipo == 'Trifásico':
-                    result['corrente_nominal_at'] = round((potencia * 1000) / (sqrt3 * tensao_at), 2)
-                    result['corrente_nominal_bt'] = round((potencia * 1000) / (sqrt3 * tensao_bt), 2)
-                else:
-                    result['corrente_nominal_at'] = round((potencia * 1000) / tensao_at, 2)
-                    result['corrente_nominal_bt'] = round((potencia * 1000) / tensao_bt, 2)
-
-                log.warning(f"[MCP Calc Currents] Cálculo simplificado após erro: AT={result['corrente_nominal_at']}A, BT={result['corrente_nominal_bt']}A")
-            except Exception as e2:
-                log.error(f"[MCP Calc Currents] Erro no cálculo simplificado: {e2}", exc_info=True)
-                # Valores fixos em caso de erro total
-                result['corrente_nominal_at'] = 100.0
-                result['corrente_nominal_bt'] = 1000.0
-                log.warning("[MCP Calc Currents] Usando valores fixos após falha total: AT=100A, BT=1000A")
+            log.error(f"[MCP Calc Currents] Erro inesperado no cálculo: {e}", exc_info=True)
+            # Em caso de erro inesperado, retornar todos os valores nulos
+            for key in result:
+                result[key] = None
+            log.warning("[MCP Calc Currents] Não foi possível calcular as correntes devido a erro inesperado. Retornando valores nulos.")
 
         log.debug(f"[MCP] Correntes calculadas: {result}")
         return result
@@ -421,20 +462,20 @@ class TransformerMCP:
         style_visible_block = {'display': 'block'} # Usado para a maioria
         style_visible_flex = {'display': 'flex', 'alignItems': 'center'} # Para SIL
 
-        # Valores default
+        # Valores default - agora todos visíveis por padrão
         styles = {
             'conexao_at_style': style_visible_block,
             'conexao_bt_style': style_visible_block,
             'conexao_terciario_style': style_visible_block,
-            'neutro_at_style': style_hidden, # Referente à coluna/div da classe neutro
-            'neutro_bt_style': style_hidden,
-            'neutro_ter_style': style_hidden,
-            'nbi_neutro_at_style': style_hidden, # Referente à coluna/div do NBI neutro
-            'nbi_neutro_bt_style': style_hidden,
-            'nbi_neutro_ter_style': style_hidden,
-            'sil_at_style': style_hidden, # Referente à coluna/div do SIL
-            'sil_bt_style': style_hidden,
-            'sil_terciario_style': style_hidden
+            'neutro_at_style': style_visible_block, # Referente à coluna/div da classe neutro - agora visível
+            'neutro_bt_style': style_visible_block, # Agora visível
+            'neutro_ter_style': style_visible_block, # Agora visível
+            'nbi_neutro_at_style': style_visible_block, # Referente à coluna/div do NBI neutro - agora visível
+            'nbi_neutro_bt_style': style_visible_block, # Agora visível
+            'nbi_neutro_ter_style': style_visible_block, # Agora visível
+            'sil_at_style': style_visible_flex, # Referente à coluna/div do SIL - agora visível
+            'sil_bt_style': style_visible_flex, # Agora visível
+            'sil_terciario_style': style_visible_flex # Agora visível
         }
 
         tipo = transformer_data.get('tipo_transformador')
@@ -451,27 +492,26 @@ class TransformerMCP:
         classe_bt = safe_float(transformer_data.get('classe_tensao_bt'))
         classe_terciario = safe_float(transformer_data.get('classe_tensao_terciario'))
 
-        if tipo == 'Monofásico':
-            # Esconder tudo relacionado a conexões e neutros
-            styles['conexao_at_style'] = style_hidden
-            styles['conexao_bt_style'] = style_hidden
-            styles['conexao_terciario_style'] = style_hidden
-            styles['neutro_at_style'] = style_hidden
-            styles['neutro_bt_style'] = style_hidden
-            styles['neutro_ter_style'] = style_hidden
-            styles['nbi_neutro_at_style'] = style_hidden
-            styles['nbi_neutro_bt_style'] = style_hidden
-            styles['nbi_neutro_ter_style'] = style_hidden
-        else: # Trifásico
-            # Mostrar campos de neutro se a conexão for Estrela COM Neutro ('estrela' no valor do dropdown)
-            if conexao_at == 'estrela': styles['neutro_at_style'] = style_visible_block; styles['nbi_neutro_at_style'] = style_visible_block
-            if conexao_bt == 'estrela': styles['neutro_bt_style'] = style_visible_block; styles['nbi_neutro_bt_style'] = style_visible_block
-            if conexao_terciario == 'estrela': styles['neutro_ter_style'] = style_visible_block; styles['nbi_neutro_ter_style'] = style_visible_block
+        # Removemos a lógica que esconde campos para transformadores monofásicos
+        # Todos os campos permanecem visíveis independentemente do tipo de transformador
 
-        # Mostrar SIL se classe >= 170 kV
-        if classe_at is not None and classe_at >= 170: styles['sil_at_style'] = style_visible_flex
-        if classe_bt is not None and classe_bt >= 170: styles['sil_bt_style'] = style_visible_flex
-        if classe_terciario is not None and classe_terciario >= 170: styles['sil_terciario_style'] = style_visible_flex
+        # Mantemos as conexões visíveis mesmo para monofásicos
+        styles['conexao_at_style'] = style_visible_block
+        styles['conexao_bt_style'] = style_visible_block
+        styles['conexao_terciario_style'] = style_visible_block
+
+        # Mantemos os campos de neutro visíveis independentemente da conexão
+        styles['neutro_at_style'] = style_visible_block
+        styles['neutro_bt_style'] = style_visible_block
+        styles['neutro_ter_style'] = style_visible_block
+        styles['nbi_neutro_at_style'] = style_visible_block
+        styles['nbi_neutro_bt_style'] = style_visible_block
+        styles['nbi_neutro_ter_style'] = style_visible_block
+
+        # Mantemos os campos SIL/IM visíveis independentemente da classe de tensão
+        styles['sil_at_style'] = style_visible_flex
+        styles['sil_bt_style'] = style_visible_flex
+        styles['sil_terciario_style'] = style_visible_flex
 
         log.debug(f"[MCP] Estilos calculados: {styles}")
         return styles
@@ -494,10 +534,14 @@ class TransformerMCP:
     def _notify_listeners(self, store_id: str, data: Dict[str, Any]) -> None:
         """ Notify all listeners for a specific store. """
         if store_id in self._listeners:
-            log.debug(f"MCP Notifying {len(self._listeners[store_id])} listeners for store: {store_id}")
+            log.info(f"[MCP NOTIFY] Notificando {len(self._listeners[store_id])} listeners para store: {store_id}")
             for callback_func in self._listeners[store_id]:
-                try: callback_func(data) # Passa os dados atuais do store
-                except Exception as e: log.error(f"MCP Error in listener for store {store_id}: {e}", exc_info=True)
+                try:
+                    log.info(f"[MCP NOTIFY] Chamando listener para store: {store_id}")
+                    callback_func(data) # Passa os dados atuais do store
+                    log.info(f"[MCP NOTIFY] Listener para store {store_id} executado com sucesso")
+                except Exception as e:
+                    log.error(f"[MCP NOTIFY] Erro em listener para store {store_id}: {e}", exc_info=True)
 
     # --- Data Validation Method Stub ---
 

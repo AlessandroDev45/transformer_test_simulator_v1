@@ -98,16 +98,14 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
     elif isinstance(obj, np.integer):
         debug_log(f"Convertendo np.integer {obj} -> int")
         return int(obj)
-    elif isinstance(obj, np.floating):
-        # Trata NaN e Infinito
-        if np.isnan(obj):
-            debug_log(f"Convertendo np.nan -> None")
-            return None  # Converte NaN para None (serializável)
-        if np.isinf(obj):
-            debug_log(f"Convertendo np.inf -> None")
-            return None  # Converte Inf para None
-        debug_log(f"Convertendo np.floating {obj} -> float")
-        return float(obj)
+    elif isinstance(obj, (np.floating, float, int)):
+        # Trata NaN e Infinito para np.floating
+        if isinstance(obj, np.floating) and (np.isnan(obj) or np.isinf(obj)):
+            debug_log(f"Convertendo np.nan/np.inf -> None")
+            return None  # Converte NaN/Inf para None (serializável)
+        # Para float e int normais, retorna diretamente sem conversão
+        debug_log(f"Mantendo/convertendo número {obj} -> {type(obj).__name__}")
+        return obj if isinstance(obj, (float, int)) else float(obj)
     elif isinstance(obj, np.ndarray):
         # Converte array para lista, aplicando recursivamente a conversão
         debug_log(f"Convertendo np.ndarray shape={obj.shape}, dtype={obj.dtype}")
@@ -139,7 +137,11 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
         debug_log(f"Convertendo set com {len(obj)} itens -> lista")
         return list(obj)  # Converte set para lista
     elif isinstance(obj, complex) or (hasattr(obj, 'imag') and hasattr(obj, 'real')):
-        # Converte números complexos para string
+        # Para números complexos, retorna apenas a parte real se a parte imaginária for zero
+        if hasattr(obj, 'imag') and obj.imag == 0:
+            debug_log(f"Convertendo complex com imag=0 -> float")
+            return float(obj.real)
+        # Caso contrário, converte para string
         debug_log(f"Convertendo complex -> string")
         return f"{obj.real}+{obj.imag}j"
 
@@ -421,7 +423,11 @@ def fix_store_data(store_data: Dict[str, Any]) -> Dict[str, Any]:
                                 debug_log(f"ERRO ao converter np.ndarray para lista: {e}", "warning")
                                 return str(obj)
                         elif isinstance(obj, complex) or (hasattr(obj, 'imag') and hasattr(obj, 'real')):
-                            # Converte números complexos para string
+                            # Para números complexos, retorna apenas a parte real se a parte imaginária for zero
+                            if hasattr(obj, 'imag') and obj.imag == 0:
+                                debug_log(f"Convertendo complex com imag=0 -> float")
+                                return float(obj.real)
+                            # Caso contrário, converte para string
                             debug_log(f"Convertendo complex -> string")
                             return f"{obj.real}+{obj.imag}j"
                         elif str(type(obj).__module__).startswith('numpy'):

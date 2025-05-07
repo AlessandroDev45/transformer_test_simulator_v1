@@ -128,6 +128,35 @@ try:
     from app_core.transformer_mcp import TransformerMCP
     app.mcp = TransformerMCP() # Atribui à instância do app
     log.info("TransformerMCP (app.mcp) inicializado com sucesso.")
+
+    # Verificar se o MCP foi inicializado corretamente
+    if app.mcp is not None:
+        # Verificar se os dados padrão foram carregados
+        transformer_data = app.mcp.get_data('transformer-inputs-store')
+        if transformer_data:
+            log.info(f"MCP inicializado com dados padrão: {transformer_data}")
+
+            # Calcular correntes nominais
+            try:
+                calculated_currents = app.mcp.calculate_nominal_currents(transformer_data)
+                log.info(f"Correntes calculadas na inicialização: {calculated_currents}")
+
+                # Atualizar os dados com as correntes calculadas
+                transformer_data.update({
+                    'corrente_nominal_at': calculated_currents.get('corrente_nominal_at'),
+                    'corrente_nominal_at_tap_maior': calculated_currents.get('corrente_nominal_at_tap_maior'),
+                    'corrente_nominal_at_tap_menor': calculated_currents.get('corrente_nominal_at_tap_menor'),
+                    'corrente_nominal_bt': calculated_currents.get('corrente_nominal_bt'),
+                    'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
+                })
+
+                # Atualizar o MCP com os dados atualizados
+                app.mcp.set_data('transformer-inputs-store', transformer_data)
+                log.info("MCP atualizado com correntes calculadas na inicialização")
+            except Exception as e:
+                log.error(f"Erro ao calcular correntes na inicialização: {e}", exc_info=True)
+        else:
+            log.warning("MCP inicializado, mas sem dados padrão")
 except ImportError as e:
     log.critical(f"FALHA CRÍTICA ao importar TransformerMCP: {e}", exc_info=True)
     app.mcp = None
@@ -170,10 +199,11 @@ if not layout_creation_failed:
     try:
         # Modules with @callback decorators (imported for side effects)
         decorated_modules = [
+            # 'transformer_inputs' removido para evitar importação com erro
+            # 'short_circuit' removido para evitar importação com erro
             'navigation_dcc_links',
             'losses',
             'dieletric_analysis',
-            'short_circuit',
             'temperature_rise',
             'report_generation',
             'dielectric_analysis_comprehensive',
@@ -185,7 +215,9 @@ if not layout_creation_failed:
             try:
                 module_path = f'callbacks.{module_name}'
                 log.debug(f"Importando módulo de callback decorado: {module_path}")
+
                 __import__(module_path)
+
                 log.debug(f"Módulo importado: {module_path}")
             except ImportError as e:
                 log.error(f"Erro ao importar módulo de callback {module_name}: {e}", exc_info=True)
@@ -194,7 +226,8 @@ if not layout_creation_failed:
 
         # Explicitly register callbacks that need app instance
         explicit_registrations = {
-            # 'transformer_inputs': 'register_transformer_inputs_callbacks', # Removido devido a circular import
+            'transformer_inputs_fix': 'register_transformer_inputs_callbacks', # Usando a versão corrigida
+            'short_circuit_fix': 'register_short_circuit_callbacks', # Usando a versão corrigida
             'impulse': 'register_impulse_callbacks',
             'applied_voltage': 'register_applied_voltage_callbacks',
             'induced_voltage': 'register_induced_voltage_callbacks',
@@ -205,8 +238,7 @@ if not layout_creation_failed:
             'client_side_callbacks': 'register_client_side_callbacks' # Client-side
         }
 
-        # Log para indicar que os callbacks de transformer_inputs já estão registrados via decorador
-        log.info("Callbacks do módulo transformer_inputs já registrados via decoradores @app.callback.")
+        # Vamos registrar os callbacks explicitamente
         for module_name, reg_func_name in explicit_registrations.items():
             try:
                 module_path = f'callbacks.{module_name}'
@@ -280,10 +312,10 @@ if __name__ == '__main__':
 
         try:
             app.run(
-                debug=debug_mode,
+                debug=False,  # Forçar debug=False para evitar reinicialização do MCP
                 host=host,
                 port=port,
-                use_reloader=debug_mode,  # Usa o reloader apenas se debug=True
+                use_reloader=False,  # Desativar reloader para evitar reinicialização do MCP
                 threaded=False  # Ajuda a mitigar erros de socket, especialmente em Windows
             )
             log.info("Servidor Dash encerrado.")

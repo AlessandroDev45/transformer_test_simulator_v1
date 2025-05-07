@@ -120,6 +120,8 @@ def create_transformer_inputs_layout():
     transformer_inputs_layout = html.Div([
         # Stores globais já estão no main_layout
 
+        # Botões de forçar atualização do MCP e limpar cache local foram removidos
+
         # Divs ocultas para compatibilidade com o callback global_updates
         html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
         html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
@@ -355,11 +357,11 @@ def create_transformer_inputs_layout():
                                 dbc.Label("NBI (kV):", style=LABEL_STYLE, html_for='nbi_at'),
                                 dcc.Dropdown(id='nbi_at', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                            # SIL (visibilidade controlada)
+                            # SIL/IM (agora visível por padrão)
                             dbc.Col(id="sil_at_col", children=[
-                                dbc.Label("SIL (kV):", style=LABEL_STYLE, html_for='sil_at'),
+                                dbc.Label("SIL/IM (kV):", style=LABEL_STYLE, html_for='sil_at'),
                                 dcc.Dropdown(id='sil_at', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         # Conexão e Classe Neutro lado a lado
@@ -373,19 +375,19 @@ def create_transformer_inputs_layout():
                                     value='estrela', # Default AT para estrela (Yn)
                                     clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type='local', className="dash-dropdown-dark")
                             ], width=6, id='conexao_at_col'),
-                            # Classe Neutro (visibilidade controlada)
+                            # Classe Neutro (agora visível por padrão)
                             dbc.Col(id='tensao_bucha_neutro_at_col', children=[
                                 dbc.Label("Classe Neutro (kV):", style=LABEL_STYLE, html_for='tensao_bucha_neutro_at'),
                                 dbc.Input(type="number", id="tensao_bucha_neutro_at", style=INPUT_STYLE, persistence=True, persistence_type='local', step=0.1, max=999.9)
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
-                        # NBI Neutro (visibilidade controlada)
+                        # NBI/BIL Neutro (agora visível por padrão)
                         dbc.Row(id='nbi_neutro_at_col', children=[
                             dbc.Col([
-                                dbc.Label("NBI Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_at'),
+                                dbc.Label("NBI/BIL Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_at'),
                                 dcc.Dropdown(id='nbi_neutro_at', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                        ], className="g-3 mb-3", style={'display': 'none'}),
+                        ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         html.Div("TAPS AT", className="mb-3 mt-3", style=SUBSECTION_TITLE_STYLE),
                         # Tensões Tap+ e Tap- lado a lado
@@ -471,11 +473,11 @@ def create_transformer_inputs_layout():
                                 dbc.Label("NBI (kV):", style=LABEL_STYLE, html_for='nbi_bt'),
                                 dcc.Dropdown(id='nbi_bt', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                            # SIL (visibilidade controlada)
+                            # SIL/IM (agora visível por padrão)
                             dbc.Col(id="sil_bt_col", children=[
-                                dbc.Label("SIL (kV):", style=LABEL_STYLE, html_for='sil_bt'),
+                                dbc.Label("SIL/IM (kV):", style=LABEL_STYLE, html_for='sil_bt'),
                                 dcc.Dropdown(id='sil_bt', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         # Conexão e Classe Neutro lado a lado
@@ -489,19 +491,19 @@ def create_transformer_inputs_layout():
                                     value='triangulo', # Default BT para triângulo
                                     clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type='local', className="dash-dropdown-dark")
                             ], width=6, id='conexao_bt_col'),
-                            # Classe Neutro (visibilidade controlada)
+                            # Classe Neutro (agora visível por padrão)
                             dbc.Col(id='tensao_bucha_neutro_bt_col', children=[
                                 dbc.Label("Classe Neutro (kV):", style=LABEL_STYLE, html_for='tensao_bucha_neutro_bt'),
                                 dbc.Input(type="number", id="tensao_bucha_neutro_bt", style=INPUT_STYLE, persistence=True, persistence_type='local', step=0.1, max=999.9)
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
-                        # NBI Neutro (visibilidade controlada)
+                        # NBI/BIL Neutro (agora visível por padrão)
                         dbc.Row(id='nbi_neutro_bt_col', children=[
                             dbc.Col([
-                                dbc.Label("NBI Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_bt'),
+                                dbc.Label("NBI/BIL Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_bt'),
                                 dcc.Dropdown(id='nbi_neutro_bt', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                        ], className="g-3 mb-3", style={'display': 'none'}),
+                        ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         html.Div("TENSÕES ENSAIO BT", className="mb-3 mt-3", style=SUBSECTION_TITLE_STYLE),
                         dbc.Row([
@@ -542,11 +544,11 @@ def create_transformer_inputs_layout():
                                 dbc.Label("NBI (kV):", style=LABEL_STYLE, html_for='nbi_terciario'),
                                 dcc.Dropdown(id='nbi_terciario', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                            # SIL (visibilidade controlada)
+                            # SIL/IM (agora visível por padrão)
                             dbc.Col(id="sil_terciario_col", children=[
-                                dbc.Label("SIL (kV):", style=LABEL_STYLE, html_for='sil_terciario'),
+                                dbc.Label("SIL/IM (kV):", style=LABEL_STYLE, html_for='sil_terciario'),
                                 dcc.Dropdown(id='sil_terciario', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         # Conexão e Classe Neutro lado a lado
@@ -560,19 +562,19 @@ def create_transformer_inputs_layout():
                                     value=' ', # Default Terciário como vazio
                                     clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type='local', className="dash-dropdown-dark")
                             ], width=6, id='conexao_terciario_col'),
-                            # Classe Neutro (visibilidade controlada)
+                            # Classe Neutro (agora visível por padrão)
                             dbc.Col(id='tensao_bucha_neutro_terciario_col', children=[
                                 dbc.Label("Classe Neutro (kV):", style=LABEL_STYLE, html_for='tensao_bucha_neutro_terciario'),
                                 dbc.Input(type="number", id="tensao_bucha_neutro_terciario", style=INPUT_STYLE, persistence=True, persistence_type='local', step=0.1, max=999.9)
-                            ], width=6, style={'display': 'none'}),
+                            ], width=6),
                         ], className="g-3 mb-3"),
-                        # NBI Neutro (visibilidade controlada)
+                        # NBI/BIL Neutro (agora visível por padrão)
                         dbc.Row(id='nbi_neutro_terciario_col', children=[
                             dbc.Col([
-                                dbc.Label("NBI Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_terciario'),
+                                dbc.Label("NBI/BIL Neutro (kV):", style=LABEL_STYLE, html_for='nbi_neutro_terciario'),
                                 dcc.Dropdown(id='nbi_neutro_terciario', options=[], style=DROPDOWN_STYLE, persistence=False, className="dash-dropdown-dark")
                             ], width=6),
-                        ], className="g-3 mb-3", style={'display': 'none'}),
+                        ], className="g-3 mb-3"),
                         html.Hr(style={"margin": "0.8rem 0", "borderTop": f"2px solid {COLORS.get('border_strong', '#adb5bd')}"}),
                         html.Div("TENSÕES ENSAIO TERCIÁRIO", className="mb-3 mt-3", style=SUBSECTION_TITLE_STYLE),
                         dbc.Row([
