@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: transformer-test-simulator
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./assets:/app/assets
+      - ./defaults:/app/defaults
+    environment:
+      - PORT=8050
+      - HOST=0.0.0.0
+      - DEBUG_MODE=false
+    restart: unless-stopped

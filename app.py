@@ -137,15 +137,30 @@ log.info(f"Pasta assets: {config.ASSETS_DIR}")
 try:
     from app_core.transformer_mcp import TransformerMCP
 
-    app.mcp = TransformerMCP()  # Atribui à instância do app
+    app.mcp = TransformerMCP(load_from_disk=True)  # Atribui à instância do app e carrega dados do disco
     log.info("TransformerMCP (app.mcp) inicializado com sucesso.")
+
+    # Inicializar o MCP com dados padrão do arquivo transformer.json
+    try:
+        from app_core.startup import seed_mcp
+
+        # Tentar carregar dados padrão do arquivo JSON
+        seed_success = seed_mcp(app_instance=app)
+        if seed_success:
+            log.info("MCP inicializado com dados padrão do arquivo transformer.json")
+        else:
+            log.warning("Não foi possível inicializar o MCP com dados padrão do arquivo transformer.json")
+    except ImportError as e:
+        log.error(f"Erro ao importar módulo de startup: {e}", exc_info=True)
+    except Exception as e:
+        log.error(f"Erro ao inicializar MCP com dados padrão: {e}", exc_info=True)
 
     # Verificar se o MCP foi inicializado corretamente
     if app.mcp is not None:
         # Verificar se os dados padrão foram carregados
         transformer_data = app.mcp.get_data("transformer-inputs-store")
         if transformer_data:
-            log.info(f"MCP inicializado com dados padrão: {transformer_data}")
+            log.info(f"MCP inicializado com dados: {transformer_data}")
 
             # Calcular correntes nominais
             try:
@@ -388,6 +403,20 @@ if __name__ == "__main__":
 
         try:
             # Sempre desativar debug e reloader para evitar problemas com o MCP
+            # Register a function to save MCP state on exit
+            import atexit
+
+            def save_mcp_on_exit():
+                if hasattr(app, 'mcp') and app.mcp is not None:
+                    log.info("Saving MCP state to disk before exit...")
+                    try:
+                        app.mcp.save_to_disk(force=True)
+                        log.info("MCP state saved successfully on exit")
+                    except Exception as e:
+                        log.error(f"Error saving MCP state on exit: {e}", exc_info=True)
+
+            atexit.register(save_mcp_on_exit)
+
             app.run(
                 debug=False,  # Forçar debug=False para evitar reinicialização do MCP
                 host=host,

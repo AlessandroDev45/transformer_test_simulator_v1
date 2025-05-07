@@ -1,5 +1,7 @@
 # Simulador de Testes de Transformadores
 
+![CI/CD Pipeline](https://github.com/AlessandroDev45/transformer_test_simulator_v1/actions/workflows/ci.yml/badge.svg)
+
 Um aplicativo web interativo para simulação e análise de testes em transformadores de potência, baseado nas normas IEC, IEEE e ABNT.
 
 ## Descrição
@@ -36,11 +38,14 @@ O simulador oferece os seguintes módulos de análise:
 ```bash
 transformer_test_simulator_v1/
 ├── app.py                  # Ponto de entrada da aplicação
+├── server.py               # Ponto de entrada alternativo com inicialização do MCP
 ├── config.py               # Configurações globais
+├── schemas.py              # Esquemas Pydantic para validação de dados
 ├── app_core/               # Núcleo da aplicação
 │   ├── calculations.py     # Funções de cálculo principais
 │   ├── data_models.py      # Modelos de dados
 │   ├── standards.py        # Implementação das normas técnicas
+│   ├── startup.py          # Inicialização do MCP com dados padrão
 │   └── transformer_mcp.py  # Model-Controller-Presenter para transformadores
 ├── assets/                 # Arquivos estáticos (CSS, imagens)
 │   ├── help_docs/          # Documentação de ajuda
@@ -62,22 +67,35 @@ transformer_test_simulator_v1/
 │   ├── validators.py
 │   ├── global_stores.py
 │   └── help_button.py
+├── defaults/               # Valores padrão para inicialização
+│   └── transformer.json    # Dados padrão do transformador
 ├── layouts/                # Layouts das diferentes seções
 │   ├── main_layout.py
 │   ├── transformer_inputs.py
 │   ├── losses.py
 │   └── ...
+├── tests/                  # Testes automatizados
+│   ├── test_transformer_mcp.py
+│   ├── test_startup.py
+│   └── test_schemas.py
 ├── utils/                  # Utilitários diversos
 │   ├── constants.py        # Constantes globais
 │   ├── db_manager.py       # Gerenciamento de banco de dados
 │   ├── logger.py           # Configuração de logs
 │   ├── store_diagnostics.py # Diagnóstico de armazenamento
+│   ├── mcp_utils.py        # Utilitários para o MCP
 │   └── styles.py           # Estilos e temas
 ├── data/                   # Diretório para armazenamento de dados
 │   ├── standards.db        # Banco de dados de normas
-│   └── test_sessions.db    # Banco de dados de sessões de teste
+│   ├── test_sessions.db    # Banco de dados de sessões de teste
+│   └── mcp_state/          # Estado do MCP persistido em disco
 ├── docs/                   # Documentação adicional
 │   └── formulas_*.md       # Documentação de fórmulas
+├── .github/workflows/      # Configuração de CI/CD
+│   └── ci.yml              # Workflow de CI/CD
+├── Dockerfile              # Configuração para build Docker
+├── docker-compose.yml      # Configuração para Docker Compose
+├── pytest.ini              # Configuração para testes com pytest
 └── requirements.txt        # Dependências do projeto
 ```
 
@@ -94,6 +112,8 @@ transformer_test_simulator_v1/
 - Outras dependências listadas em `requirements.txt`
 
 ## Instalação
+
+### Método 1: Instalação Local
 
 1. Clone o repositório:
 
@@ -118,13 +138,42 @@ transformer_test_simulator_v1/
 4. Execute a aplicação:
 
    ```bash
-   python app.py
+   python server.py  # Usa o ponto de entrada com inicialização do MCP
+   # ou
+   python app.py     # Ponto de entrada tradicional
    ```
 
 5. Acesse a aplicação no navegador:
 
    ```text
    http://127.0.0.1:8050/
+   ```
+
+### Método 2: Usando Docker
+
+1. Clone o repositório:
+
+   ```bash
+   git clone https://github.com/AlessandroDev45/transformer_test_simulator_v1.git
+   cd transformer_test_simulator_v1
+   ```
+
+2. Construa e inicie o contêiner com Docker Compose:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Acesse a aplicação no navegador:
+
+   ```text
+   http://127.0.0.1:8050/
+   ```
+
+4. Para parar a aplicação:
+
+   ```bash
+   docker-compose down
    ```
 
 ## Uso
@@ -154,6 +203,26 @@ transformer_test_simulator_v1/
 - **IEEE C57.12.00**: Norma americana para transformadores de potência
 - **IEC 60076**: Norma internacional para transformadores de potência
 
+## Testes
+
+O projeto utiliza pytest para testes automatizados. Para executar os testes:
+
+```bash
+# Instalar dependências de teste
+pip install pytest pytest-cov
+
+# Executar todos os testes
+pytest
+
+# Executar testes com cobertura
+pytest --cov=. --cov-report=html
+
+# Executar testes específicos
+pytest tests/test_transformer_mcp.py
+```
+
+Os relatórios de cobertura de testes são gerados na pasta `htmlcov/`.
+
 ## Contribuição
 
 Contribuições são bem-vindas! Para contribuir:
@@ -163,6 +232,8 @@ Contribuições são bem-vindas! Para contribuir:
 3. Faça commit das suas alterações (`git commit -m 'Adiciona nova funcionalidade'`)
 4. Faça push para a branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
+
+Certifique-se de que seus testes passam e que a cobertura de testes é mantida ou melhorada.
 
 ## Licença
 
