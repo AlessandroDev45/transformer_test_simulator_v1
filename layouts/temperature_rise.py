@@ -441,14 +441,18 @@ def create_temperature_rise_layout():
                                                             # Diagrama explicativo
                                                             html.Div(
                                                                 [
-                                                                    html.Img(
-                                                                        src="assets/temp_rise_diagram.png",
-                                                                        alt="Diagrama de Elevação de Temperatura",
+                                                                    html.Div(
+                                                                        [
+                                                                            html.I(className="fas fa-temperature-high fa-4x"),
+                                                                            html.P("Diagrama de Elevação de Temperatura", className="mt-2"),
+                                                                        ],
+                                                                        className="text-center p-4",
                                                                         style={
                                                                             "width": "100%",
                                                                             "maxWidth": "500px",
                                                                             "margin": "0 auto",
                                                                             "display": "block",
+                                                                            "color": "#aaa",
                                                                         },
                                                                     )
                                                                 ],

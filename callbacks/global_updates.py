@@ -75,11 +75,21 @@ def diagnose_and_fix_mcp(pathname):
     info_panel_outputs,
     Input("transformer-inputs-store", "data"),  # Acionado quando o store (e portanto o MCP) muda
     Input("url", "pathname"),  # Adicionado para detectar mudanças de rota
+    # Adicionamos outros stores como Input para garantir que o painel recarregue quando qualquer store mudar
+    Input("losses-store", "data"),
+    Input("impulse-store", "data"),
+    Input("dieletric-analysis-store", "data"),
+    Input("applied-voltage-store", "data"),
+    Input("induced-voltage-store", "data"),
+    Input("short-circuit-store", "data"),
+    Input("temperature-rise-store", "data"),
     prevent_initial_call="initial_duplicate",  # Permite rodar na carga inicial para exibir dados padrão/carregados
 )
 def global_updates_all_transformer_info_panels(
-    store_data, pathname
-):  # Recebe dados do store como trigger
+    transformer_store_data, pathname, losses_store_data, impulse_store_data,
+    dieletric_store_data, applied_voltage_store_data, induced_voltage_store_data,
+    short_circuit_store_data, temperature_rise_store_data
+):  # Recebe dados de todos os stores como trigger
     """
     Atualiza TODOS os painéis de informação do transformador lendo do MCP.
     """
@@ -100,8 +110,8 @@ def global_updates_all_transformer_info_panels(
     log.debug(f"[{module_name}] Trigger: {triggered_id}")
 
     # Verificar dados do store recebido como trigger
-    if not store_data:
-        log.debug(f"[{module_name}] Nenhum dado recebido do store como trigger")
+    if not transformer_store_data:
+        log.debug(f"[{module_name}] Nenhum dado recebido do transformer-inputs-store como trigger")
 
     if app.mcp is None:
         log.error(f"[{module_name}] MCP não disponível. Não é possível atualizar painéis.")
@@ -125,10 +135,10 @@ def global_updates_all_transformer_info_panels(
 
     # Verificar se temos dados essenciais no store
     store_has_essential_data = (
-        isinstance(store_data, dict)
-        and store_data.get("potencia_mva") is not None
-        and store_data.get("tensao_at") is not None
-        and store_data.get("tensao_bt") is not None
+        isinstance(transformer_store_data, dict)
+        and transformer_store_data.get("potencia_mva") is not None
+        and transformer_store_data.get("tensao_at") is not None
+        and transformer_store_data.get("tensao_bt") is not None
     )
 
     if has_essential_data:
@@ -137,12 +147,12 @@ def global_updates_all_transformer_info_panels(
         )
     elif store_has_essential_data:
         log.debug(
-            f"[{module_name}] Store contém dados essenciais: potencia={store_data.get('potencia_mva')}, tensao_at={store_data.get('tensao_at')}, tensao_bt={store_data.get('tensao_bt')}"
+            f"[{module_name}] Store contém dados essenciais: potencia={transformer_store_data.get('potencia_mva')}, tensao_at={transformer_store_data.get('tensao_at')}, tensao_bt={transformer_store_data.get('tensao_bt')}"
         )
 
         # IMPORTANTE: Usar patch_mcp em vez de set_data para evitar sobrescrever dados válidos com None
         # Isso garante que apenas campos não vazios sejam atualizados
-        if patch_mcp("transformer-inputs-store", store_data, app):
+        if patch_mcp("transformer-inputs-store", transformer_store_data, app):
             log.debug(f"[{module_name}] MCP atualizado com dados não vazios do store")
             # Obter os dados atualizados do MCP
             transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
@@ -153,9 +163,9 @@ def global_updates_all_transformer_info_panels(
         log.debug(f"[{module_name}] Dados essenciais ausentes no MCP e no store")
 
         # Verificar se temos dados no store que podemos usar
-        if isinstance(store_data, dict) and store_data:
+        if isinstance(transformer_store_data, dict) and transformer_store_data:
             # Usar os dados do store diretamente para exibição, mas NÃO atualizar o MCP
-            transformer_data_mcp = store_data
+            transformer_data_mcp = transformer_store_data
             log.debug(
                 f"[{module_name}] Usando dados do store apenas para exibição, sem atualizar o MCP"
             )

@@ -22,17 +22,29 @@ from layouts import COLORS, COMPONENTS, TYPOGRAPHY
 
 def create_input_row(label, id, placeholder, input_type="number"):
     """Função auxiliar para criar linhas de input com estilo consistente"""
+    # Importar estilos padronizados
+    from layouts import COMPONENTS, TYPOGRAPHY
+
+    # Definir estilos locais para evitar duplicação
+    label_style = {
+        "fontSize": "0.7rem",
+        "marginBottom": "0",
+        "fontWeight": "bold",
+        "color": COLORS["text_light"],
+    }
+
+    input_style = {
+        "fontSize": "0.7rem",
+        "height": "22px",
+        "padding": "0 0.3rem"
+    }
+
     return dbc.Row(
         [
             dbc.Col(
                 dbc.Label(
                     label,
-                    style={
-                        "fontSize": "0.7rem",
-                        "marginBottom": "0",
-                        "fontWeight": "bold",
-                        "color": COLORS["text_light"],
-                    },
+                    style=label_style,
                 ),
                 width=7,
                 className="text-end",
@@ -44,7 +56,7 @@ def create_input_row(label, id, placeholder, input_type="number"):
                     placeholder=placeholder,
                     persistence=True,
                     persistence_type="local",
-                    style={"fontSize": "0.7rem", "height": "22px", "padding": "0 0.3rem"},
+                    style=input_style,
                 ),
                 width=5,
             ),

@@ -361,15 +361,21 @@ def applied_voltage_calculate_and_analyze(
 
     # --- Cálculos ---
     try:
-        # Converte inputs validados
-        cap_at = num_inputs["Cap. AT (pF)"]
-        cap_bt = num_inputs["Cap. BT (pF)"]
+        # Converte inputs validados com valores padrão para capacitâncias
+        cap_at = num_inputs["Cap. AT (pF)"] or 1000  # Valor padrão de 1000 pF se for None
+        cap_bt = num_inputs["Cap. BT (pF)"] or 1000  # Valor padrão de 1000 pF se for None
         tensao_at_kv = num_inputs["Tensão AT (kV)"]
         tensao_bt_kv = num_inputs["Tensão BT (kV)"]
         freq_hz = num_inputs["Frequência (Hz)"]
         # Usa valores já tratados para terciário
-        cap_ter = cap_ter_pf_val
+        cap_ter = cap_ter_pf_val or 0  # Garante que não seja None
         tensao_ter_kv = tensao_ter_kv  # Já é float ou 0.0
+
+        # Log dos valores padrão usados
+        if num_inputs["Cap. AT (pF)"] is None or num_inputs["Cap. AT (pF)"] == 0:
+            log.info("[CALC Applied] Usando valor padrão para Cap. AT (pF): 1000 pF")
+        if num_inputs["Cap. BT (pF)"] is None or num_inputs["Cap. BT (pF)"] == 0:
+            log.info("[CALC Applied] Usando valor padrão para Cap. BT (pF): 1000 pF")
 
         # Registra os valores que serão usados nos cálculos
         print("=" * 80)

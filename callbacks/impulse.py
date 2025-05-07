@@ -1506,35 +1506,46 @@ def create_waveform_analysis_table(
         Output("gap-distance", "value"),
         Output("si-capacitor-value", "value"),
     ],
-    [Input("url", "pathname")],
+    [
+        Input("url", "pathname"),
+        Input("impulse-store", "data"),  # Adicionado para detectar mudanças no store
+    ],
     prevent_initial_call=False,  # Executa na carga inicial
 )
-def load_impulse_data_on_page_load(pathname):
+def load_impulse_data_on_page_load(pathname, impulse_store_data):
     """
-    Carrega os dados iniciais do módulo de impulso quando a página é carregada.
-    Este callback é executado quando a URL muda para '/impulso'.
+    Carrega os dados iniciais do módulo de impulso quando a página é carregada ou o store muda.
+    Este callback é executado quando a URL muda para '/impulso' ou quando o store é atualizado.
     """
-    log.info(f"[IMPULSE LOAD] Callback de carregamento inicial acionado. Pathname: {pathname}")
+    # Verificar qual foi o trigger
+    triggered_id = ctx.triggered_id if ctx.triggered else None
+    log.info(f"[IMPULSE LOAD] Callback de carregamento acionado. Trigger: {triggered_id}, Pathname: {pathname}")
 
-    # Verifica se estamos na página correta
-    if pathname is None:
-        raise PreventUpdate
+    # Se o trigger for o store, usamos os dados do store diretamente
+    if triggered_id == "impulse-store" and impulse_store_data:
+        log.info(f"[IMPULSE LOAD] Carregando dados do store que foi atualizado")
+        # Continua com o processamento abaixo, usando impulse_store_data
+        impulse_data = impulse_store_data
+    else:
+        # Se o trigger for a URL, verificamos se estamos na página correta
+        if pathname is None:
+            raise PreventUpdate
 
-    clean_path = normalize_pathname(pathname)
-    if clean_path != ROUTE_IMPULSE:
-        log.debug(
-            f"[IMPULSE LOAD] Não estamos na página de impulso (pathname={pathname}). Prevenindo atualização."
-        )
-        raise PreventUpdate
+        clean_path = normalize_pathname(pathname)
+        if clean_path != ROUTE_IMPULSE:
+            log.debug(
+                f"[IMPULSE LOAD] Não estamos na página de impulso (pathname={pathname}). Prevenindo atualização."
+            )
+            raise PreventUpdate
 
-    # Tenta obter os dados do MCP
-    if app.mcp is None:
-        log.error("[IMPULSE LOAD] MCP não inicializado. Abortando.")
-        raise PreventUpdate
+        # Tenta obter os dados do MCP
+        if app.mcp is None:
+            log.error("[IMPULSE LOAD] MCP não inicializado. Abortando.")
+            raise PreventUpdate
 
-    # Obtém os dados do store de impulso
-    impulse_data = app.mcp.get_data("impulse-store")
-    log.info(f"[IMPULSE LOAD] Dados obtidos do MCP: {impulse_data}")
+        # Obtém os dados do store de impulso
+        impulse_data = app.mcp.get_data("impulse-store")
+        log.info(f"[IMPULSE LOAD] Dados obtidos do MCP: {impulse_data}")
 
     # Valores padrão caso não haja dados no store
     defaults = {
