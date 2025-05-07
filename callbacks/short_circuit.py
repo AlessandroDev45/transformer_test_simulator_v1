@@ -65,15 +65,15 @@ def create_empty_sc_figure():
 # --- Callbacks ---
 
 # --- Callback para exibir informações do transformador na página ---
-# Este callback copia o conteúdo do painel global para o painel específico da página
-@app.callback(
-    Output("transformer-info-short-circuit-page", "children"),
-    Input("transformer-info-short-circuit", "children"),
-    prevent_initial_call=False
-)
-def update_short_circuit_page_info_panel(global_panel_content):
-    """Copia o conteúdo do painel global para o painel específico da página."""
-    return global_panel_content
+# Este callback foi removido pois o painel agora é criado diretamente no layout
+# @app.callback(
+#     Output("transformer-info-short-circuit-page", "children"),
+#     Input("transformer-info-short-circuit", "children"),
+#     prevent_initial_call=False
+# )
+# def update_short_circuit_page_info_panel(global_panel_content):
+#     """Copia o conteúdo do painel global para o painel específico da página."""
+#     return global_panel_content
 
 # Callback para CARREGAR dados do Store
 @app.callback(
@@ -283,10 +283,49 @@ def short_circuit_calculate_and_verify(
         tipo = transformer_data.get('tipo_transformador', 'Trifásico')
         sqrt_3 = math.sqrt(3) if tipo == 'Trifásico' else 1.0
 
-        # Pega corrente nominal do lado selecionado (garantido que existe e é > 0)
-        if side == 'AT': corrente_nominal_a = float(transformer_data['corrente_nominal_at'])
-        elif side == 'BT': corrente_nominal_a = float(transformer_data['corrente_nominal_bt'])
-        else: corrente_nominal_a = float(transformer_data['corrente_nominal_terciario'])
+        # Pega corrente nominal do lado selecionado
+        corrente_nominal_a = None
+
+        # Primeiro tenta obter do dicionário de dados do transformador
+        if side == 'AT': corrente_nominal_a = transformer_data.get('corrente_nominal_at')
+        elif side == 'BT': corrente_nominal_a = transformer_data.get('corrente_nominal_bt')
+        else: corrente_nominal_a = transformer_data.get('corrente_nominal_terciario')
+
+        # Se não encontrou ou é None, calcula usando o MCP
+        if corrente_nominal_a is None:
+            log.warning(f"[Short Circuit] Corrente nominal para lado {side} não encontrada no MCP. Calculando...")
+            calculated_currents = app.mcp.calculate_nominal_currents(transformer_data)
+
+            # Atualiza o MCP com as correntes calculadas
+            updated_transformer_data = transformer_data.copy()
+            updated_transformer_data.update({
+                'corrente_nominal_at': calculated_currents.get('corrente_nominal_at'),
+                'corrente_nominal_at_tap_maior': calculated_currents.get('corrente_nominal_at_tap_maior'),
+                'corrente_nominal_at_tap_menor': calculated_currents.get('corrente_nominal_at_tap_menor'),
+                'corrente_nominal_bt': calculated_currents.get('corrente_nominal_bt'),
+                'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
+            })
+
+            # Serializa e salva no MCP
+            from utils.store_diagnostics import convert_numpy_types
+            serializable_data = convert_numpy_types(updated_transformer_data, debug_path="short_circuit_calculate_currents")
+            app.mcp.set_data('transformer-inputs-store', serializable_data)
+            log.info("[Short Circuit] MCP atualizado com correntes calculadas.")
+
+            # Obtém a corrente nominal calculada
+            if side == 'AT': corrente_nominal_a = calculated_currents.get('corrente_nominal_at')
+            elif side == 'BT': corrente_nominal_a = calculated_currents.get('corrente_nominal_bt')
+            else: corrente_nominal_a = calculated_currents.get('corrente_nominal_terciario')
+
+        # Verifica se a corrente nominal é válida
+        if corrente_nominal_a is None or corrente_nominal_a <= 0:
+            log.error(f"[Short Circuit] Corrente nominal para lado {side} inválida ou não calculada: {corrente_nominal_a}")
+            errors.append(f"Corrente nominal para lado {side} inválida ou não calculada.")
+            error_msg = html.Ul([html.Li(e) for e in errors], style={"color": "red", "fontSize": "0.7rem"})
+            return None, None, None, "-", empty_fig, error_msg, no_update
+
+        # Converte para float para uso nos cálculos
+        corrente_nominal_a = float(corrente_nominal_a)
 
         # --- Cálculos Principais ---
         isc_sym_ka, isc_peak_ka = calculate_short_circuit_params(

@@ -58,15 +58,19 @@ def create_impulse_layout():
     log = logging.getLogger(__name__)
     log.info("Criando layout de impulso...")
 
-    # Tenta obter os dados do transformador do cache da aplicação
+    # Tenta obter os dados do transformador do cache da aplicação ou do MCP
     transformer_data = {}
     try:
-        # Verifica se o cache de dados do transformador existe e não está vazio
-        if hasattr(app, 'transformer_data_cache') and app.transformer_data_cache:
+        # Primeiro tenta obter do MCP (fonte mais confiável)
+        if hasattr(app, 'mcp') and app.mcp is not None:
+            transformer_data = app.mcp.get_data('transformer-inputs-store')
+            log.info(f"[Impulse] Dados do transformador obtidos do MCP: {len(transformer_data) if isinstance(transformer_data, dict) else 'Não é dict'}")
+        # Se não conseguir do MCP, tenta do cache
+        elif hasattr(app, 'transformer_data_cache') and app.transformer_data_cache:
             transformer_data = app.transformer_data_cache
-            log.info(f"[Impulse] Dados do transformador obtidos do cache: {transformer_data}")
+            log.info(f"[Impulse] Dados do transformador obtidos do cache: {len(transformer_data) if isinstance(transformer_data, dict) else 'Não é dict'}")
         else:
-            log.warning("[Impulse] Dados do transformador não encontrados no cache")
+            log.warning("[Impulse] Dados do transformador não encontrados no MCP nem no cache")
     except Exception as e:
         log.error(f"[Impulse] Erro ao obter dados do transformador: {e}")
 
@@ -82,13 +86,11 @@ def create_impulse_layout():
         dbc.Row([
             dbc.Col([
                 # Componente de informações do transformador adicionado diretamente no layout
-                # Usando a função create_transformer_info_panel diretamente com os dados obtidos do cache
                 html.Div([
-                    # Div onde o painel será renderizado - usando ID único para evitar conflitos
-                    html.Div(id="transformer-info-impulse-page", className="mb-1"),
-                    # Divs ocultas para manter compatibilidade com callbacks existentes
+                    # Criando o painel diretamente com os dados obtidos
+                    create_transformer_info_panel(transformer_data),
+                    # Divs ocultos para compatibilidade com o callback global_updates
                     html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
-                    # Adicionado para compatibilidade com o callback global_updates
                     html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
                     html.Div(html.Div(), id="transformer-info-applied", style={"display": "none"}),

@@ -1136,15 +1136,15 @@ def update_rt_value(up_clicks, down_clicks, current_value):
     return current_value
 
 # --- Callback para exibir informações do transformador na página ---
-# Este callback copia o conteúdo do painel global para o painel específico da página
-@app.callback(
-    Output("transformer-info-impulse-page", "children"),
-    Input("transformer-info-impulse", "children"),
-    prevent_initial_call=False
-)
-def update_impulse_page_info_panel(global_panel_content):
-    """Copia o conteúdo do painel global para o painel específico da página."""
-    return global_panel_content
+# Este callback foi removido pois o painel agora é criado diretamente no layout
+# @app.callback(
+#     Output("transformer-info-impulse-page", "children"),
+#     Input("transformer-info-impulse", "children"),
+#     prevent_initial_call=False
+# )
+# def update_impulse_page_info_panel(global_panel_content):
+#     """Copia o conteúdo do painel global para o painel específico da página."""
+#     return global_panel_content
 
 # Callback para mostrar/esconder a calculadora de indutância do transformador
 @app.callback(

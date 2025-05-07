@@ -13,6 +13,10 @@ from utils.store_diagnostics import convert_numpy_types
 from utils.routes import normalize_pathname, ROUTE_HOME
 
 log = logging.getLogger(__name__)
+log.info("============ MÓDULO TRANSFORMER_INPUTS CARREGADO ============")
+log.info(f"Nível de log: {logging.getLevelName(log.getEffectiveLevel())}")
+log.info(f"Handlers configurados: {[h.__class__.__name__ for h in log.handlers]}")
+log.info("=============================================================")
 tabela_nbr = TabelaTransformadorNBR()
 
 # --- Callbacks para OPTIONS (sem mudança) ---
@@ -375,38 +379,114 @@ def load_ui_on_page_load(pathname):
     Carrega os valores iniciais dos componentes da UI lendo do MCP QUANDO a página é carregada.
     Este callback é o ÚNICO que roda com prevent_initial_call=False para esta página.
     """
+    log.info("===============================================================")
+    log.info("[Load UI Callback] INICIANDO CALLBACK DE CARREGAMENTO DA UI...")
+    log.info("===============================================================")
+
+    # Verificar o contexto do callback
+    triggered = ctx.triggered
     triggered_id = ctx.triggered_id
-    log.info(f"[Load UI Callback] Disparado por: {triggered_id}, Pathname: {pathname}")
+    triggered_prop_ids = ctx.triggered_prop_ids
+
+    log.info(f"[Load UI Callback] Disparado por: {triggered_id}")
+    log.info(f"[Load UI Callback] Triggered: {triggered}")
+    log.info(f"[Load UI Callback] Triggered Prop IDs: {triggered_prop_ids}")
+    log.info(f"[Load UI Callback] Pathname: {pathname}")
 
     if app.mcp is None:
         log.error("[Load UI Callback] MCP não inicializado. Abortando.")
         return [no_update] * 36
 
+    # IMPORTANTE: Este callback DEVE executar na inicialização da aplicação
     # Só executa na página correta
-    if pathname is None: raise PreventUpdate
-    clean_path = normalize_pathname(pathname)
-    if clean_path != ROUTE_HOME:
-        log.debug(f"[Load UI Callback] Não na página '{ROUTE_HOME}'. Prevenindo update.")
-        raise PreventUpdate
+    if pathname is None:
+        log.warning("[Load UI Callback] Pathname é None. Continuando mesmo assim para garantir inicialização.")
+        # NÃO usar PreventUpdate aqui para garantir que o callback execute
+
+    clean_path = normalize_pathname(pathname) if pathname else ""
+    log.info(f"[Load UI Callback] Pathname normalizado: '{clean_path}'")
+
+    # Aceita pathname vazio, '/', ou o route específico
+    # Modificado para ser mais permissivo e garantir execução
+    if clean_path != ROUTE_HOME and clean_path != '' and clean_path != '/' and clean_path != 'dados':
+        log.debug(f"[Load UI Callback] Não na página '{ROUTE_HOME}'. Continuando mesmo assim.")
+        # NÃO usar PreventUpdate aqui para garantir que o callback execute
+
+    log.info(f"[Load UI Callback] Pathname: '{clean_path}'. Continuando execução.")
 
     log.debug("[Load UI Callback] Na página correta. Obtendo dados do MCP para carga inicial.")
 
     # Obter dados ATUALIZADOS do MCP
     transformer_data = app.mcp.get_data('transformer-inputs-store')
     if not transformer_data:
-        log.warning("[Load UI Callback] Dados do MCP estão vazios. Usando defaults.")
+        log.warning("[Load UI Callback] Dados do MCP estão vazios. Usando defaults e salvando no MCP.")
         transformer_data = DEFAULT_TRANSFORMER_INPUTS.copy()
+        serializable_data = convert_numpy_types(transformer_data, debug_path="load_ui_defaults")
+        app.mcp.set_data('transformer-inputs-store', serializable_data)
+        log.info("[Load UI Callback] MCP atualizado com valores padrão.")
+        log.debug(f"[Load UI Callback] Valores padrão salvos no MCP: {serializable_data}")
 
     # Calcular correntes e estilos usando os métodos do MCP
+    log.info("[Load UI Callback] Calculando correntes nominais...")
+
+    # Garantir que temos dados mínimos para o cálculo
+    if not transformer_data:
+        log.warning("[Load UI Callback] Dados vazios! Criando dicionário com valores padrão")
+        transformer_data = {
+            'tipo_transformador': 'Trifásico',
+            'potencia_mva': 10.0,
+            'tensao_at': 138.0,
+            'tensao_bt': 13.8,
+            'tensao_terciario': 0.0
+        }
+
+    # Garantir que temos os campos necessários
+    if 'tipo_transformador' not in transformer_data:
+        transformer_data['tipo_transformador'] = 'Trifásico'
+    if 'potencia_mva' not in transformer_data or not transformer_data['potencia_mva']:
+        transformer_data['potencia_mva'] = 10.0
+    if 'tensao_at' not in transformer_data or not transformer_data['tensao_at']:
+        transformer_data['tensao_at'] = 138.0
+    if 'tensao_bt' not in transformer_data or not transformer_data['tensao_bt']:
+        transformer_data['tensao_bt'] = 13.8
+
+    # Calcular correntes
     calculated_currents = app.mcp.calculate_nominal_currents(transformer_data)
-    visibility_styles_mcp = app.mcp.calculate_visibility_styles(transformer_data)
+    log.info(f"[Load UI Callback] Correntes calculadas: {calculated_currents}")
+
+    # Sempre atualizar o MCP com as correntes calculadas
+    # Adicionar os valores calculados de corrente ao dicionário de dados do transformador
+    updated_transformer_data = transformer_data.copy()
+    updated_transformer_data.update({
+        'corrente_nominal_at': calculated_currents.get('corrente_nominal_at'),
+        'corrente_nominal_at_tap_maior': calculated_currents.get('corrente_nominal_at_tap_maior'),
+        'corrente_nominal_at_tap_menor': calculated_currents.get('corrente_nominal_at_tap_menor'),
+        'corrente_nominal_bt': calculated_currents.get('corrente_nominal_bt'),
+        'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
+    })
+
+    # Serializar e salvar no MCP
+    serializable_data = convert_numpy_types(updated_transformer_data, debug_path="load_ui_with_currents")
+    app.mcp.set_data('transformer-inputs-store', serializable_data)
+    log.info("[Load UI Callback] MCP atualizado com correntes calculadas.")
+    log.info(f"[Load UI Callback] Valores de corrente salvos: AT={updated_transformer_data.get('corrente_nominal_at')}A, BT={updated_transformer_data.get('corrente_nominal_bt')}A")
+
+    # Usar os dados atualizados para calcular os estilos
+    visibility_styles_mcp = app.mcp.calculate_visibility_styles(updated_transformer_data)
+
+    # Usar os dados atualizados para a UI
+    transformer_data = updated_transformer_data
 
     # Extrair valores para a UI (lógica igual ao callback anterior)
+    # Garantir que temos valores válidos para as correntes
     corrente_at = calculated_currents.get('corrente_nominal_at')
     corrente_at_tap_maior = calculated_currents.get('corrente_nominal_at_tap_maior')
     corrente_at_tap_menor = calculated_currents.get('corrente_nominal_at_tap_menor')
     corrente_bt = calculated_currents.get('corrente_nominal_bt')
     corrente_terciario = calculated_currents.get('corrente_nominal_terciario')
+
+    # Log detalhado dos valores que serão exibidos na UI
+    log.info(f"[Load UI Callback] Valores de corrente para UI: AT={corrente_at}A, BT={corrente_bt}A, Terciário={corrente_terciario}A")
     neutro_at_col_style = visibility_styles_mcp.get('neutro_at_style')
     neutro_bt_col_style = visibility_styles_mcp.get('neutro_bt_style')
     neutro_ter_col_style = visibility_styles_mcp.get('neutro_ter_style')
@@ -441,7 +521,8 @@ def load_ui_on_page_load(pathname):
 
     log.info("[Load UI Callback] Dados do MCP carregados e processados para carga inicial da UI.")
 
-    return (
+    # Criar a tupla de retorno
+    return_values = (
         corrente_at, corrente_at_tap_maior, corrente_at_tap_menor, corrente_bt, corrente_terciario,
         neutro_at_col_style, neutro_bt_col_style, neutro_ter_col_style,
         nbi_neutro_at_col_style, nbi_neutro_bt_col_style, nbi_neutro_ter_col_style,
@@ -453,6 +534,18 @@ def load_ui_on_page_load(pathname):
         conexao_at_val, conexao_bt_val, conexao_terciario_val,
         tensao_bucha_neutro_at, tensao_bucha_neutro_bt, tensao_bucha_neutro_terciario
     )
+
+    # Log detalhado dos valores retornados
+    log.info("===============================================================")
+    log.info("[Load UI Callback] VALORES RETORNADOS PARA UI:")
+    log.info(f"Corrente AT: {corrente_at}")
+    log.info(f"Corrente BT: {corrente_bt}")
+    log.info(f"Corrente Terciário: {corrente_terciario}")
+    log.info(f"Corrente AT Tap Maior: {corrente_at_tap_maior}")
+    log.info(f"Corrente AT Tap Menor: {corrente_at_tap_menor}")
+    log.info("===============================================================")
+
+    return return_values
 
 # --- Callback Principal de Atualização (MODIFICADO - Usa allow_duplicate=True) ---
 @app.callback(
@@ -480,6 +573,7 @@ def update_transformer_calculations_and_mcp(*args):
     """
     triggered_input = ctx.triggered_id
     log.debug(f"[Update Callback] Disparado por input: {triggered_input}")
+    log.info(f"[Update Callback] Argumentos recebidos: {args}")
 
     if app.mcp is None:
         log.error("[Update Callback] MCP não inicializado. Abortando.")
@@ -499,13 +593,34 @@ def update_transformer_calculations_and_mcp(*args):
     log.debug(f"[Update Callback] Valores de entrada da UI: {inputs_dict}")
 
     try:
+        # Primeiro, serializar e salvar os dados básicos no MCP
         serializable_inputs = convert_numpy_types(inputs_dict, debug_path="update_transformer_inputs")
         log.debug("[Update Callback] Dados da UI serializados.")
         app.mcp.set_data('transformer-inputs-store', serializable_inputs)
         log.info("[Update Callback] MCP atualizado com dados da UI.")
 
-        # Recalcula com base nos dados atualizados no MCP
-        calculated_currents = app.mcp.calculate_nominal_currents()
+        # Sempre calcular as correntes, mesmo com dados incompletos
+        # O método calculate_nominal_currents foi modificado para lidar com dados ausentes
+        log.info("[Update Callback] Calculando correntes nominais...")
+        calculated_currents = app.mcp.calculate_nominal_currents(inputs_dict)
+        log.info(f"[Update Callback] Correntes calculadas: {calculated_currents}")
+
+        # Adicionar os valores calculados de corrente ao dicionário de inputs
+        inputs_dict.update({
+            'corrente_nominal_at': calculated_currents.get('corrente_nominal_at'),
+            'corrente_nominal_at_tap_maior': calculated_currents.get('corrente_nominal_at_tap_maior'),
+            'corrente_nominal_at_tap_menor': calculated_currents.get('corrente_nominal_at_tap_menor'),
+            'corrente_nominal_bt': calculated_currents.get('corrente_nominal_bt'),
+            'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
+        })
+
+        # Serializar e salvar no MCP novamente com as correntes calculadas
+        serializable_inputs = convert_numpy_types(inputs_dict, debug_path="update_transformer_inputs_with_currents")
+        log.debug("[Update Callback] Dados da UI serializados (incluindo correntes calculadas).")
+        app.mcp.set_data('transformer-inputs-store', serializable_inputs)
+        log.info("[Update Callback] MCP atualizado com dados da UI e correntes calculadas.")
+
+        # Recalcular estilos de visibilidade
         visibility_styles_mcp = app.mcp.calculate_visibility_styles()
 
         corrente_nominal_at = calculated_currents.get('corrente_nominal_at')
@@ -531,7 +646,9 @@ def update_transformer_calculations_and_mcp(*args):
         return [no_update] * 17
 
     log.info(f"[Update Callback] Dados processados e prontos para UI.")
-    return (
+
+    # Criar a tupla de retorno
+    return_values = (
         corrente_nominal_at, corr_at_maior, corr_at_menor,
         corrente_nominal_bt, corrente_nominal_terciario,
         conexao_at_style, conexao_bt_style, conexao_terciario_style,
@@ -539,6 +656,18 @@ def update_transformer_calculations_and_mcp(*args):
         nbi_neutro_at_style, nbi_neutro_bt_style, nbi_neutro_ter_style,
         sil_at_style, sil_bt_style, sil_terciario_style
     )
+
+    # Log detalhado dos valores retornados
+    log.info("===============================================================")
+    log.info("[Update Callback] VALORES RETORNADOS PARA UI:")
+    log.info(f"Corrente AT: {corrente_nominal_at}")
+    log.info(f"Corrente BT: {corrente_nominal_bt}")
+    log.info(f"Corrente Terciário: {corrente_nominal_terciario}")
+    log.info(f"Corrente AT Tap Maior: {corr_at_maior}")
+    log.info(f"Corrente AT Tap Menor: {corr_at_menor}")
+    log.info("===============================================================")
+
+    return return_values
 
 # --- Callback para Limpar Campos (MODIFICADO - Usa allow_duplicate=True) ---
 @app.callback(
@@ -572,6 +701,29 @@ def limpar_transformer_inputs_trigger(n_clicks):
     log.info("[Clear Callback] Dados limpos no MCP.")
     cleaned_mcp_data = app.mcp.get_data('transformer-inputs-store')
 
+    # Calcular correntes com base nos dados limpos
+    log.info("[Clear Callback] Calculando correntes nominais após limpeza...")
+    calculated_currents_cleared = app.mcp.calculate_nominal_currents(cleaned_mcp_data)
+    log.info(f"[Clear Callback] Correntes calculadas após limpeza: {calculated_currents_cleared}")
+
+    # Adicionar os valores calculados de corrente ao dicionário de dados limpos
+    updated_cleaned_data = cleaned_mcp_data.copy()
+    updated_cleaned_data.update({
+        'corrente_nominal_at': calculated_currents_cleared.get('corrente_nominal_at'),
+        'corrente_nominal_at_tap_maior': calculated_currents_cleared.get('corrente_nominal_at_tap_maior'),
+        'corrente_nominal_at_tap_menor': calculated_currents_cleared.get('corrente_nominal_at_tap_menor'),
+        'corrente_nominal_bt': calculated_currents_cleared.get('corrente_nominal_bt'),
+        'corrente_nominal_terciario': calculated_currents_cleared.get('corrente_nominal_terciario')
+    })
+
+    # Salvar os dados atualizados no MCP
+    serializable_data = convert_numpy_types(updated_cleaned_data, debug_path="limpar_transformer_inputs_trigger")
+    app.mcp.set_data('transformer-inputs-store', serializable_data)
+    log.info("[Clear Callback] MCP atualizado com correntes calculadas após limpeza.")
+
+    # Usar os dados atualizados para a UI
+    cleaned_mcp_data = updated_cleaned_data
+
     default_ui_values = []
     input_ids_for_clear = [
         "tipo_transformador", "potencia_mva", "frequencia", "grupo_ligacao", "liquido_isolante", "elevacao_oleo_topo", "tipo_isolamento", "elevacao_enrol",
@@ -586,9 +738,13 @@ def limpar_transformer_inputs_trigger(n_clicks):
     for field_id in input_ids_for_clear:
         default_ui_values.append(cleaned_mcp_data.get(field_id, None))
 
-    calculated_currents_cleared = app.mcp.calculate_nominal_currents()
+    # Usar os valores de corrente já calculados e armazenados no MCP
     cleared_current_values = [
-        calculated_currents_cleared.get('corrente_nominal_at'), calculated_currents_cleared.get('corrente_nominal_at_tap_maior'), calculated_currents_cleared.get('corrente_nominal_at_tap_menor'), calculated_currents_cleared.get('corrente_nominal_bt'), calculated_currents_cleared.get('corrente_nominal_terciario')
+        cleaned_mcp_data.get('corrente_nominal_at'),
+        cleaned_mcp_data.get('corrente_nominal_at_tap_maior'),
+        cleaned_mcp_data.get('corrente_nominal_at_tap_menor'),
+        cleaned_mcp_data.get('corrente_nominal_bt'),
+        cleaned_mcp_data.get('corrente_nominal_terciario')
     ]
 
     visibility_styles_cleared = app.mcp.calculate_visibility_styles()

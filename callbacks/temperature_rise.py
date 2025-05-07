@@ -30,15 +30,15 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # --- Callback para exibir informações do transformador na página ---
-# Este callback copia o conteúdo do painel global para o painel específico da página
-@app.callback(
-    Output("transformer-info-temperature-rise-page", "children"),
-    Input("transformer-info-temperature-rise", "children"),
-    prevent_initial_call=False
-)
-def update_temperature_rise_page_info_panel(global_panel_content):
-    """Copia o conteúdo do painel global para o painel específico da página."""
-    return global_panel_content
+# Este callback foi removido pois o painel agora é criado diretamente no layout
+# @app.callback(
+#     Output("transformer-info-temperature-rise-page", "children"),
+#     Input("transformer-info-temperature-rise", "children"),
+#     prevent_initial_call=False
+# )
+# def update_temperature_rise_page_info_panel(global_panel_content):
+#     """Copia o conteúdo do painel global para o painel específico da página."""
+#     return global_panel_content
 
 
 # --- Funções Auxiliares (mantida) ---
