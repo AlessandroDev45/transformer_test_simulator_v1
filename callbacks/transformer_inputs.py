@@ -5,7 +5,7 @@ Versão corrigida do módulo transformer_inputs que usa o padrão de registro ce
 import logging
 
 import dash_bootstrap_components as dbc
-from dash import Input, Output, html
+from dash import Input, Output, html, ctx
 from dash.exceptions import PreventUpdate
 
 print("\n\n")
@@ -463,6 +463,12 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"NBI NEUTRO BT: {current_data.get('nbi_neutro_bt')}")
                     print(f"NBI NEUTRO TERCIÁRIO: {current_data.get('nbi_neutro_terciario')}")
 
+                    # Verificar se o callback foi acionado por um botão de salvar ou calcular
+                    allowed_triggers = {"save-transformer-btn", "calcular-perdas-vazio", "calcular-perdas-carga", "calc-btn"}
+                    if ctx.triggered_id not in allowed_triggers:
+                        log.warning(f"[Update Callback] Bloqueando gravação fantasma. Trigger: {ctx.triggered_id}")
+                        raise PreventUpdate
+
                     # Serializar e salvar no MCP usando patch_mcp
                     serializable_data = convert_numpy_types(
                         current_data, debug_path="update_transformer_inputs_with_currents"
@@ -476,6 +482,12 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # Propagar dados para outros stores
                     try:
+                        # Verificar novamente se o callback foi acionado por um botão de salvar ou calcular
+                        allowed_triggers = {"save-transformer-btn", "calcular-perdas-vazio", "calcular-perdas-carga", "calc-btn"}
+                        if ctx.triggered_id not in allowed_triggers:
+                            log.warning(f"[Update Callback] Bloqueando propagação de dados. Trigger: {ctx.triggered_id}")
+                            raise PreventUpdate
+
                         # Propagar dados para o store de perdas
                         losses_transformer_data = {
                             "potencia_mva": potencia_mva,

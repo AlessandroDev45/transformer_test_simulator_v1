@@ -7,7 +7,7 @@ import dash
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
-from dash import Input, Output, State, html, no_update
+from dash import Input, Output, State, html, no_update, ctx
 from dash.exceptions import PreventUpdate
 
 from app import app
@@ -135,8 +135,20 @@ except ImportError:
 
 
 # --- Callbacks ---
-@dash.callback(Output("conteudo-perdas", "children"), [Input("tabs-perdas", "active_tab")])
-def losses_render_tab_content(tab_ativa):
+@dash.callback(
+    Output("conteudo-perdas", "children"),
+    [
+        Input("tabs-perdas", "active_tab"),
+        Input("losses-store", "data")
+    ]
+)
+def losses_render_tab_content(tab_ativa, losses_store):
+    """
+    Renderiza o conteúdo da aba selecionada na página de perdas.
+    Também é acionado quando o store losses-store é atualizado.
+    """
+    # O parâmetro losses_store é usado apenas para acionar o callback quando o store é atualizado
+    # mas não é utilizado diretamente na função
     if tab_ativa == "tab-vazio":
         return render_perdas_vazio()
     elif tab_ativa == "tab-carga":
@@ -285,6 +297,11 @@ def losses_handle_perdas_vazio(
     Processa os inputs de perdas em vazio, atualiza o MCP, e retorna os resultados para a UI.
     """
     if n_clicks is None:
+        raise PreventUpdate
+
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id != "calcular-perdas-vazio":
+        log.warning(f"[losses_handle_perdas_vazio] Bloqueando gravação fantasma. Trigger: {ctx.triggered_id}")
         raise PreventUpdate
 
     initial_params = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
@@ -1496,7 +1513,7 @@ def suggest_capacitor_bank_config(max_voltage_kv, max_power_mvar, circuit_type):
         return "N/A (Dados insuficientes)", "N/A", 0.0
 
     # 1. Select Target Bank Voltage (use Com Fator for lookups)
-    target_v_cf_key, target_v_sf_key = select_target_bank_voltage(max_voltage_kv)
+    target_v_cf_key, _ = select_target_bank_voltage(max_voltage_kv)
     if target_v_cf_key is None:
         log.error("Could not determine target bank voltage.")
         return "N/A (Erro Tensão)", "N/A", 0.0
@@ -1736,7 +1753,13 @@ def losses_handle_perdas_carga(
     """
     Processa os inputs de perdas em carga, atualiza o MCP, e retorna os resultados para a UI.
     """
-    if n_clicks is None:
+    # Verificar se o botão foi clicado
+    if n_clicks is None or n_clicks <= 0:
+        raise PreventUpdate
+
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id != "calcular-perdas-carga":
+        log.warning(f"[losses_handle_perdas_carga] Bloqueando gravação fantasma. Trigger: {ctx.triggered_id}")
         raise PreventUpdate
 
     initial_detailed_content = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
