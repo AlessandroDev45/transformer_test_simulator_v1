@@ -7,6 +7,7 @@ import logging
 from dash import callback, Input, Output, State, html, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+from utils.mcp_utils import patch_mcp # Importar função patch_mcp
 
 # Importar estilos padronizados
 from layouts import COLORS
@@ -600,11 +601,13 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         log.info("[FORCE LOAD] Usando MCP para salvar dados dielétricos")
         print("[FORCE LOAD] Usando MCP para salvar dados dielétricos")
 
-        # Salvar dados no MCP
-        app.mcp.set_data('dieletric-analysis-store', data_to_store)
-
-        log.info("[FORCE LOAD] Dados dielétricos salvos via MCP")
-        print("[FORCE LOAD] Dados dielétricos salvos via MCP")
+        # Usar patch_mcp para atualizar apenas campos não vazios
+        if patch_mcp('dieletric-analysis-store', data_to_store):
+            log.info("[FORCE LOAD] Dados dielétricos salvos via MCP")
+            print("[FORCE LOAD] Dados dielétricos salvos via MCP")
+        else:
+            log.warning("[FORCE LOAD] Nenhum dado válido para atualizar no MCP")
+            print("[FORCE LOAD] Nenhum dado válido para atualizar no MCP")
     else:
         log.warning("[FORCE LOAD] MCP não disponível. Usando método antigo para salvar dados dielétricos.")
         print("[FORCE LOAD] MCP não disponível. Usando método antigo para salvar dados dielétricos.")

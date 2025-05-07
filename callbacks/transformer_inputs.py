@@ -24,6 +24,7 @@ from app_core.standards import TabelaTransformadorNBR
 from app_core.transformer_mcp import DEFAULT_TRANSFORMER_INPUTS
 from utils.store_diagnostics import convert_numpy_types
 from utils.routes import normalize_pathname, ROUTE_HOME
+from utils.mcp_utils import patch_mcp
 
 log = logging.getLogger(__name__)
 log.info("============ MÓDULO TRANSFORMER_INPUTS CARREGADO ============")
@@ -106,7 +107,8 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("nbi_neutro_terciario", "value"),
             Input("teste_tensao_aplicada_terciario", "value")
         ],
-        prevent_initial_call=False # Permite rodar na carga inicial para garantir que o MCP seja atualizado
+        prevent_initial_call=False, # Permite rodar na carga inicial para garantir que o MCP seja atualizado
+        priority=1000 # Alta prioridade para garantir que este callback seja executado antes de outros
     )
     def update_transformer_calculations_and_mcp(
         # Dados básicos
@@ -388,10 +390,59 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"NBI NEUTRO BT: {current_data.get('nbi_neutro_bt')}")
                     print(f"NBI NEUTRO TERCIÁRIO: {current_data.get('nbi_neutro_terciario')}")
 
-                    # Serializar e salvar no MCP
+                    # Serializar e salvar no MCP usando patch_mcp
                     serializable_data = convert_numpy_types(current_data, debug_path="update_transformer_inputs_with_currents")
-                    app_instance.mcp.set_data('transformer-inputs-store', serializable_data, validate=True)
-                    log.info("[Update Callback] MCP atualizado com todos os valores do formulário")
+                    if patch_mcp('transformer-inputs-store', serializable_data, app_instance):
+                        log.info("[Update Callback] MCP atualizado com valores não vazios do formulário")
+                    else:
+                        log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
+
+                    # Propagar dados para outros stores
+                    try:
+                        # Propagar dados para o store de perdas
+                        losses_transformer_data = {
+                            'potencia_mva': potencia_mva,
+                            'tensao_at': tensao_at,
+                            'tensao_bt': tensao_bt,
+                            'corrente_nominal_at': corrente_at,
+                            'corrente_nominal_bt': corrente_bt,
+                            'tipo_transformador': tipo_transformador,
+                            'frequencia': frequencia
+                        }
+
+                        # Usar patch_mcp para atualizar apenas campos não vazios
+                        if patch_mcp('losses-store', {'transformer_data': losses_transformer_data}, app_instance):
+                            log.info("[Update Callback] Dados propagados para losses-store")
+
+                        # Propagar dados para o store de impulso
+                        impulse_transformer_data = {
+                            'potencia_mva': potencia_mva,
+                            'tensao_at': tensao_at,
+                            'impedancia': impedancia,
+                            'frequencia': frequencia
+                        }
+
+                        if patch_mcp('impulse-store', {'transformer_data': impulse_transformer_data}, app_instance):
+                            log.info("[Update Callback] Dados propagados para impulse-store")
+
+                        # Propagar dados para outros stores
+                        other_stores_transformer_data = {
+                            'potencia_mva': potencia_mva,
+                            'tensao_at': tensao_at,
+                            'tensao_bt': tensao_bt,
+                            'corrente_nominal_at': corrente_at,
+                            'corrente_nominal_bt': corrente_bt,
+                            'tipo_transformador': tipo_transformador,
+                            'frequencia': frequencia,
+                            'impedancia': impedancia
+                        }
+
+                        for store_id in ['dieletric-analysis-store', 'applied-voltage-store', 'induced-voltage-store',
+                                        'short-circuit-store', 'temperature-rise-store', 'comprehensive-analysis-store']:
+                            if patch_mcp(store_id, {'transformer_data': other_stores_transformer_data}, app_instance):
+                                log.info(f"[Update Callback] Dados propagados para {store_id}")
+                    except Exception as e:
+                        log.error(f"[Update Callback] Erro ao propagar dados para outros stores: {e}", exc_info=True)
 
                     # Verificar se os valores principais foram salvos corretamente
                     print("\n--- VERIFICAÇÃO DE VALORES NO MCP ---")

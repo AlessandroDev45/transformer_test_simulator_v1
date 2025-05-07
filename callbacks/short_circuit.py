@@ -23,6 +23,7 @@ from config import colors # Importar cores para estilos de status
 from components.transformer_info_template import create_transformer_info_panel
 from dash import Input, Output # Adicionar Input, Output se não estiverem já importados globalmente
 from dash.exceptions import PreventUpdate # Adicionar PreventUpdate
+from utils.mcp_utils import patch_mcp # Importar função patch_mcp
 
 # Importar módulo de debug
 try:
@@ -306,11 +307,13 @@ def short_circuit_calculate_and_verify(
                 'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
             })
 
-            # Serializa e salva no MCP
+            # Serializa e salva no MCP usando patch_mcp
             from utils.store_diagnostics import convert_numpy_types
             serializable_data = convert_numpy_types(updated_transformer_data, debug_path="short_circuit_calculate_currents")
-            app.mcp.set_data('transformer-inputs-store', serializable_data)
-            log.info("[Short Circuit] MCP atualizado com correntes calculadas.")
+            if patch_mcp('transformer-inputs-store', serializable_data):
+                log.info("[Short Circuit] MCP atualizado com correntes calculadas.")
+            else:
+                log.warning("[Short Circuit] Nenhum dado válido para atualizar no MCP")
 
             # Obtém a corrente nominal calculada
             if side == 'AT': corrente_nominal_a = calculated_currents.get('corrente_nominal_at')

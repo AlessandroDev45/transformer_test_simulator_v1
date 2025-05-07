@@ -79,8 +79,18 @@ def create_transformer_info_panel(transformer_data):
         # Imprimir o valor de potência e corrente que serão exibidos no painel
         potencia_valor = transformer_data.get('potencia_mva')
         corrente_at_valor = transformer_data.get('corrente_nominal_at')
+        tensao_at_valor = transformer_data.get('tensao_at')
+        tensao_bt_valor = transformer_data.get('tensao_bt')
+
         print(f"POTÊNCIA EXIBIDA NO PAINEL: {potencia_valor}")
+        print(f"TENSÃO AT EXIBIDA NO PAINEL: {tensao_at_valor} kV")
+        print(f"TENSÃO BT EXIBIDA NO PAINEL: {tensao_bt_valor} kV")
         print(f"CORRENTE AT EXIBIDA NO PAINEL: {corrente_at_valor}A")
+
+        # Imprimir todos os dados disponíveis para debug
+        print(f"DADOS COMPLETOS NO PAINEL: {transformer_data}")
+
+        logger.info(f"Criando painel com dados: potencia={potencia_valor}, tensao_at={tensao_at_valor}, tensao_bt={tensao_bt_valor}, corrente_at={corrente_at_valor}")
 
         top_items = [
             ("Potência:", 'potencia_mva', "MVA"),

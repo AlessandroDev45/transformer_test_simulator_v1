@@ -14,6 +14,7 @@ from app_core.standards import VerificadorTransformador, safe_float_convert
 from utils.store_diagnostics import convert_numpy_types
 # Importar constantes de rota
 from utils.routes import normalize_pathname, ROUTE_DIELECTRIC_ANALYSIS
+from utils.mcp_utils import patch_mcp # Importar função patch_mcp
 
 log = logging.getLogger(__name__)
 
@@ -920,18 +921,16 @@ def store_dielectric_analysis_data(
             log.info("[STORE DATA] Usando MCP para salvar dados dielétricos")
             print("[STORE DATA] Usando MCP para salvar dados dielétricos")
 
-            # Obter dados atuais do store via MCP
-            current_mcp_data = app.mcp.get_data('dieletric-analysis-store') or {}
+            # Usar patch_mcp para atualizar apenas campos não vazios
+            if patch_mcp('dieletric-analysis-store', data_to_store):
+                log.info("[STORE DATA] Dados dielétricos salvos via MCP")
+                print("[STORE DATA] Dados dielétricos salvos via MCP")
+            else:
+                log.warning("[STORE DATA] Nenhum dado válido para atualizar no MCP")
+                print("[STORE DATA] Nenhum dado válido para atualizar no MCP")
 
-            # Atualizar com os novos dados
-            final_data_store = current_mcp_data.copy()
-            final_data_store.update(data_to_store)
-
-            # Salvar de volta no MCP
-            app.mcp.set_data('dieletric-analysis-store', final_data_store)
-
-            log.info("[STORE DATA] Dados dielétricos salvos via MCP")
-            print("[STORE DATA] Dados dielétricos salvos via MCP")
+            # Obter dados atualizados do MCP
+            final_data_store = app.mcp.get_data('dieletric-analysis-store') or {}
         else:
             # Fallback para o método antigo se o MCP não estiver disponível
             log.warning("[STORE DATA] MCP não disponível. Usando método antigo para salvar dados dielétricos.")

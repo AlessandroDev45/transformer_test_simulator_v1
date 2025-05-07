@@ -94,7 +94,13 @@ class TransformerMCP:
         """
         if store_id not in self._data:
             log.warning(f"[MCP GET] Attempted to access non-existent store: {store_id}")
-            return {} # Return empty dict if store ID is invalid
+            # Initialize the store with empty dict
+            if store_id == 'transformer-inputs-store':
+                log.info(f"[MCP GET] Initializing transformer-inputs-store with empty dict")
+                self._data[store_id] = {}
+            else:
+                # Return empty dict if store ID is invalid
+                return {}
 
         # Return a deep copy to prevent external modification of internal state
         return copy.deepcopy(self._data.get(store_id, {}))
@@ -133,9 +139,17 @@ class TransformerMCP:
             self._data[store_id] = copy.deepcopy(serializable_data)
 
             # Imprimir apenas o valor de potência quando for atualizado no transformer-inputs-store
-            if store_id == 'transformer-inputs-store' and 'potencia_mva' in serializable_data:
+            if store_id == 'transformer-inputs-store':
                 potencia = serializable_data.get('potencia_mva')
+                tensao_at = serializable_data.get('tensao_at')
+                tensao_bt = serializable_data.get('tensao_bt')
                 print(f"POTÊNCIA SALVA NO MCP: {potencia}")
+                print(f"TENSÃO AT SALVA NO MCP: {tensao_at}")
+                print(f"TENSÃO BT SALVA NO MCP: {tensao_bt}")
+
+                # Não calculamos correntes automaticamente aqui
+                # Apenas registramos os valores para diagnóstico
+                log.info(f"[MCP SET] Dados salvos no MCP: potencia={potencia}, tensao_at={tensao_at}, tensao_bt={tensao_bt}")
 
             # NOTA: O cálculo automático de correntes foi removido daqui.
             # A responsabilidade de calcular as correntes e incluir nos dados
