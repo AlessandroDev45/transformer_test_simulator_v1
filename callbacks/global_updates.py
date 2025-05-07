@@ -108,10 +108,24 @@ def global_updates_all_transformer_info_panels(store_data): # Recebe dados do st
                          transformer_data_mcp.get('tensao_at') is not None and
                          transformer_data_mcp.get('tensao_bt') is not None)
 
+    # Verificar se temos dados essenciais no store
+    store_has_essential_data = (isinstance(store_data, dict) and
+                               store_data.get('potencia_mva') is not None and
+                               store_data.get('tensao_at') is not None and
+                               store_data.get('tensao_bt') is not None)
+
     if has_essential_data:
         log.info(f"[{module_name}] MCP contém dados essenciais: potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
+    elif store_has_essential_data:
+        log.info(f"[{module_name}] Store contém dados essenciais: potencia={store_data.get('potencia_mva')}, tensao_at={store_data.get('tensao_at')}, tensao_bt={store_data.get('tensao_bt')}")
+        # Atualizar o MCP com os dados do store
+        app.mcp.set_data('transformer-inputs-store', store_data)
+        log.info(f"[{module_name}] MCP atualizado com dados do store")
+        # Atualizar a variável transformer_data_mcp
+        transformer_data_mcp = store_data
+        has_essential_data = True
     else:
-        log.warning(f"[{module_name}] Dados essenciais ausentes no MCP, tentando diagnóstico e correção")
+        log.warning(f"[{module_name}] Dados essenciais ausentes no MCP e no store, tentando diagnóstico e correção")
         # Tentar corrigir o MCP
         from utils.mcp_diagnostics import fix_mcp_data
         fix_result = fix_mcp_data(app, verbose=True)
@@ -141,12 +155,9 @@ def global_updates_all_transformer_info_panels(store_data): # Recebe dados do st
 
                 if store_has_essential_data:
                     log.info(f"[{module_name}] Store contém dados essenciais, usando como fallback")
-                    # Usar os dados do store diretamente
+                    # Usar os dados do store diretamente para exibição, mas NÃO atualizar o MCP
                     transformer_data_mcp = store_data
-
-                    # Atualizar o MCP diretamente com os dados do store
-                    app.mcp.set_data('transformer-inputs-store', store_data)
-                    log.info(f"[{module_name}] MCP atualizado diretamente com dados do store")
+                    log.info(f"[{module_name}] Usando dados do store apenas para exibição, sem atualizar o MCP")
                 else:
                     log.warning(f"[{module_name}] Store não contém dados essenciais, não é possível usar como fallback")
 

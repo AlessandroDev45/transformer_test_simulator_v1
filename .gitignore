@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Log files
 logs/
@@ -20,6 +23,7 @@ venv/
 env/
 ENV/
 test_env/
+.env*
 
 # IDE specific files
 .idea/
@@ -30,3 +34,17 @@ test_env/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Builds Front-end (se usa Dash + Webpack)
+assets/bundle/
+assets/*.map
+
+# Dados temporários e dumps
+*.sqlite3
+*.db
+
+# Dados temporários de simulação
+front-resistor-data/
+tail-resistor-data/
+calculated-inductance/
+simulation-status/

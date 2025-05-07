@@ -111,6 +111,7 @@ app = dash.Dash(
     __name__,
     external_stylesheets=[config.DEFAULT_THEME_URL],
     suppress_callback_exceptions=True,
+    prevent_initial_callbacks=True,  # Evita que callbacks sejam disparados na inicialização
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
         {"name": "description", "content": "Simulador de Testes de Transformadores"},
@@ -343,6 +344,7 @@ if __name__ == '__main__':
             log.debug("Não abrindo navegador (processo principal do reloader)")
 
         try:
+            # Sempre desativar debug e reloader para evitar problemas com o MCP
             app.run(
                 debug=False,  # Forçar debug=False para evitar reinicialização do MCP
                 host=host,
