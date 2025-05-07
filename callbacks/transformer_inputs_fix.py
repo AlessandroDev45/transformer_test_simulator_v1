@@ -16,6 +16,7 @@ from app_core.standards import TabelaTransformadorNBR
 from app_core.transformer_mcp import DEFAULT_TRANSFORMER_INPUTS
 from utils.store_diagnostics import convert_numpy_types
 from utils.routes import normalize_pathname, ROUTE_HOME
+from utils.mcp_utils import patch_mcp
 
 log = logging.getLogger(__name__)
 log.info("============ MÓDULO TRANSFORMER_INPUTS_FIX CARREGADO ============")
@@ -98,7 +99,8 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("nbi_neutro_terciario", "value"),
             Input("teste_tensao_aplicada_terciario", "value")
         ],
-        prevent_initial_call=False # Permite rodar na carga inicial para garantir que o MCP seja atualizado
+        prevent_initial_call=False, # Permite rodar na carga inicial para garantir que o MCP seja atualizado
+        priority=1000 # Alta prioridade para garantir que este callback seja executado antes de outros
     )
     def update_transformer_calculations_and_mcp(
         # Dados básicos
@@ -382,8 +384,57 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # Serializar e salvar no MCP
                     serializable_data = convert_numpy_types(current_data, debug_path="update_transformer_inputs_with_currents")
-                    app_instance.mcp.set_data('transformer-inputs-store', serializable_data, validate=True)
-                    log.info("[Update Callback] MCP atualizado com todos os valores do formulário")
+
+                    # Verificar se os dados principais estão presentes antes de salvar
+                    log.info(f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}")
+
+                    # Forçar a atualização direta no MCP para garantir que os dados sejam salvos
+                    app_instance.mcp.set_data('transformer-inputs-store', serializable_data)
+                    log.info("[Update Callback] MCP atualizado diretamente com todos os valores do formulário")
+
+                    # Verificar se os dados foram salvos corretamente
+                    saved_data = app_instance.mcp.get_data('transformer-inputs-store')
+                    log.info(f"[Update Callback] Verificação após salvar no MCP: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}")
+
+                    # Propagar dados para outros stores usando o novo utilitário
+                    try:
+                        # Obter os dados mais recentes do MCP para garantir consistência
+                        latest_data = app_instance.mcp.get_data('transformer-inputs-store')
+
+                        # Verificar se temos dados válidos para propagar
+                        if not latest_data or not any(latest_data.get(key) is not None for key in
+                                                    ['potencia_mva', 'tensao_at', 'tensao_bt']):
+                            log.warning("[Update Callback] Dados insuficientes para propagação. Abortando.")
+                            return corrente_at, corrente_bt, corrente_terciario, corrente_at_tap_maior, corrente_at_tap_menor
+
+                        log.info(f"[Update Callback] Dados para propagação: {latest_data}")
+
+                        # Importar o utilitário de persistência do MCP
+                        from utils.mcp_persistence import ensure_mcp_data_propagation
+
+                        # Lista de stores para os quais propagar os dados
+                        target_stores = [
+                            'losses-store',
+                            'impulse-store',
+                            'dieletric-analysis-store',
+                            'applied-voltage-store',
+                            'induced-voltage-store',
+                            'short-circuit-store',
+                            'temperature-rise-store',
+                            'comprehensive-analysis-store'
+                        ]
+
+                        # Propagar dados para todos os stores
+                        propagation_results = ensure_mcp_data_propagation(app_instance, 'transformer-inputs-store', target_stores)
+
+                        # Registrar resultados
+                        for store, success in propagation_results.items():
+                            if success:
+                                log.info(f"[Update Callback] Dados propagados para {store}")
+                            else:
+                                log.debug(f"[Update Callback] Não foi necessário propagar dados para {store}")
+                    except Exception as e:
+                        log.error(f"[Update Callback] Erro ao propagar dados para outros stores: {e}", exc_info=True)
 
                     # Verificar se os valores principais foram salvos corretamente
                     print("\n--- VERIFICAÇÃO DE VALORES NO MCP ---")

@@ -13,6 +13,9 @@ import time
 import json
 from datetime import datetime
 from utils.mcp_diagnostics import diagnose_mcp, fix_mcp_data
+from utils.mcp_utils import patch_mcp
+
+# Importamos a função patch_mcp do módulo utils.mcp_utils
 
 log = logging.getLogger(__name__)
 
@@ -95,8 +98,63 @@ def global_updates_all_transformer_info_panels(store_data): # Recebe dados do st
         return [error_panel] * len(info_panel_outputs)
 
     # --- Obter dados do MCP ---
+    # SEMPRE obter os dados diretamente do MCP para garantir que estamos usando os dados mais atualizados
+    log.info(f"[{module_name}] Obtendo dados diretamente do MCP")
     transformer_data_mcp = app.mcp.get_data('transformer-inputs-store')
-    log.info(f"[{module_name}] Dados obtidos do MCP para painéis")
+
+    # Verificar se temos dados essenciais no MCP
+    has_essential_data = (transformer_data_mcp and
+                         transformer_data_mcp.get('potencia_mva') is not None and
+                         transformer_data_mcp.get('tensao_at') is not None and
+                         transformer_data_mcp.get('tensao_bt') is not None)
+
+    if has_essential_data:
+        log.info(f"[{module_name}] MCP contém dados essenciais: potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
+    else:
+        log.warning(f"[{module_name}] Dados essenciais ausentes no MCP, tentando diagnóstico e correção")
+        # Tentar corrigir o MCP
+        from utils.mcp_diagnostics import fix_mcp_data
+        fix_result = fix_mcp_data(app, verbose=True)
+        if fix_result['status'] == 'ok':
+            log.info(f"[{module_name}] MCP corrigido com sucesso: {fix_result['actions']}")
+            # Obter os dados novamente após a correção
+            transformer_data_mcp = app.mcp.get_data('transformer-inputs-store')
+
+            # Verificar novamente se temos dados essenciais
+            has_essential_data = (transformer_data_mcp and
+                                 transformer_data_mcp.get('potencia_mva') is not None and
+                                 transformer_data_mcp.get('tensao_at') is not None and
+                                 transformer_data_mcp.get('tensao_bt') is not None)
+
+            if has_essential_data:
+                log.info(f"[{module_name}] MCP agora contém dados essenciais após correção")
+            else:
+                log.warning(f"[{module_name}] MCP ainda não contém dados essenciais após correção")
+        else:
+            log.error(f"[{module_name}] Falha ao corrigir MCP: {fix_result['errors']}")
+
+            # Verificar se temos dados no store que podemos usar
+            if isinstance(store_data, dict) and store_data:
+                store_has_essential_data = (store_data.get('potencia_mva') is not None and
+                                           store_data.get('tensao_at') is not None and
+                                           store_data.get('tensao_bt') is not None)
+
+                if store_has_essential_data:
+                    log.info(f"[{module_name}] Store contém dados essenciais, usando como fallback")
+                    # Usar os dados do store diretamente
+                    transformer_data_mcp = store_data
+
+                    # Atualizar o MCP diretamente com os dados do store
+                    app.mcp.set_data('transformer-inputs-store', store_data)
+                    log.info(f"[{module_name}] MCP atualizado diretamente com dados do store")
+                else:
+                    log.warning(f"[{module_name}] Store não contém dados essenciais, não é possível usar como fallback")
+
+    # IMPORTANTE: NÃO atualizar o transformer-inputs-store com dados do store
+    # Isso evita que valores None sobrescrevam dados válidos no MCP durante a navegação
+    log.info(f"[{module_name}] Ignorando atualização do transformer-inputs-store a partir do store para evitar perda de dados")
+
+    log.info(f"[{module_name}] Dados obtidos para painéis: {transformer_data_mcp}")
 
     # Log detalhado dos dados obtidos do MCP
     if isinstance(transformer_data_mcp, dict):
@@ -120,9 +178,32 @@ def global_updates_all_transformer_info_panels(store_data): # Recebe dados do st
     # Este callback agora assume que os dados do MCP (transformer_data_mcp)
     # já contêm as correntes calculadas pelo callback de inputs.
 
+    # Não propagamos dados aqui - isso é responsabilidade do callback update_transformer_calculations_and_mcp
+    # Apenas verificamos se os dados são válidos para criar o painel
+    if not transformer_data_mcp or not isinstance(transformer_data_mcp, dict):
+        log.warning(f"[{module_name}] Dados do MCP insuficientes para criar painel. Exibindo painel vazio.")
+        return [create_transformer_info_panel({})] * len(info_panel_outputs)
+
+    # Verificar quais dados estão disponíveis para log
+    available_keys = [key for key in ['potencia_mva', 'tensao_at', 'tensao_bt', 'corrente_nominal_at', 'corrente_nominal_bt']
+                      if transformer_data_mcp.get(key) is not None]
+    if available_keys:
+        log.info(f"[{module_name}] Dados disponíveis no MCP: {available_keys}")
+    else:
+        log.warning(f"[{module_name}] Nenhum dado principal disponível no MCP.")
+
     # Criar o painel HTML
     try:
+        # Log detalhado dos dados principais que serão usados no painel
+        potencia = transformer_data_mcp.get('potencia_mva')
+        tensao_at = transformer_data_mcp.get('tensao_at')
+        tensao_bt = transformer_data_mcp.get('tensao_bt')
+        corrente_at = transformer_data_mcp.get('corrente_nominal_at')
+        corrente_bt = transformer_data_mcp.get('corrente_nominal_bt')
+
+        log.info(f"[{module_name}] Dados principais para o painel: potencia={potencia}, tensao_at={tensao_at}, tensao_bt={tensao_bt}, corrente_at={corrente_at}, corrente_bt={corrente_bt}")
         log.info(f"[{module_name}] Criando painel HTML com os dados do MCP: {transformer_data_mcp}")
+
         panel_html = create_transformer_info_panel(transformer_data_mcp)
         execution_time = time.time() - start_time
         log.info(f"[{module_name}] Painel de informações global criado em {round(execution_time * 1000, 2)}ms")

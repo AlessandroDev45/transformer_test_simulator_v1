@@ -150,9 +150,41 @@ try:
                     'corrente_nominal_terciario': calculated_currents.get('corrente_nominal_terciario')
                 })
 
-                # Atualizar o MCP com os dados atualizados
+                # Atualizar o MCP com os dados atualizados diretamente
                 app.mcp.set_data('transformer-inputs-store', transformer_data)
                 log.info("MCP atualizado com correntes calculadas na inicialização")
+
+                # Propagar dados para outros stores usando o novo utilitário
+                try:
+                    log.info("Propagando dados do transformer-inputs-store para outros stores...")
+
+                    # Importar o utilitário de persistência do MCP
+                    from utils.mcp_persistence import ensure_mcp_data_propagation
+
+                    # Lista de stores para os quais propagar os dados
+                    target_stores = [
+                        'losses-store',
+                        'impulse-store',
+                        'dieletric-analysis-store',
+                        'applied-voltage-store',
+                        'induced-voltage-store',
+                        'short-circuit-store',
+                        'temperature-rise-store',
+                        'comprehensive-analysis-store'
+                    ]
+
+                    # Propagar dados para todos os stores
+                    propagation_results = ensure_mcp_data_propagation(app, 'transformer-inputs-store', target_stores)
+
+                    # Registrar resultados
+                    for store, success in propagation_results.items():
+                        if success:
+                            log.info(f"Dados propagados para {store}")
+                        else:
+                            log.warning(f"Não foi necessário propagar dados para {store}")
+
+                except Exception as e:
+                    log.error(f"Erro ao propagar dados para outros stores: {e}", exc_info=True)
             except Exception as e:
                 log.error(f"Erro ao calcular correntes na inicialização: {e}", exc_info=True)
         else:
@@ -316,7 +348,7 @@ if __name__ == '__main__':
                 host=host,
                 port=port,
                 use_reloader=False,  # Desativar reloader para evitar reinicialização do MCP
-                threaded=False  # Ajuda a mitigar erros de socket, especialmente em Windows
+                threaded=True  # Usar threading para melhor desempenho e estabilidade
             )
             log.info("Servidor Dash encerrado.")
         except OSError as e:
