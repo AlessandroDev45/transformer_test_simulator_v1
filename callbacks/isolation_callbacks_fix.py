@@ -4,6 +4,7 @@ Versão corrigida dos callbacks de isolamento automático.
 """
 
 import logging
+
 from dash import Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -11,6 +12,7 @@ from app_core.isolation_repo import derive_um, get_isolation_levels
 from utils.store_diagnostics import convert_numpy_types
 
 log = logging.getLogger(__name__)
+
 
 def register_isolation_callbacks(app_instance):
     """
@@ -20,7 +22,9 @@ def register_isolation_callbacks(app_instance):
 
     # Forçar suppress_callback_exceptions para True
     app_instance.suppress_callback_exceptions = True
-    log.info("suppress_callback_exceptions definido como True para garantir funcionamento dos callbacks")
+    log.info(
+        "suppress_callback_exceptions definido como True para garantir funcionamento dos callbacks"
+    )
 
     # Mapeamento de valores de conexão para o formato esperado
     def map_conexao(conexao):
@@ -33,25 +37,35 @@ def register_isolation_callbacks(app_instance):
             "estrela_sem_neutro": "Y",
             "triangulo": "D",
             "ziguezague": "ZN",
-            "ziguezague_sem_neutro": "Z"
+            "ziguezague_sem_neutro": "Z",
         }
         return mapping.get(conexao, conexao)
 
-    # ⬇️ CALLBACK PARA BLOQUEAR TROCA DE NORMA
+    # ⬇️ CALLBACK PARA RECALCULAR QUANDO A NORMA MUDAR
     @app_instance.callback(
-        Output("norma_iso", "disabled"),
         [
-            Input("classe_tensao_at", "value"),
-            Input("classe_tensao_bt", "value"),
-            Input("classe_tensao_terciario", "value"),
+            Output("tensao_at", "value", allow_duplicate=True),
+            Output("tensao_bt", "value", allow_duplicate=True),
+            Output("tensao_terciario", "value", allow_duplicate=True),
+        ],
+        [
+            Input("norma_iso", "value"),
+        ],
+        [
+            State("tensao_at", "value"),
+            State("tensao_bt", "value"),
+            State("tensao_terciario", "value"),
         ],
         prevent_initial_call=True,
     )
-    def lock_norma(classe_at, classe_bt, classe_terciario):
-        """Bloqueia a troca de norma quando qualquer classe de tensão já tiver valor."""
-        if classe_at or classe_bt or classe_terciario:
-            return True
-        return False
+    def trigger_recalculation_on_standard_change(norma, tensao_at, tensao_bt, tensao_terciario):
+        """
+        Quando a norma muda, retorna os mesmos valores de tensão para forçar
+        o recálculo dos níveis de isolamento com a nova norma.
+        """
+        log.info(f"Norma alterada para {norma}. Disparando recálculo dos níveis de isolamento.")
+        # Retorna os mesmos valores para forçar o recálculo
+        return tensao_at, tensao_bt, tensao_terciario
 
     # ⬇️ CALLBACK PARA O ENROLAMENTO AT
     @app_instance.callback(
@@ -76,7 +90,7 @@ def register_isolation_callbacks(app_instance):
         [
             State("transformer-inputs-store", "data"),
         ],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def auto_isolation_at(v_nom, v_tap_plus, conexao, norma, neutro_classe, store):
         """Calcula automaticamente níveis de isolamento para AT."""
@@ -113,56 +127,74 @@ def register_isolation_callbacks(app_instance):
                 try:
                     # Usar a classe de tensão do neutro para buscar valores
                     neutro_um = float(neutro_classe)
-                    neutro_levels, _ = get_isolation_levels(neutro_um, conexao_mapped, norma or "IEC")
+                    neutro_levels, _ = get_isolation_levels(
+                        neutro_um, conexao_mapped, norma or "IEC"
+                    )
 
                     # Usar o NBI do neutro baseado na classe de tensão do neutro
                     if neutro_levels["nbi"] is not None:
-                        nbi_neutro_options = [{"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}
+                        ]
                         levels["nbi_neutro"] = neutro_levels["nbi"]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if neutro_um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(neutro_levels["nbi"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
                 except Exception as e:
                     log.warning(f"Erro ao calcular níveis de isolamento para neutro AT: {e}")
                     # Fallback para o cálculo padrão (60% do NBI principal)
                     if levels["nbi_neutro"] is not None:
-                        nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                        ]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
             else:
                 # Cálculo padrão (60% do NBI principal)
                 if levels["nbi_neutro"] is not None:
-                    nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                    nbi_neutro_options = [
+                        {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                    ]
 
                     # Calcular SIL/IM do neutro (75% do NBI do neutro)
                     if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                         sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                        sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                        sil_neutro_options = [
+                            {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                        ]
 
             # Atualiza store
             store = store or {}
-            store.update({
-                "classe_tensao_at": um,
-                "nbi_at": levels["nbi"],
-                "sil_at": levels["sil_im"],
-                "nbi_neutro_at": levels["nbi_neutro"],
-                "sil_neutro_at": sil_neutro_value,
-                "norma_iso": norma,
-            })
+            store.update(
+                {
+                    "classe_tensao_at": um,
+                    "nbi_at": levels["nbi"],
+                    "sil_at": levels["sil_im"],
+                    "nbi_neutro_at": levels["nbi_neutro"],
+                    "sil_neutro_at": sil_neutro_value,
+                    "norma_iso": norma,
+                }
+            )
 
             # Converter para tipos serializáveis
             store = convert_numpy_types(store)
 
-            log.info(f"Níveis de isolamento AT calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}")
+            log.info(
+                f"Níveis de isolamento AT calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}"
+            )
 
             return (
                 um,  # value para classe_tensao_at
-                True,  # disabled para classe_tensao_at
+                False,  # disabled para classe_tensao_at (agora permitimos edição)
                 options,  # options para nbi_at
                 levels["nbi"],  # value para nbi_at
                 options,  # options para sil_at (mesma lista)
@@ -171,7 +203,7 @@ def register_isolation_callbacks(app_instance):
                 levels["nbi_neutro"],  # value para nbi_neutro_at
                 sil_neutro_options,  # options para sil_neutro_at
                 sil_neutro_value,  # value para sil_neutro_at
-                store  # data para transformer-inputs-store
+                store,  # data para transformer-inputs-store
             )
         except Exception as e:
             log.error(f"Erro ao calcular níveis de isolamento AT: {e}")
@@ -199,7 +231,7 @@ def register_isolation_callbacks(app_instance):
         [
             State("transformer-inputs-store", "data"),
         ],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def auto_isolation_bt(v_nom, conexao, norma, neutro_classe, store):
         """Calcula automaticamente níveis de isolamento para BT."""
@@ -232,56 +264,74 @@ def register_isolation_callbacks(app_instance):
                 try:
                     # Usar a classe de tensão do neutro para buscar valores
                     neutro_um = float(neutro_classe)
-                    neutro_levels, _ = get_isolation_levels(neutro_um, conexao_mapped, norma or "IEC")
+                    neutro_levels, _ = get_isolation_levels(
+                        neutro_um, conexao_mapped, norma or "IEC"
+                    )
 
                     # Usar o NBI do neutro baseado na classe de tensão do neutro
                     if neutro_levels["nbi"] is not None:
-                        nbi_neutro_options = [{"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}
+                        ]
                         levels["nbi_neutro"] = neutro_levels["nbi"]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if neutro_um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(neutro_levels["nbi"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
                 except Exception as e:
                     log.warning(f"Erro ao calcular níveis de isolamento para neutro BT: {e}")
                     # Fallback para o cálculo padrão (60% do NBI principal)
                     if levels["nbi_neutro"] is not None:
-                        nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                        ]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
             else:
                 # Cálculo padrão (60% do NBI principal)
                 if levels["nbi_neutro"] is not None:
-                    nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                    nbi_neutro_options = [
+                        {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                    ]
 
                     # Calcular SIL/IM do neutro (75% do NBI do neutro)
                     if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                         sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                        sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                        sil_neutro_options = [
+                            {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                        ]
 
             # Atualiza store
             store = store or {}
-            store.update({
-                "classe_tensao_bt": um,
-                "nbi_bt": levels["nbi"],
-                "sil_bt": levels["sil_im"],
-                "nbi_neutro_bt": levels["nbi_neutro"],
-                "sil_neutro_bt": sil_neutro_value,
-                "norma_iso": norma,
-            })
+            store.update(
+                {
+                    "classe_tensao_bt": um,
+                    "nbi_bt": levels["nbi"],
+                    "sil_bt": levels["sil_im"],
+                    "nbi_neutro_bt": levels["nbi_neutro"],
+                    "sil_neutro_bt": sil_neutro_value,
+                    "norma_iso": norma,
+                }
+            )
 
             # Converter para tipos serializáveis
             store = convert_numpy_types(store)
 
-            log.info(f"Níveis de isolamento BT calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}")
+            log.info(
+                f"Níveis de isolamento BT calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}"
+            )
 
             return (
                 um,  # value para classe_tensao_bt
-                True,  # disabled para classe_tensao_bt
+                False,  # disabled para classe_tensao_bt (agora permitimos edição)
                 options,  # options para nbi_bt
                 levels["nbi"],  # value para nbi_bt
                 options,  # options para sil_bt (mesma lista)
@@ -290,7 +340,7 @@ def register_isolation_callbacks(app_instance):
                 levels["nbi_neutro"],  # value para nbi_neutro_bt
                 sil_neutro_options,  # options para sil_neutro_bt
                 sil_neutro_value,  # value para sil_neutro_bt
-                store  # data para transformer-inputs-store
+                store,  # data para transformer-inputs-store
             )
         except Exception as e:
             log.error(f"Erro ao calcular níveis de isolamento BT: {e}")
@@ -318,7 +368,7 @@ def register_isolation_callbacks(app_instance):
         [
             State("transformer-inputs-store", "data"),
         ],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def auto_isolation_terciario(v_nom, conexao, norma, neutro_classe, store):
         """Calcula automaticamente níveis de isolamento para o terciário."""
@@ -351,56 +401,74 @@ def register_isolation_callbacks(app_instance):
                 try:
                     # Usar a classe de tensão do neutro para buscar valores
                     neutro_um = float(neutro_classe)
-                    neutro_levels, _ = get_isolation_levels(neutro_um, conexao_mapped, norma or "IEC")
+                    neutro_levels, _ = get_isolation_levels(
+                        neutro_um, conexao_mapped, norma or "IEC"
+                    )
 
                     # Usar o NBI do neutro baseado na classe de tensão do neutro
                     if neutro_levels["nbi"] is not None:
-                        nbi_neutro_options = [{"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{neutro_levels['nbi']} kVp", "value": neutro_levels["nbi"]}
+                        ]
                         levels["nbi_neutro"] = neutro_levels["nbi"]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if neutro_um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(neutro_levels["nbi"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
                 except Exception as e:
                     log.warning(f"Erro ao calcular níveis de isolamento para neutro terciário: {e}")
                     # Fallback para o cálculo padrão (60% do NBI principal)
                     if levels["nbi_neutro"] is not None:
-                        nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                        nbi_neutro_options = [
+                            {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                        ]
 
                         # Calcular SIL/IM do neutro (75% do NBI do neutro)
                         if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                             sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                            sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                            sil_neutro_options = [
+                                {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                            ]
             else:
                 # Cálculo padrão (60% do NBI principal)
                 if levels["nbi_neutro"] is not None:
-                    nbi_neutro_options = [{"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}]
+                    nbi_neutro_options = [
+                        {"label": f"{levels['nbi_neutro']} kVp", "value": levels["nbi_neutro"]}
+                    ]
 
                     # Calcular SIL/IM do neutro (75% do NBI do neutro)
                     if um >= 300:  # SIL/IM só existe para Um ≥ 300 kV
                         sil_neutro_value = round(levels["nbi_neutro"] * 0.75)
-                        sil_neutro_options = [{"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}]
+                        sil_neutro_options = [
+                            {"label": f"{sil_neutro_value} kVp", "value": sil_neutro_value}
+                        ]
 
             # Atualiza store
             store = store or {}
-            store.update({
-                "classe_tensao_terciario": um,
-                "nbi_terciario": levels["nbi"],
-                "sil_terciario": levels["sil_im"],
-                "nbi_neutro_terciario": levels["nbi_neutro"],
-                "sil_neutro_terciario": sil_neutro_value,
-                "norma_iso": norma,
-            })
+            store.update(
+                {
+                    "classe_tensao_terciario": um,
+                    "nbi_terciario": levels["nbi"],
+                    "sil_terciario": levels["sil_im"],
+                    "nbi_neutro_terciario": levels["nbi_neutro"],
+                    "sil_neutro_terciario": sil_neutro_value,
+                    "norma_iso": norma,
+                }
+            )
 
             # Converter para tipos serializáveis
             store = convert_numpy_types(store)
 
-            log.info(f"Níveis de isolamento terciário calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}")
+            log.info(
+                f"Níveis de isolamento terciário calculados: Um={um}, NBI={levels['nbi']}, SIL={levels['sil_im']}, NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}"
+            )
 
             return (
                 um,  # value para classe_tensao_terciario
-                True,  # disabled para classe_tensao_terciario
+                False,  # disabled para classe_tensao_terciario (agora permitimos edição)
                 options,  # options para nbi_terciario
                 levels["nbi"],  # value para nbi_terciario
                 options,  # options para sil_terciario (mesma lista)
@@ -409,7 +477,7 @@ def register_isolation_callbacks(app_instance):
                 levels["nbi_neutro"],  # value para nbi_neutro_terciario
                 sil_neutro_options,  # options para sil_neutro_terciario
                 sil_neutro_value,  # value para sil_neutro_terciario
-                store  # data para transformer-inputs-store
+                store,  # data para transformer-inputs-store
             )
         except Exception as e:
             log.error(f"Erro ao calcular níveis de isolamento terciário: {e}")

@@ -1,25 +1,25 @@
 {
-  "timestamp": "2025-05-08T11:25:40.852566",
+  "timestamp": "2025-05-08T11:15:13.046539",
   "version": "1.0",
   "stores": {
     "transformer-inputs-store": {
       "tipo_transformador": "Trifásico",
-      "potencia_mva": 100,
-      "tensao_at": 230,
+      "potencia_mva": 30,
+      "tensao_at": 138,
       "tensao_bt": 13.8,
-      "tensao_terciario": 138,
+      "tensao_terciario": null,
       "frequencia": 60,
       "impedancia_nominal": 12.5,
       "conexao_at": "estrela",
       "conexao_bt": "triangulo",
-      "conexao_terciario": "estrela",
+      "conexao_terciario": "",
       "liquido_isolante": "Mineral",
-      "tipo_isolamento": "Uniforme",
-      "corrente_nominal_at": 251.02,
-      "corrente_nominal_bt": 4183.7,
-      "corrente_nominal_terciario": 418.37,
-      "corrente_nominal_at_tap_maior": 251.02,
-      "corrente_nominal_at_tap_menor": 251.02,
+      "tipo_isolamento": "uniforme",
+      "corrente_nominal_at": 125.51,
+      "corrente_nominal_bt": 1255.11,
+      "corrente_nominal_terciario": null,
+      "corrente_nominal_at_tap_maior": 125.51,
+      "corrente_nominal_at_tap_menor": 125.51,
       "impedancia_tap_maior": null,
       "impedancia_tap_menor": null,
       "tensao_at_tap_maior": null,
@@ -109,11 +109,9 @@
         "impedancia_nominal": 12.5,
         "conexao_at": "estrela",
         "conexao_bt": "triangulo",
-        "conexao_terciario": "estrela",
+        "conexao_terciario": "",
         "liquido_isolante": "Mineral",
-        "tipo_isolamento": "uniforme",
-        "tensao_terciario": 138,
-        "corrente_nominal_terciario": 418.37
+        "tipo_isolamento": "uniforme"
       }
     },
     "applied-voltage-store": {
@@ -131,11 +129,9 @@
         "impedancia_nominal": 12.5,
         "conexao_at": "estrela",
         "conexao_bt": "triangulo",
-        "conexao_terciario": "estrela",
+        "conexao_terciario": "",
         "liquido_isolante": "Mineral",
-        "tipo_isolamento": "uniforme",
-        "tensao_terciario": 138,
-        "corrente_nominal_terciario": 418.37
+        "tipo_isolamento": "uniforme"
       }
     },
     "induced-voltage-store": {

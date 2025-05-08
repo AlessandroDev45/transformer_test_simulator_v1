@@ -4,9 +4,7 @@ Versão corrigida do módulo transformer_inputs que usa o padrão de registro ce
 """
 import logging
 
-from dash import Input, Output, html, State, ALL, ctx
-
-from utils.mcp_utils import patch_mcp
+from dash import Input, Output, html
 
 # Não importar app diretamente para evitar importações circulares
 # from app import app  # REMOVIDO
@@ -147,19 +145,20 @@ def register_transformer_inputs_callbacks(app_instance):
         """
         Calcula as correntes nominais do transformador e atualiza o MCP.
         """
-        # Log resumido para o arquivo de log
-        log.info(
+        # Log resumido para o arquivo de log (nível DEBUG para reduzir volume de logs)
+        log.debug(
             f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}"
         )
 
         # Auto-save: sempre salvar no MCP quando qualquer campo for alterado
         from dash import ctx
+
         trigger_id = ctx.triggered_id if ctx.triggered else None
-        log.info(f"[Update Callback] Trigger ID: {trigger_id}")
+        log.debug(f"[Update Callback] Trigger ID: {trigger_id}")
 
         # Com auto-save, sempre salvamos no MCP
         save_to_mcp = True
-        log.info(f"[Update Callback] Auto-save ativado: sempre salvar no MCP")
+        log.debug("[Update Callback] Auto-save ativado: sempre salvar no MCP")
 
         # Verificar se os valores principais são numéricos
         try:
@@ -212,7 +211,7 @@ def register_transformer_inputs_callbacks(app_instance):
             corrente_at_tap_menor = calculated_currents.get("corrente_nominal_at_tap_menor")
 
             # Log dos valores calculados
-            log.info(
+            log.debug(
                 f"[Update Callback] Correntes calculadas: AT={corrente_at}A, BT={corrente_bt}A, Terciário={corrente_terciario}A, AT Tap Maior={corrente_at_tap_maior}A, AT Tap Menor={corrente_at_tap_menor}A"
             )
 
@@ -223,70 +222,119 @@ def register_transformer_inputs_callbacks(app_instance):
                 if current_data:
                     # Atualizar todos os valores do formulário no MCP
 
+                    # Função keep para evitar sobrescrever valores válidos com None
+                    def keep(new_value, key):
+                        """
+                        Usa o valor novo se não for None, caso contrário mantém o valor atual.
+
+                        Args:
+                            new_value: Novo valor a ser considerado
+                            key: Chave no dicionário current_data
+
+                        Returns:
+                            O valor a ser usado (novo ou atual)
+                        """
+                        return new_value if new_value is not None else current_data.get(key)
+
                     # Dados básicos
-                    current_data["potencia_mva"] = potencia_mva
-                    current_data["frequencia"] = frequencia
-                    current_data["grupo_ligacao"] = grupo_ligacao
-                    current_data["liquido_isolante"] = liquido_isolante
-                    current_data["elevacao_oleo_topo"] = elevacao_oleo_topo
-                    current_data["elevacao_enrol"] = elevacao_enrol
-                    current_data["tipo_transformador"] = tipo_transformador
-                    current_data["tipo_isolamento"] = tipo_isolamento
+                    current_data["potencia_mva"] = keep(potencia_mva, "potencia_mva")
+                    current_data["frequencia"] = keep(frequencia, "frequencia")
+                    current_data["grupo_ligacao"] = keep(grupo_ligacao, "grupo_ligacao")
+                    current_data["liquido_isolante"] = keep(liquido_isolante, "liquido_isolante")
+                    current_data["elevacao_oleo_topo"] = keep(
+                        elevacao_oleo_topo, "elevacao_oleo_topo"
+                    )
+                    current_data["elevacao_enrol"] = keep(elevacao_enrol, "elevacao_enrol")
+                    current_data["tipo_transformador"] = keep(
+                        tipo_transformador, "tipo_transformador"
+                    )
+                    current_data["tipo_isolamento"] = keep(tipo_isolamento, "tipo_isolamento")
 
                     # Pesos
-                    current_data["peso_total"] = peso_total
-                    current_data["peso_parte_ativa"] = peso_parte_ativa
-                    current_data["peso_oleo"] = peso_oleo
-                    current_data["peso_tanque_acessorios"] = peso_tanque_acessorios
+                    current_data["peso_total"] = keep(peso_total, "peso_total")
+                    current_data["peso_parte_ativa"] = keep(peso_parte_ativa, "peso_parte_ativa")
+                    current_data["peso_oleo"] = keep(peso_oleo, "peso_oleo")
+                    current_data["peso_tanque_acessorios"] = keep(
+                        peso_tanque_acessorios, "peso_tanque_acessorios"
+                    )
 
                     # Alta Tensão (AT)
-                    current_data["tensao_at"] = tensao_at
-                    current_data["classe_tensao_at"] = classe_tensao_at
-                    current_data["impedancia"] = impedancia
-                    current_data["nbi_at"] = nbi_at
-                    current_data["sil_at"] = sil_at
-                    current_data["conexao_at"] = conexao_at
-                    current_data["tensao_bucha_neutro_at"] = tensao_bucha_neutro_at
-                    current_data["nbi_neutro_at"] = nbi_neutro_at
+                    current_data["tensao_at"] = keep(tensao_at, "tensao_at")
+                    current_data["classe_tensao_at"] = keep(classe_tensao_at, "classe_tensao_at")
+                    current_data["impedancia"] = keep(impedancia, "impedancia")
+                    current_data["nbi_at"] = keep(nbi_at, "nbi_at")
+                    current_data["sil_at"] = keep(sil_at, "sil_at")
+                    current_data["conexao_at"] = keep(conexao_at, "conexao_at")
+                    current_data["tensao_bucha_neutro_at"] = keep(
+                        tensao_bucha_neutro_at, "tensao_bucha_neutro_at"
+                    )
+                    current_data["nbi_neutro_at"] = keep(nbi_neutro_at, "nbi_neutro_at")
 
                     # Taps AT
-                    current_data["tensao_at_tap_maior"] = tensao_at_tap_maior
-                    current_data["impedancia_tap_maior"] = impedancia_tap_maior
-                    current_data["tensao_at_tap_menor"] = tensao_at_tap_menor
-                    current_data["impedancia_tap_menor"] = impedancia_tap_menor
+                    current_data["tensao_at_tap_maior"] = keep(
+                        tensao_at_tap_maior, "tensao_at_tap_maior"
+                    )
+                    current_data["impedancia_tap_maior"] = keep(
+                        impedancia_tap_maior, "impedancia_tap_maior"
+                    )
+                    current_data["tensao_at_tap_menor"] = keep(
+                        tensao_at_tap_menor, "tensao_at_tap_menor"
+                    )
+                    current_data["impedancia_tap_menor"] = keep(
+                        impedancia_tap_menor, "impedancia_tap_menor"
+                    )
 
                     # Tensões de ensaio AT
-                    current_data["teste_tensao_aplicada_at"] = teste_tensao_aplicada_at
-                    current_data["teste_tensao_induzida"] = teste_tensao_induzida
+                    current_data["teste_tensao_aplicada_at"] = keep(
+                        teste_tensao_aplicada_at, "teste_tensao_aplicada_at"
+                    )
+                    current_data["teste_tensao_induzida"] = keep(
+                        teste_tensao_induzida, "teste_tensao_induzida"
+                    )
 
                     # Baixa Tensão (BT)
-                    current_data["tensao_bt"] = tensao_bt
-                    current_data["classe_tensao_bt"] = classe_tensao_bt
-                    current_data["nbi_bt"] = nbi_bt
-                    current_data["sil_bt"] = sil_bt
-                    current_data["conexao_bt"] = conexao_bt
-                    current_data["tensao_bucha_neutro_bt"] = tensao_bucha_neutro_bt
-                    current_data["nbi_neutro_bt"] = nbi_neutro_bt
-                    current_data["teste_tensao_aplicada_bt"] = teste_tensao_aplicada_bt
+                    current_data["tensao_bt"] = keep(tensao_bt, "tensao_bt")
+                    current_data["classe_tensao_bt"] = keep(classe_tensao_bt, "classe_tensao_bt")
+                    current_data["nbi_bt"] = keep(nbi_bt, "nbi_bt")
+                    current_data["sil_bt"] = keep(sil_bt, "sil_bt")
+                    current_data["conexao_bt"] = keep(conexao_bt, "conexao_bt")
+                    current_data["tensao_bucha_neutro_bt"] = keep(
+                        tensao_bucha_neutro_bt, "tensao_bucha_neutro_bt"
+                    )
+                    current_data["nbi_neutro_bt"] = keep(nbi_neutro_bt, "nbi_neutro_bt")
+                    current_data["teste_tensao_aplicada_bt"] = keep(
+                        teste_tensao_aplicada_bt, "teste_tensao_aplicada_bt"
+                    )
 
                     # Terciário
-                    current_data["tensao_terciario"] = tensao_terciario
-                    current_data["classe_tensao_terciario"] = classe_tensao_terciario
-                    current_data["nbi_terciario"] = nbi_terciario
-                    current_data["sil_terciario"] = sil_terciario
-                    current_data["conexao_terciario"] = conexao_terciario
-                    current_data["tensao_bucha_neutro_terciario"] = tensao_bucha_neutro_terciario
-                    current_data["nbi_neutro_terciario"] = nbi_neutro_terciario
-                    current_data[
-                        "teste_tensao_aplicada_terciario"
-                    ] = teste_tensao_aplicada_terciario
+                    current_data["tensao_terciario"] = keep(tensao_terciario, "tensao_terciario")
+                    current_data["classe_tensao_terciario"] = keep(
+                        classe_tensao_terciario, "classe_tensao_terciario"
+                    )
+                    current_data["nbi_terciario"] = keep(nbi_terciario, "nbi_terciario")
+                    current_data["sil_terciario"] = keep(sil_terciario, "sil_terciario")
+                    current_data["conexao_terciario"] = keep(conexao_terciario, "conexao_terciario")
+                    current_data["tensao_bucha_neutro_terciario"] = keep(
+                        tensao_bucha_neutro_terciario, "tensao_bucha_neutro_terciario"
+                    )
+                    current_data["nbi_neutro_terciario"] = keep(
+                        nbi_neutro_terciario, "nbi_neutro_terciario"
+                    )
+                    current_data["teste_tensao_aplicada_terciario"] = keep(
+                        teste_tensao_aplicada_terciario, "teste_tensao_aplicada_terciario"
+                    )
 
-                    # Atualizar os valores de corrente calculados
+                    # Atualizar os valores de corrente calculados (sempre usar os calculados, pois são derivados)
                     current_data["corrente_nominal_at"] = corrente_at
                     current_data["corrente_nominal_bt"] = corrente_bt
                     current_data["corrente_nominal_terciario"] = corrente_terciario
                     current_data["corrente_nominal_at_tap_maior"] = corrente_at_tap_maior
                     current_data["corrente_nominal_at_tap_menor"] = corrente_at_tap_menor
+
+                    # Log dos valores principais após aplicar a função keep
+                    log.debug(
+                        f"[Update Callback] Após keep - Potência: {current_data.get('potencia_mva')}, Tensão AT: {current_data.get('tensao_at')}, Tensão BT: {current_data.get('tensao_bt')}"
+                    )
 
                     # Log dos valores principais que serão salvos no MCP (apenas em nível debug)
                     if log.isEnabledFor(logging.DEBUG):
@@ -309,7 +357,9 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # Se não foi acionado pelo botão de salvar, apenas retornar as correntes calculadas
                     if not save_to_mcp:
-                        log.info("[Update Callback] Callback não acionado pelo botão de salvar. Apenas calculando correntes sem salvar no MCP.")
+                        log.info(
+                            "[Update Callback] Callback não acionado pelo botão de salvar. Apenas calculando correntes sem salvar no MCP."
+                        )
                         return (
                             corrente_at,
                             corrente_bt,
@@ -319,29 +369,34 @@ def register_transformer_inputs_callbacks(app_instance):
                         )
 
                     # Verificar se os dados principais estão presentes antes de salvar
-                    log.info(
+                    log.debug(
                         f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}, tensao_bt={serializable_data.get('tensao_bt')}"
                     )
 
-                    # Validar dados antes de salvar
-                    from utils.mcp_persistence import _dados_ok, ESSENTIAL
+                    # Não vamos mais bloquear a atualização se faltar algum dado essencial
+                    # Apenas registramos um aviso para fins de diagnóstico
+                    from utils.mcp_persistence import ESSENTIAL, _dados_ok
+
                     if not _dados_ok(serializable_data):
-                        missing_fields = [k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)]
-                        log.warning(f"[Update Callback] Dados essenciais ausentes: {missing_fields}")
-                        log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
-                        return (
-                            corrente_at,
-                            corrente_bt,
-                            corrente_terciario,
-                            corrente_at_tap_maior,
-                            corrente_at_tap_menor,
+                        missing_fields = [
+                            k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)
+                        ]
+                        log.warning(
+                            f"[Update Callback] Dados essenciais ausentes: {missing_fields}"
+                        )
+                        log.warning(
+                            "[Update Callback] Continuando com a atualização mesmo com dados essenciais ausentes"
                         )
 
                     # IMPORTANTE: Usar set_data diretamente em vez de patch_mcp
                     # Isso garante que todos os campos sejam salvos, mesmo os que são None → valor
-                    log.info(f"[Update Callback] Salvando {len(serializable_data)} campos no MCP via set_data")
+                    log.info(
+                        f"[Update Callback] Salvando {len(serializable_data)} campos no MCP via set_data"
+                    )
                     app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
-                    log.info(f"[Update Callback] MCP atualizado com TODOS os valores do formulário via set_data")
+                    log.debug(
+                        "[Update Callback] MCP atualizado com TODOS os valores do formulário via set_data"
+                    )
 
                     # Verificar se os dados foram salvos corretamente
                     saved_data = app_instance.mcp.get_data("transformer-inputs-store")
@@ -437,7 +492,7 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("frequencia", "value"),
             # Adicione outros campos conforme necessário
         ],
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def mark_dirty(*_):
         """
@@ -445,7 +500,10 @@ def register_transformer_inputs_callbacks(app_instance):
         Isso aciona o callback de auto-save com debounce.
         """
         from datetime import datetime
-        log.debug(f"[mark_dirty] Formulário marcado como sujo às {datetime.now().strftime('%H:%M:%S')}")
+
+        log.debug(
+            f"[mark_dirty] Formulário marcado como sujo às {datetime.now().strftime('%H:%M:%S')}"
+        )
         return True
 
     # Callback de auto-save com debounce
@@ -456,7 +514,7 @@ def register_transformer_inputs_callbacks(app_instance):
         # Usar debounce para evitar salvar a cada alteração
         # Aguardar 1 segundo após a última alteração antes de salvar
         debounce=True,
-        interval=1000  # 1 segundo
+        interval=1000,  # 1 segundo
     )
     def autosave_with_debounce(dirty_flag):
         """
@@ -466,6 +524,7 @@ def register_transformer_inputs_callbacks(app_instance):
             return ""
 
         from datetime import datetime
+
         now = datetime.now().strftime("%H:%M:%S")
 
         try:
@@ -475,14 +534,46 @@ def register_transformer_inputs_callbacks(app_instance):
 
             # Serializar dados para salvar no MCP
             from utils.store_diagnostics import convert_numpy_types
-            serializable_data = convert_numpy_types(current_data, debug_path="autosave_with_debounce")
+
+            serializable_data = convert_numpy_types(
+                current_data, debug_path="autosave_with_debounce"
+            )
+
+            # Verificar se os dados essenciais estão presentes
+            from utils.mcp_persistence import ESSENTIAL, _dados_ok
+
+            if not _dados_ok(serializable_data):
+                missing_fields = [k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)]
+                log.warning(f"[autosave_with_debounce] Dados essenciais ausentes: {missing_fields}")
+
+                # Obter os dados atuais do MCP para mesclar
+                mcp_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
+
+                # Mesclar dados essenciais
+                for key in ESSENTIAL:
+                    if serializable_data.get(key) in (None, "", 0) and mcp_data.get(key) not in (
+                        None,
+                        "",
+                        0,
+                    ):
+                        serializable_data[key] = mcp_data.get(key)
+                        log.info(
+                            f"[autosave_with_debounce] Mantido valor existente para {key}: {mcp_data.get(key)}"
+                        )
 
             # Salvar no MCP usando set_data diretamente
             app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
             log.info(f"[autosave_with_debounce] MCP atualizado automaticamente às {now}")
 
+            # Verificar se os dados foram salvos corretamente
+            saved_data = app_instance.mcp.get_data("transformer-inputs-store")
+            log.info(
+                f"[autosave_with_debounce] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
+            )
+
             # Propagar dados para outros stores
             from utils.mcp_persistence import ensure_mcp_data_propagation
+
             target_stores = [
                 "losses-store",
                 "impulse-store",
@@ -504,7 +595,7 @@ def register_transformer_inputs_callbacks(app_instance):
     @app_instance.callback(
         Output("dummy-output", "children", allow_duplicate=True),
         Input("url", "pathname"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def flush_on_page_change(pathname):
         """
@@ -518,14 +609,52 @@ def register_transformer_inputs_callbacks(app_instance):
 
                 # Serializar dados para salvar no MCP
                 from utils.store_diagnostics import convert_numpy_types
-                serializable_data = convert_numpy_types(current_data, debug_path="flush_on_page_change")
+
+                serializable_data = convert_numpy_types(
+                    current_data, debug_path="flush_on_page_change"
+                )
+
+                # Verificar se os dados essenciais estão presentes
+                from utils.mcp_persistence import ESSENTIAL, _dados_ok
+
+                if not _dados_ok(serializable_data):
+                    missing_fields = [
+                        k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)
+                    ]
+                    log.warning(
+                        f"[flush_on_page_change] Dados essenciais ausentes: {missing_fields}"
+                    )
+
+                    # Obter os dados atuais do MCP para mesclar
+                    mcp_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
+
+                    # Função keep para evitar sobrescrever valores válidos com None
+                    def keep(new_value, key):
+                        return new_value if new_value is not None else mcp_data.get(key)
+
+                    # Mesclar dados essenciais
+                    for key in ESSENTIAL:
+                        if serializable_data.get(key) in (None, "", 0) and mcp_data.get(
+                            key
+                        ) not in (None, "", 0):
+                            serializable_data[key] = mcp_data.get(key)
+                            log.info(
+                                f"[flush_on_page_change] Mantido valor existente para {key}: {mcp_data.get(key)}"
+                            )
 
                 # Salvar no MCP usando set_data diretamente
                 app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
                 log.info(f"[flush_on_page_change] MCP atualizado ao navegar para {pathname}")
 
+                # Verificar se os dados foram salvos corretamente
+                saved_data = app_instance.mcp.get_data("transformer-inputs-store")
+                log.info(
+                    f"[flush_on_page_change] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
+                )
+
                 # Propagar dados para outros stores
                 from utils.mcp_persistence import ensure_mcp_data_propagation
+
                 target_stores = [
                     "losses-store",
                     "impulse-store",

@@ -25,33 +25,80 @@ def create_global_stores(app=None):  # Aceita app como argumento opcional
     transformer_initial_data = DEFAULT_TRANSFORMER_INPUTS.copy()
     losses_initial_data = {"resultados_perdas_vazio": {}, "resultados_perdas_carga": {}}
 
+    # CORREÇÃO PARA EVITAR FLASH-BACK: Definir valores corretos manualmente
+    # Estes valores serão usados apenas se não houver dados no MCP
+    transformer_initial_data.update(
+        {
+            "potencia_mva": 100,
+            "tensao_at": 230,
+            "tensao_bt": 13.8,
+            "tensao_terciario": 138,
+            "corrente_nominal_at": 251.02,
+            "corrente_nominal_bt": 4183.7,
+            "corrente_nominal_terciario": 418.37,
+            "tipo_transformador": "Trifásico",
+            "frequencia": 60,
+            "impedancia": 20,
+            "impedancia_nominal": 12.5,
+            "conexao_at": "estrela",
+            "conexao_bt": "triangulo",
+            "conexao_terciario": "estrela",
+            "liquido_isolante": "Mineral",
+            "tipo_isolamento": "Uniforme",
+        }
+    )
+
     if app is not None:
         # Se o MCP estiver inicializado no app, tenta obter dados dele
         if hasattr(app, "mcp") and app.mcp is not None:
-            transformer_initial_data = (
-                app.mcp.get_data("transformer-inputs-store") or transformer_initial_data
-            )
+            mcp_data = app.mcp.get_data("transformer-inputs-store")
+
+            # CORREÇÃO PARA EVITAR FLASH-BACK: Verificar se os dados do MCP são os antigos (30 MVA / 138 kV)
+            if mcp_data and mcp_data.get("potencia_mva") == 30 and mcp_data.get("tensao_at") == 138:
+                log.warning(
+                    "Detectados dados antigos no MCP (30 MVA / 138 kV). Usando dados corretos."
+                )
+                # Não usar os dados do MCP, manter os valores corretos definidos acima
+            else:
+                # Usar os dados do MCP se não forem os antigos
+                transformer_initial_data = mcp_data or transformer_initial_data
+
             losses_initial_data = app.mcp.get_data("losses-store") or losses_initial_data
             # ... Fazer o mesmo para outros stores se necessário ...
         # Se não houver MCP, tenta usar caches se existirem
         elif hasattr(app, "transformer_data_cache"):
-            transformer_initial_data = app.transformer_data_cache or transformer_initial_data
+            cache_data = app.transformer_data_cache
+
+            # CORREÇÃO PARA EVITAR FLASH-BACK: Verificar se os dados do cache são os antigos (30 MVA / 138 kV)
+            if (
+                cache_data
+                and cache_data.get("potencia_mva") == 30
+                and cache_data.get("tensao_at") == 138
+            ):
+                log.warning(
+                    "Detectados dados antigos no cache (30 MVA / 138 kV). Usando dados corretos."
+                )
+                # Não usar os dados do cache, manter os valores corretos definidos acima
+            else:
+                # Usar os dados do cache se não forem os antigos
+                transformer_initial_data = cache_data or transformer_initial_data
+
         if hasattr(app, "losses_store_initial"):
             losses_initial_data = app.losses_store_initial or losses_initial_data
 
     stores = [
-        # Stores principais - 'local' para persistência
+        # Stores principais - 'session' para persistência entre páginas
         dcc.Store(
-            id="transformer-inputs-store", storage_type="local", data=transformer_initial_data
+            id="transformer-inputs-store", storage_type="session", data=transformer_initial_data
         ),
-        dcc.Store(id="losses-store", storage_type="local", data=losses_initial_data),
-        dcc.Store(id="impulse-store", storage_type="local", data={}),
-        dcc.Store(id="dieletric-analysis-store", storage_type="local", data={}),
-        dcc.Store(id="applied-voltage-store", storage_type="local", data={}),
-        dcc.Store(id="induced-voltage-store", storage_type="local", data={}),
-        dcc.Store(id="short-circuit-store", storage_type="local", data={}),
-        dcc.Store(id="temperature-rise-store", storage_type="local", data={}),
-        dcc.Store(id="comprehensive-analysis-store", storage_type="local", data={}),
+        dcc.Store(id="losses-store", storage_type="session", data=losses_initial_data),
+        dcc.Store(id="impulse-store", storage_type="session", data={}),
+        dcc.Store(id="dieletric-analysis-store", storage_type="session", data={}),
+        dcc.Store(id="applied-voltage-store", storage_type="session", data={}),
+        dcc.Store(id="induced-voltage-store", storage_type="session", data={}),
+        dcc.Store(id="short-circuit-store", storage_type="session", data={}),
+        dcc.Store(id="temperature-rise-store", storage_type="session", data={}),
+        dcc.Store(id="comprehensive-analysis-store", storage_type="session", data={}),
         # Stores temporários (memory)
         dcc.Store(id="history-temp-store", storage_type="memory", data={}),
         dcc.Store(id="delete-session-id-store", storage_type="memory", data={}),

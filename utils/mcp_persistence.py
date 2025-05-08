@@ -5,14 +5,40 @@ Utilitários para garantir a persistência de dados no MCP durante a navegação
 import logging
 from typing import Dict
 
-import dash
-from dash.exceptions import PreventUpdate
-
 log = logging.getLogger(__name__)
 
 # Lista de campos essenciais que devem estar presentes para salvar dados no MCP
-ESSENTIAL = ["potencia_mva", "tensao_at", "tensao_bt",
-             "corrente_nominal_at", "corrente_nominal_bt"]
+ESSENTIAL = ["potencia_mva", "tensao_at", "tensao_bt", "corrente_nominal_at", "corrente_nominal_bt"]
+
+# Define a fonte-de-verdade (authoritative store) para os dados básicos
+AUTHORITATIVE_STORE = "transformer-inputs-store"
+
+# Define os campos básicos que só devem ser atualizados a partir da fonte-de-verdade
+BASIC_FIELDS = {
+    "potencia_mva",
+    "tensao_at",
+    "tensao_bt",
+    "tensao_terciario",
+    "corrente_nominal_at",
+    "corrente_nominal_bt",
+    "corrente_nominal_terciario",
+    "corrente_nominal_at_tap_maior",
+    "corrente_nominal_at_tap_menor",
+    "tipo_transformador",
+    "frequencia",
+    "impedancia",
+    "impedancia_nominal",
+    "impedancia_tap_maior",
+    "impedancia_tap_menor",
+    "grupo_ligacao",
+    "conexao_at",
+    "conexao_bt",
+    "conexao_terciario",
+    "classe_tensao_at",
+    "classe_tensao_bt",
+    "classe_tensao_terciario",
+}
+
 
 def _dados_ok(d: dict) -> bool:
     """
@@ -41,7 +67,8 @@ def _dados_ok(d: dict) -> bool:
 
 def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> Dict[str, bool]:
     """
-    Garante que os dados do store de origem sejam propagados para os stores de destino.
+    Garante que os dados do store de origem sejam propagados para os stores de destino,
+    respeitando a fonte-de-verdade (authoritative store) para campos básicos.
 
     Args:
         app: Instância da aplicação Dash
@@ -68,26 +95,42 @@ def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> 
         f"[ensure_mcp_data_propagation] Dados disponíveis no store {source_store}: potencia_mva={source_data.get('potencia_mva')}, tensao_at={source_data.get('tensao_at')}, tensao_bt={source_data.get('tensao_bt')}, corrente_nominal_at={source_data.get('corrente_nominal_at')}, corrente_nominal_bt={source_data.get('corrente_nominal_bt')}"
     )
 
+    # Verificar se a origem é a fonte-de-verdade
+    is_authoritative = source_store == AUTHORITATIVE_STORE
+    if not is_authoritative:
+        log.info(
+            f"[ensure_mcp_data_propagation] Store de origem {source_store} NÃO é a fonte-de-verdade para campos básicos"
+        )
+    else:
+        log.info(
+            f"[ensure_mcp_data_propagation] Store de origem {source_store} É a fonte-de-verdade para campos básicos"
+        )
+
     if not has_essential_data:
         missing_fields = [k for k in ESSENTIAL if source_data.get(k) in (None, "", 0)]
         log.warning(
             f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}: {missing_fields}"
         )
-        return {store: False for store in target_stores}
 
     # Preparar os dados para propagação
-    propagation_data = {
-        "transformer_data": {
-            "potencia_mva": source_data.get("potencia_mva"),
-            "tensao_at": source_data.get("tensao_at"),
-            "tensao_bt": source_data.get("tensao_bt"),
-            "corrente_nominal_at": source_data.get("corrente_nominal_at"),
-            "corrente_nominal_bt": source_data.get("corrente_nominal_bt"),
-            "tipo_transformador": source_data.get("tipo_transformador"),
-            "frequencia": source_data.get("frequencia"),
-            "impedancia": source_data.get("impedancia"),
-        }
-    }
+    propagation_data = {"transformer_data": {}}
+
+    # Se a origem não é a fonte-de-verdade, não propagar campos básicos
+    if not is_authoritative:
+        # Copiar apenas campos que não são básicos
+        for key, value in source_data.items():
+            if key not in BASIC_FIELDS:
+                propagation_data["transformer_data"][key] = value
+        log.info(
+            f"[ensure_mcp_data_propagation] Propagando apenas campos não-básicos de {source_store}"
+        )
+    else:
+        # Se é a fonte-de-verdade, propagar todos os campos
+        for key, value in source_data.items():
+            propagation_data["transformer_data"][key] = value
+        log.info(
+            f"[ensure_mcp_data_propagation] Propagando todos os campos de {source_store} (fonte-de-verdade)"
+        )
 
     # Propagar para cada store de destino
     results = {}
@@ -104,12 +147,29 @@ def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> 
             current_transformer_data = target_data.get("transformer_data", {})
             updated = False
 
+            # Verificar se o destino é a fonte-de-verdade
+            is_dest_authoritative = store == AUTHORITATIVE_STORE
+
             for key, value in propagation_data["transformer_data"].items():
+                # Se o destino é a fonte-de-verdade e o campo é básico, só aceitar se a origem também for a fonte-de-verdade
+                if is_dest_authoritative and key in BASIC_FIELDS and not is_authoritative:
+                    log.info(
+                        f"[ensure_mcp_data_propagation] Ignorando atualização de {key} em {store} (fonte-de-verdade) a partir de {source_store}"
+                    )
+                    continue
+
+                # Propagar se:
+                # 1. O valor de origem não é None
+                # 2. E (o valor de destino não existe OU é None OU é string vazia OU é zero)
                 if value is not None and (
-                    key not in current_transformer_data or current_transformer_data[key] is None
+                    key not in current_transformer_data
+                    or current_transformer_data[key] is None
+                    or current_transformer_data[key] == ""
+                    or current_transformer_data[key] == 0
                 ):
                     current_transformer_data[key] = value
                     updated = True
+                    log.info(f"[ensure_mcp_data_propagation] Atualizado {key}={value} em {store}")
 
             if updated:
                 target_data["transformer_data"] = current_transformer_data
