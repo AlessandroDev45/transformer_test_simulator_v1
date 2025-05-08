@@ -1662,20 +1662,15 @@ def create_transformer_inputs_layout():
                             # Espaçamento adicional para melhorar a aparência
                             html.Div(style={"height": "15px"}),
 
-                            # Botão de Salvar
+                            # Indicador de último salvamento automático
                             dbc.Row(
                                 [
                                     dbc.Col(
                                         [
-                                            dbc.Button(
-                                                "Salvar Dados do Transformador",
-                                                id="save-transformer-btn",
-                                                color="primary",
-                                                className="w-100 mt-3",
-                                                style={
-                                                    "fontSize": "0.9rem",
-                                                    "fontWeight": "bold",
-                                                },
+                                            html.Div(
+                                                id="last-save-ok",
+                                                className="text-center text-muted small",
+                                                style={"fontSize": "0.8rem"},
                                             ),
                                         ],
                                         width={"size": 6, "offset": 3},
@@ -1683,6 +1678,12 @@ def create_transformer_inputs_layout():
                                 ],
                                 className="g-2 mb-2",
                             ),
+
+                            # Store para controlar o estado "sujo" do formulário
+                            dcc.Store(id="dirty-flag", storage_type="memory"),
+
+                            # Trigger para inicialização da página
+                            dcc.Interval(id="page-init-trigger", n_intervals=0, max_intervals=1),
                         ],
                         style={**CARD_BODY_STYLE, "padding": "1rem"},
                     ),

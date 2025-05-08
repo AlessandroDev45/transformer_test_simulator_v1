@@ -4,7 +4,7 @@ Versão corrigida do módulo transformer_inputs que usa o padrão de registro ce
 """
 import logging
 
-from dash import Input, Output
+from dash import Input, Output, html, State, ALL, ctx
 
 from utils.mcp_utils import patch_mcp
 
@@ -87,8 +87,7 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("tensao_bucha_neutro_terciario", "value"),
             Input("nbi_neutro_terciario", "value"),
             Input("teste_tensao_aplicada_terciario", "value"),
-            # Botão de salvar
-            Input("save-transformer-btn", "n_clicks"),
+            # Removido o botão de salvar
         ],
         prevent_initial_call=False,  # Permite rodar na carga inicial para garantir que o MCP seja atualizado
         priority=1000,  # Alta prioridade para garantir que este callback seja executado antes de outros
@@ -143,8 +142,7 @@ def register_transformer_inputs_callbacks(app_instance):
         tensao_bucha_neutro_terciario,
         nbi_neutro_terciario,
         teste_tensao_aplicada_terciario,
-        # Botão de salvar
-        save_btn_clicks,
+        # Botão de salvar removido
     ):
         """
         Calcula as correntes nominais do transformador e atualiza o MCP.
@@ -154,14 +152,14 @@ def register_transformer_inputs_callbacks(app_instance):
             f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}"
         )
 
-        # Verificar se o callback foi acionado pelo botão de salvar
+        # Auto-save: sempre salvar no MCP quando qualquer campo for alterado
         from dash import ctx
         trigger_id = ctx.triggered_id if ctx.triggered else None
         log.info(f"[Update Callback] Trigger ID: {trigger_id}")
 
-        # Se não foi acionado pelo botão de salvar, apenas calcular as correntes sem salvar no MCP
-        save_to_mcp = trigger_id == "save-transformer-btn"
-        log.info(f"[Update Callback] Salvar no MCP: {save_to_mcp}")
+        # Com auto-save, sempre salvamos no MCP
+        save_to_mcp = True
+        log.info(f"[Update Callback] Auto-save ativado: sempre salvar no MCP")
 
         # Verificar se os valores principais são numéricos
         try:
@@ -427,7 +425,125 @@ def register_transformer_inputs_callbacks(app_instance):
             corrente_at_tap_menor,
         )
 
-    # Os callbacks para forçar atualização do MCP e limpar cache local foram removidos
+    # Callback para marcar o formulário como "sujo" quando qualquer campo for alterado
+    @app_instance.callback(
+        Output("dirty-flag", "data", allow_duplicate=True),
+        [
+            Input({"type": "transformer-input", "id": "ALL"}, "value"),
+            # Incluir todos os inputs individuais também para garantir que todos os campos sejam capturados
+            Input("potencia_mva", "value"),
+            Input("tensao_at", "value"),
+            Input("tensao_bt", "value"),
+            Input("frequencia", "value"),
+            # Adicione outros campos conforme necessário
+        ],
+        prevent_initial_call=True
+    )
+    def mark_dirty(*_):
+        """
+        Marca o formulário como "sujo" quando qualquer campo for alterado.
+        Isso aciona o callback de auto-save com debounce.
+        """
+        from datetime import datetime
+        log.debug(f"[mark_dirty] Formulário marcado como sujo às {datetime.now().strftime('%H:%M:%S')}")
+        return True
+
+    # Callback de auto-save com debounce
+    @app_instance.callback(
+        Output("last-save-ok", "children"),
+        Input("dirty-flag", "data"),
+        prevent_initial_call=True,
+        # Usar debounce para evitar salvar a cada alteração
+        # Aguardar 1 segundo após a última alteração antes de salvar
+        debounce=True,
+        interval=1000  # 1 segundo
+    )
+    def autosave_with_debounce(dirty_flag):
+        """
+        Salva automaticamente os dados no MCP após um período de inatividade.
+        """
+        if not dirty_flag:
+            return ""
+
+        from datetime import datetime
+        now = datetime.now().strftime("%H:%M:%S")
+
+        try:
+            # Obter os dados atuais do formulário
+            # Aqui precisamos obter os valores diretamente do MCP, pois não temos acesso aos inputs
+            current_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
+
+            # Serializar dados para salvar no MCP
+            from utils.store_diagnostics import convert_numpy_types
+            serializable_data = convert_numpy_types(current_data, debug_path="autosave_with_debounce")
+
+            # Salvar no MCP usando set_data diretamente
+            app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
+            log.info(f"[autosave_with_debounce] MCP atualizado automaticamente às {now}")
+
+            # Propagar dados para outros stores
+            from utils.mcp_persistence import ensure_mcp_data_propagation
+            target_stores = [
+                "losses-store",
+                "impulse-store",
+                "dieletric-analysis-store",
+                "applied-voltage-store",
+                "induced-voltage-store",
+                "short-circuit-store",
+                "temperature-rise-store",
+                "comprehensive-analysis-store",
+            ]
+            ensure_mcp_data_propagation(app_instance, "transformer-inputs-store", target_stores)
+
+            return f"✓ Salvo automaticamente às {now}"
+        except Exception as e:
+            log.error(f"[autosave_with_debounce] Erro ao salvar automaticamente: {e}")
+            return f"✗ Erro ao salvar às {now}"
+
+    # Callback para salvar ao trocar de página
+    @app_instance.callback(
+        Output("dummy-output", "children", allow_duplicate=True),
+        Input("url", "pathname"),
+        prevent_initial_call=True
+    )
+    def flush_on_page_change(pathname):
+        """
+        Salva os dados no MCP quando o usuário navega para outra página.
+        """
+        if pathname and not pathname.startswith("/transformer-inputs"):
+            log.info(f"[flush_on_page_change] Navegando para {pathname}, salvando dados no MCP")
+            try:
+                # Obter os dados atuais do formulário
+                current_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
+
+                # Serializar dados para salvar no MCP
+                from utils.store_diagnostics import convert_numpy_types
+                serializable_data = convert_numpy_types(current_data, debug_path="flush_on_page_change")
+
+                # Salvar no MCP usando set_data diretamente
+                app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
+                log.info(f"[flush_on_page_change] MCP atualizado ao navegar para {pathname}")
+
+                # Propagar dados para outros stores
+                from utils.mcp_persistence import ensure_mcp_data_propagation
+                target_stores = [
+                    "losses-store",
+                    "impulse-store",
+                    "dieletric-analysis-store",
+                    "applied-voltage-store",
+                    "induced-voltage-store",
+                    "short-circuit-store",
+                    "temperature-rise-store",
+                    "comprehensive-analysis-store",
+                ]
+                ensure_mcp_data_propagation(app_instance, "transformer-inputs-store", target_stores)
+            except Exception as e:
+                log.error(f"[flush_on_page_change] Erro ao salvar ao trocar de página: {e}")
+
+        return ""
+
+    # Adicionar um elemento dummy para o callback de flush_on_page_change
+    app_instance.layout.children.append(html.Div(id="dummy-output", style={"display": "none"}))
 
     log.info(
         f"Todos os callbacks do módulo transformer_inputs registrados com sucesso para app {app_instance.title}."
