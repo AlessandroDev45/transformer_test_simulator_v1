@@ -106,26 +106,42 @@ def patch_mcp(store_id: str, data: Dict[str, Any], app=None) -> bool:
                     break
                 # Verificar valores dentro do dicionário
                 for subkey in updated_data[key]:
-                    # Converter para string para comparação mais segura
-                    updated_val = str(updated_data[key][subkey]) if updated_data[key][subkey] is not None else None
-                    current_val = str(current_data[key].get(subkey)) if current_data[key].get(subkey) is not None else None
-
-                    if updated_val != current_val:
+                    # Se um dos valores é None e o outro não, são diferentes
+                    if (updated_data[key][subkey] is None and current_data[key].get(subkey) is not None) or \
+                       (updated_data[key][subkey] is not None and current_data[key].get(subkey) is None):
                         changes = True
                         changed_fields.append(f"{key}.{subkey}")
                         break
+
+                    # Se ambos não são None, converter para string para comparação mais segura
+                    if updated_data[key][subkey] is not None and current_data[key].get(subkey) is not None:
+                        updated_val = str(updated_data[key][subkey])
+                        current_val = str(current_data[key].get(subkey))
+
+                        if updated_val != current_val:
+                            changes = True
+                            changed_fields.append(f"{key}.{subkey}")
+                            break
                 if changes:
                     break
             # Para valores simples, comparar como strings para evitar problemas de tipo
             else:
-                # Converter para string para comparação mais segura
-                updated_val = str(updated_data[key]) if updated_data[key] is not None else None
-                current_val = str(current_data.get(key)) if current_data.get(key) is not None else None
-
-                if updated_val != current_val:
+                # Se um dos valores é None e o outro não, são diferentes
+                if (updated_data[key] is None and current_data.get(key) is not None) or \
+                   (updated_data[key] is not None and current_data.get(key) is None):
                     changes = True
                     changed_fields.append(key)
                     break
+
+                # Se ambos não são None, converter para string para comparação mais segura
+                if updated_data[key] is not None and current_data.get(key) is not None:
+                    updated_val = str(updated_data[key])
+                    current_val = str(current_data.get(key))
+
+                    if updated_val != current_val:
+                        changes = True
+                        changed_fields.append(key)
+                        break
 
     if not changes:
         log.debug(f"[patch_mcp] Nenhuma mudança efetiva em {store_id}")

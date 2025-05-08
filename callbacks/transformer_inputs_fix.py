@@ -87,6 +87,8 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("tensao_bucha_neutro_terciario", "value"),
             Input("nbi_neutro_terciario", "value"),
             Input("teste_tensao_aplicada_terciario", "value"),
+            # Botão de salvar
+            Input("save-transformer-btn", "n_clicks"),
         ],
         prevent_initial_call=False,  # Permite rodar na carga inicial para garantir que o MCP seja atualizado
         priority=1000,  # Alta prioridade para garantir que este callback seja executado antes de outros
@@ -141,6 +143,8 @@ def register_transformer_inputs_callbacks(app_instance):
         tensao_bucha_neutro_terciario,
         nbi_neutro_terciario,
         teste_tensao_aplicada_terciario,
+        # Botão de salvar
+        save_btn_clicks,
     ):
         """
         Calcula as correntes nominais do transformador e atualiza o MCP.
@@ -149,6 +153,15 @@ def register_transformer_inputs_callbacks(app_instance):
         log.info(
             f"[Update Callback] ACIONADO! Potência: {potencia_mva}, Tensão AT: {tensao_at}, Tensão BT: {tensao_bt}, Tensão Terciário: {tensao_terciario}, Tipo: {tipo_transformador}"
         )
+
+        # Verificar se o callback foi acionado pelo botão de salvar
+        from dash import ctx
+        trigger_id = ctx.triggered_id if ctx.triggered else None
+        log.info(f"[Update Callback] Trigger ID: {trigger_id}")
+
+        # Se não foi acionado pelo botão de salvar, apenas calcular as correntes sem salvar no MCP
+        save_to_mcp = trigger_id == "save-transformer-btn"
+        log.info(f"[Update Callback] Salvar no MCP: {save_to_mcp}")
 
         # Verificar se os valores principais são numéricos
         try:
@@ -291,24 +304,46 @@ def register_transformer_inputs_callbacks(app_instance):
                         )
                         log.debug(f"[Update Callback] Impedância: {current_data.get('impedancia')}")
 
-                    # Serializar e salvar no MCP usando patch_mcp
+                    # Serializar dados para salvar no MCP
                     serializable_data = convert_numpy_types(
                         current_data, debug_path="update_transformer_inputs_with_currents"
                     )
 
+                    # Se não foi acionado pelo botão de salvar, apenas retornar as correntes calculadas
+                    if not save_to_mcp:
+                        log.info("[Update Callback] Callback não acionado pelo botão de salvar. Apenas calculando correntes sem salvar no MCP.")
+                        return (
+                            corrente_at,
+                            corrente_bt,
+                            corrente_terciario,
+                            corrente_at_tap_maior,
+                            corrente_at_tap_menor,
+                        )
+
                     # Verificar se os dados principais estão presentes antes de salvar
-                    log.debug(
-                        f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}"
+                    log.info(
+                        f"[Update Callback] Verificando dados antes de salvar no MCP: potencia_mva={serializable_data.get('potencia_mva')}, tensao_at={serializable_data.get('tensao_at')}, tensao_bt={serializable_data.get('tensao_bt')}"
                     )
 
-                    # Usar patch_mcp para atualizar o MCP com os dados não vazios
-                    # Isso evita que valores None sobrescrevam dados válidos
-                    if patch_mcp("transformer-inputs-store", serializable_data, app_instance):
-                        log.info(
-                            "[Update Callback] MCP atualizado com valores não vazios do formulário"
-                        )
-                    else:
+                    # Validar dados antes de salvar
+                    from utils.mcp_persistence import _dados_ok, ESSENTIAL
+                    if not _dados_ok(serializable_data):
+                        missing_fields = [k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)]
+                        log.warning(f"[Update Callback] Dados essenciais ausentes: {missing_fields}")
                         log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
+                        return (
+                            corrente_at,
+                            corrente_bt,
+                            corrente_terciario,
+                            corrente_at_tap_maior,
+                            corrente_at_tap_menor,
+                        )
+
+                    # IMPORTANTE: Usar set_data diretamente em vez de patch_mcp
+                    # Isso garante que todos os campos sejam salvos, mesmo os que são None → valor
+                    log.info(f"[Update Callback] Salvando {len(serializable_data)} campos no MCP via set_data")
+                    app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
+                    log.info(f"[Update Callback] MCP atualizado com TODOS os valores do formulário via set_data")
 
                     # Verificar se os dados foram salvos corretamente
                     saved_data = app_instance.mcp.get_data("transformer-inputs-store")
