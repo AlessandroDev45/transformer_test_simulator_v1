@@ -1661,6 +1661,28 @@ def create_transformer_inputs_layout():
                             ),  # Fim da Row dos Enrolamentos
                             # Espaçamento adicional para melhorar a aparência
                             html.Div(style={"height": "15px"}),
+
+                            # Botão de Salvar
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                "Salvar Dados do Transformador",
+                                                id="save-transformer-btn",
+                                                color="primary",
+                                                className="w-100 mt-3",
+                                                style={
+                                                    "fontSize": "0.9rem",
+                                                    "fontWeight": "bold",
+                                                },
+                                            ),
+                                        ],
+                                        width={"size": 6, "offset": 3},
+                                    ),
+                                ],
+                                className="g-2 mb-2",
+                            ),
                         ],
                         style={**CARD_BODY_STYLE, "padding": "1rem"},
                     ),
