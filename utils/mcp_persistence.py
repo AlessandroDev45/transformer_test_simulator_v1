@@ -5,7 +5,38 @@ Utilitários para garantir a persistência de dados no MCP durante a navegação
 import logging
 from typing import Dict
 
+import dash
+from dash.exceptions import PreventUpdate
+
 log = logging.getLogger(__name__)
+
+# Lista de campos essenciais que devem estar presentes para salvar dados no MCP
+ESSENTIAL = ["potencia_mva", "tensao_at", "tensao_bt",
+             "corrente_nominal_at", "corrente_nominal_bt"]
+
+def _dados_ok(d: dict) -> bool:
+    """
+    Verifica se os dados essenciais estão presentes e são válidos.
+
+    Garante que potência, tensões e correntes estejam preenchidos.
+
+    Args:
+        d: Dicionário de dados a ser verificado
+
+    Returns:
+        bool: True se todos os dados essenciais estiverem presentes e válidos, False caso contrário
+    """
+    # Verificar se o dicionário existe
+    if not d or not isinstance(d, dict):
+        return False
+
+    # Verificar se todos os campos essenciais estão presentes e não são None, string vazia ou zero
+    for k in ESSENTIAL:
+        value = d.get(k)
+        if value in (None, "", 0):
+            return False
+
+    return True
 
 
 def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> Dict[str, bool]:
@@ -29,28 +60,18 @@ def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> 
         log.warning(f"[ensure_mcp_data_propagation] Store de origem {source_store} está vazio")
         return {store: False for store in target_stores}
 
-    # Verificar se os dados essenciais estão presentes
-    has_essential_data = (
-        source_data.get("potencia_mva") is not None
-        and source_data.get("tensao_at") is not None
-        and source_data.get("tensao_bt") is not None
-    )
-
-    # Se não tiver dados essenciais, verificar se há dados de corrente que podemos usar
-    if not has_essential_data and source_data.get("corrente_nominal_at") is not None:
-        log.info(
-            f"[ensure_mcp_data_propagation] Dados de corrente encontrados no store de origem {source_store}"
-        )
-        has_essential_data = True
+    # Verificar se os dados essenciais estão presentes usando a função _dados_ok
+    has_essential_data = _dados_ok(source_data)
 
     # Log detalhado dos dados disponíveis para debug
     log.debug(
-        f"[ensure_mcp_data_propagation] Dados disponíveis no store {source_store}: potencia_mva={source_data.get('potencia_mva')}, tensao_at={source_data.get('tensao_at')}, tensao_bt={source_data.get('tensao_bt')}, corrente_nominal_at={source_data.get('corrente_nominal_at')}"
+        f"[ensure_mcp_data_propagation] Dados disponíveis no store {source_store}: potencia_mva={source_data.get('potencia_mva')}, tensao_at={source_data.get('tensao_at')}, tensao_bt={source_data.get('tensao_bt')}, corrente_nominal_at={source_data.get('corrente_nominal_at')}, corrente_nominal_bt={source_data.get('corrente_nominal_bt')}"
     )
 
     if not has_essential_data:
+        missing_fields = [k for k in ESSENTIAL if source_data.get(k) in (None, "", 0)]
         log.warning(
-            f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}"
+            f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}: {missing_fields}"
         )
         return {store: False for store in target_stores}
 

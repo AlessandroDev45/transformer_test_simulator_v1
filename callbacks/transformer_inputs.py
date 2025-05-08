@@ -23,6 +23,7 @@ print("\n\n")
 
 from utils.mcp_utils import patch_mcp
 from utils.store_diagnostics import convert_numpy_types
+from utils.mcp_persistence import _dados_ok, ESSENTIAL
 
 log = logging.getLogger(__name__)
 log.info("============ MÓDULO TRANSFORMER_INPUTS CARREGADO ============")
@@ -464,26 +465,57 @@ def register_transformer_inputs_callbacks(app_instance):
                     print(f"NBI NEUTRO TERCIÁRIO: {current_data.get('nbi_neutro_terciario')}")
 
                     # Verificar se o callback foi acionado por um botão de salvar ou calcular
-                    allowed_triggers = {"save-transformer-btn", "calcular-perdas-vazio", "calcular-perdas-carga", "calc-btn"}
+                    # Imprimir o ID do trigger para debug
+                    log.info(f"[Update Callback] Trigger ID: {ctx.triggered_id}")
+
+                    # Lista de IDs permitidos (incluindo o botão de salvar e outros botões de cálculo)
+                    allowed_triggers = {
+                        "save-transformer-btn",  # ID do botão de salvar
+                        "submit-transformer-btn",  # ID alternativo possível
+                        "calcular-perdas-vazio",
+                        "calcular-perdas-carga",
+                        "calc-btn"
+                    }
+
                     if ctx.triggered_id not in allowed_triggers:
                         log.warning(f"[Update Callback] Bloqueando gravação fantasma. Trigger: {ctx.triggered_id}")
                         raise PreventUpdate
 
-                    # Serializar e salvar no MCP usando patch_mcp
+                    # Validar dados antes de salvar
+                    if not _dados_ok(current_data):
+                        missing_fields = [k for k in ESSENTIAL if current_data.get(k) in (None, "", 0)]
+                        log.warning(f"[Update Callback] Dados essenciais ausentes: {missing_fields}")
+                        log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
+                        return (
+                            corrente_at,
+                            corrente_bt,
+                            corrente_terciario,
+                            corrente_at_tap_maior,
+                            corrente_at_tap_menor,
+                        )
+
+                    # Serializar dados para salvar no MCP
                     serializable_data = convert_numpy_types(
                         current_data, debug_path="update_transformer_inputs_with_currents"
                     )
-                    if patch_mcp("transformer-inputs-store", serializable_data, app_instance):
-                        log.info(
-                            "[Update Callback] MCP atualizado com valores não vazios do formulário"
-                        )
-                    else:
-                        log.warning("[Update Callback] Nenhum dado válido para atualizar no MCP")
+
+                    # FIRST: Gravar no MCP antes de atualizar o store local
+                    # Usar set_data diretamente para garantir que os dados sejam salvos
+                    app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
+                    log.info(f"[mcp.set_data] transformer-inputs-store atualizado com {len(serializable_data)} campos")
 
                     # Propagar dados para outros stores
                     try:
                         # Verificar novamente se o callback foi acionado por um botão de salvar ou calcular
-                        allowed_triggers = {"save-transformer-btn", "calcular-perdas-vazio", "calcular-perdas-carga", "calc-btn"}
+                        # Usar a mesma lista de IDs permitidos definida anteriormente
+                        allowed_triggers = {
+                            "save-transformer-btn",  # ID do botão de salvar
+                            "submit-transformer-btn",  # ID alternativo possível
+                            "calcular-perdas-vazio",
+                            "calcular-perdas-carga",
+                            "calc-btn"
+                        }
+
                         if ctx.triggered_id not in allowed_triggers:
                             log.warning(f"[Update Callback] Bloqueando propagação de dados. Trigger: {ctx.triggered_id}")
                             raise PreventUpdate
