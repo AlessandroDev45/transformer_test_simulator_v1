@@ -23,7 +23,6 @@ from layouts import COLORS, COMPONENTS, TYPOGRAPHY
 def create_input_row(label, id, placeholder, input_type="number"):
     """Função auxiliar para criar linhas de input com estilo consistente"""
     # Importar estilos padronizados
-    from layouts import COMPONENTS, TYPOGRAPHY
 
     # Definir estilos locais para evitar duplicação
     label_style = {
@@ -33,11 +32,7 @@ def create_input_row(label, id, placeholder, input_type="number"):
         "color": COLORS["text_light"],
     }
 
-    input_style = {
-        "fontSize": "0.7rem",
-        "height": "22px",
-        "padding": "0 0.3rem"
-    }
+    input_style = {"fontSize": "0.7rem", "height": "22px", "padding": "0 0.3rem"}
 
     return dbc.Row(
         [

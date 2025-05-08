@@ -86,9 +86,15 @@ def diagnose_and_fix_mcp(pathname):
     prevent_initial_call="initial_duplicate",  # Permite rodar na carga inicial para exibir dados padrão/carregados
 )
 def global_updates_all_transformer_info_panels(
-    transformer_store_data, pathname, losses_store_data, impulse_store_data,
-    dieletric_store_data, applied_voltage_store_data, induced_voltage_store_data,
-    short_circuit_store_data, temperature_rise_store_data
+    transformer_store_data,
+    pathname,
+    losses_store_data,
+    impulse_store_data,
+    dieletric_store_data,
+    applied_voltage_store_data,
+    induced_voltage_store_data,
+    short_circuit_store_data,
+    temperature_rise_store_data,
 ):  # Recebe dados de todos os stores como trigger
     """
     Atualiza TODOS os painéis de informação do transformador lendo do MCP.
