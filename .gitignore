@@ -42,9 +42,19 @@ assets/*.map
 # Dados temporários e dumps
 *.sqlite3
 *.db
+data/*.db
+data/mcp_state/backups/
 
 # Dados temporários de simulação
 front-resistor-data/
 tail-resistor-data/
 calculated-inductance/
 simulation-status/
+
+# Artefatos de diagnóstico
+callback_report.html
+analyze_callbacks*.py
+
+# Relatórios de cobertura
+htmlcov/
+.coverage
