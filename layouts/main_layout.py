@@ -413,6 +413,11 @@ def create_main_layout(uso_atual=0, limite_atingido=False, app=None):
     global_components = [
         *global_stores,
         dcc.Download(id="download-pdf"),
+        # CSS personalizado
+        html.Link(
+            rel="stylesheet",
+            href="/assets/css/custom.css",
+        ),
         dbc.Modal(
             [
                 dbc.ModalHeader(

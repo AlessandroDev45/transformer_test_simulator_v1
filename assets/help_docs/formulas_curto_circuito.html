@@ -365,6 +365,50 @@ Onde:
 2. A potência de curto-circuito da rede deve ser obtida junto à concessionária de energia.
 3. O fator X/R pode variar significativamente dependendo do projeto do transformador e da rede.
 4. A duração do curto-circuito depende do tempo de atuação das proteções.
+
+## 7. Inputs, Tipos e Callbacks
+
+### 7.1. Inputs e Tipos
+
+#### 7.1.1. Parâmetros de Impedância
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| impedance-before | number | Impedância pré-ensaio em % |
+| impedance-after | number | Impedância pós-ensaio em % |
+| peak-factor | number | Fator de pico (k√2) |
+
+#### 7.1.2. Parâmetros de Configuração
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| isc-side | dropdown | Lado para cálculo (AT/BT/TERCIARIO) |
+| power-category | dropdown | Categoria de potência (I/II/III) |
+
+#### 7.1.3. Resultados
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| isc-sym-result | number | Corrente de curto-circuito simétrica em kA |
+| isc-peak-result | number | Corrente de curto-circuito de pico em kA |
+| delta-impedance-result | number | Variação de impedância em % |
+| impedance-check-status | div | Status da verificação (APROVADO/REPROVADO) |
+| impedance-variation-graph | graph | Gráfico de variação de impedância |
+
+### 7.2. Callbacks Principais
+
+#### 7.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_short_circuit_page_info_panel | Atualiza painel de informações | Copia o conteúdo do painel global para o painel específico da página |
+| short_circuit_load_data | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+
+#### 7.2.2. Callbacks de Cálculo
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| short_circuit_calculate_and_verify | Calcula e verifica | Executa os cálculos de curto-circuito, verifica a conformidade e atualiza o store |
 `;
 
         // Function to generate TOC and add IDs to headings in the actual document

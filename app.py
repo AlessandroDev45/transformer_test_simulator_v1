@@ -35,7 +35,7 @@ except ImportError:
         DEFAULT_THEME_NAME = "DARKLY"
         ASSETS_DIR = "assets"
         USAGE_COUNT_FILE = "usage_count.txt"
-        USAGE_LIMIT = 615  # Example fallback
+        USAGE_LIMIT = 61  # Example fallback
         HOST = "127.0.0.1"
         PORT = 8060
         DEBUG_MODE = False  # Default to False in fallback
@@ -314,6 +314,7 @@ if not layout_creation_failed:
             "induced_voltage": "register_induced_voltage_callbacks",
             "history": "register_history_callbacks",
             "global_actions": "register_global_actions_callbacks",  # Adicionado
+            "isolation_callbacks_fix": "register_isolation_callbacks",  # Corrigido - Callbacks de isolamento automático
             # 'standards_consultation': 'register_standards_consultation_callbacks', # Já são decorados
             # 'standards_management': 'register_standards_management_callbacks' # Já são decorados
             "client_side_callbacks": "register_client_side_callbacks",  # Client-side

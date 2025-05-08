@@ -151,7 +151,7 @@ def toggle_save_modal(n_save, n_cancel, n_confirm, is_open):
     ],
     prevent_initial_call=True,
 )
-def save_current_session(n_clicks, session_name, notes, *store_data):
+def save_current_session(n_clicks, session_name, notes, *transformer_store_data):
     """Salva a sessão atual no banco de dados."""
     print(f"\n\n{'!'*10} CALLBACK save_current_session ACIONADO {'!'*10}")
     print(f"n_clicks: {n_clicks}, session_name: '{session_name}'")
@@ -197,16 +197,16 @@ def save_current_session(n_clicks, session_name, notes, *store_data):
         print(f"{'='*80}")
 
         log.info(f"[HISTORY SAVE] Iniciando salvamento da sessão '{session_name}'")
-        log.info(f"[HISTORY SAVE] Número de stores recebidos: {len(store_data)}")
+        log.info(f"[HISTORY SAVE] Número de stores recebidos: {len(transformer_store_data)}")
         log.info(f"[HISTORY SAVE] Número de nomes de stores: {len(store_names)}")
 
         # Verificar se o número de stores recebidos corresponde ao número de nomes
-        if len(store_data) != len(store_names):
+        if len(transformer_store_data) != len(store_names):
             log.warning(
-                f"[HISTORY SAVE] Discrepância: {len(store_data)} stores recebidos, mas {len(store_names)} nomes definidos"
+                f"[HISTORY SAVE] Discrepância: {len(transformer_store_data)} stores recebidos, mas {len(store_names)} nomes definidos"
             )
             print(
-                f"[DEBUG DB] ALERTA: Discrepância no número de stores! Recebidos: {len(store_data)}, Esperados: {len(store_names)}"
+                f"[DEBUG DB] ALERTA: Discrepância no número de stores! Recebidos: {len(transformer_store_data)}, Esperados: {len(store_names)}"
             )
             # Mesmo com discrepância, tenta preparar com os dados recebidos
             # prepare_session_data usará zip, que para no menor número de elementos
@@ -217,7 +217,7 @@ def save_current_session(n_clicks, session_name, notes, *store_data):
         print(f"{'='*80}")
         log.info("--- [SAVE SESSION] INSPECIONANDO DADOS BRUTOS DETALHADAMENTE ---")
 
-        store_data_list = list(store_data)
+        store_data_list = list(transformer_store_data)
         any_data_found = False
         for i, store_name in enumerate(store_names):
             data = store_data_list[i] if i < len(store_data_list) else None
@@ -711,12 +711,12 @@ def load_session(load_clicks, transformer_inputs=None):
             return no_update, dbc.Alert("Sessão não encontrada.", color="danger"), no_update
 
         # Extrair os dados dos stores
-        store_data = session_details.get("store_data", {})
+        transformer_store_data = session_details.get("transformer_store_data", {})
 
         # Armazenar os dados no store temporário e exibir mensagem de sucesso
         # Não atualizamos o cache aqui, isso será feito em process_loaded_data
         return (
-            {"session_id": session_id, "session_name": session_name, "store_data": store_data},
+            {"session_id": session_id, "session_name": session_name, "transformer_store_data": transformer_store_data},
             dbc.Alert(f"Sessão '{session_name}' carregada com sucesso!", color="success"),
             no_update,
         )
@@ -792,7 +792,7 @@ def process_loaded_data(temp_store_data):
 
     session_id = temp_store_data.get("session_id")
     session_name = temp_store_data.get("session_name")
-    store_data = temp_store_data.get("store_data", {})
+    transformer_store_data = temp_store_data.get("transformer_store_data", {})
 
     log_detailed(
         log,
@@ -803,11 +803,11 @@ def process_loaded_data(temp_store_data):
         data={
             "session_id": session_id,
             "session_name": session_name,
-            "store_count": len(store_data),
+            "store_count": len(transformer_store_data),
         },
     )
 
-    # Processar dados diretamente do store_data (sem MCP)
+    # Processar dados diretamente do transformer_store_data (sem MCP)
     log_detailed(
         log,
         "info",
@@ -820,7 +820,7 @@ def process_loaded_data(temp_store_data):
     # Atualizar o cache da aplicação para acesso rápido fora dos callbacks
     try:
         # Atualizar o cache com os dados carregados
-        for store_name, data in store_data.items():
+        for store_name, data in transformer_store_data.items():
             if (
                 data and store_name == "transformer-inputs-store"
             ):  # Verificar se os dados não estão vazios
@@ -853,15 +853,15 @@ def process_loaded_data(temp_store_data):
             exception=e,
         )
 
-    # Preparar os dados para retorno diretamente do store_data
-    transformer_inputs = store_data.get("transformer-inputs-store", {})
-    losses_store = store_data.get("losses-store", {})
-    impulse_store = store_data.get("impulse-store", {})
-    dieletric_analysis_store = store_data.get("dieletric-analysis-store", {})
-    applied_voltage_store = store_data.get("applied-voltage-store", {})
-    induced_voltage_store = store_data.get("induced-voltage-store", {})
-    short_circuit_store = store_data.get("short-circuit-store", {})
-    temperature_rise_store = store_data.get("temperature-rise-store", {})
+    # Preparar os dados para retorno diretamente do transformer_store_data
+    transformer_inputs = transformer_store_data.get("transformer-inputs-store", {})
+    losses_store = transformer_store_data.get("losses-store", {})
+    impulse_store = transformer_store_data.get("impulse-store", {})
+    dieletric_analysis_store = transformer_store_data.get("dieletric-analysis-store", {})
+    applied_voltage_store = transformer_store_data.get("applied-voltage-store", {})
+    induced_voltage_store = transformer_store_data.get("induced-voltage-store", {})
+    short_circuit_store = transformer_store_data.get("short-circuit-store", {})
+    temperature_rise_store = transformer_store_data.get("temperature-rise-store", {})
 
     # Verificar se todos os stores foram carregados corretamente
     stores_status = {

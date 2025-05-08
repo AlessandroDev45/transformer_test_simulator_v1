@@ -343,6 +343,52 @@ Onde:
 2. As constantes de tempo térmicas podem variar significativamente dependendo do projeto e tamanho do transformador.
 3. A perda de vida útil é cumulativa e deve ser considerada ao longo de toda a vida do transformador.
 4. O sistema de resfriamento deve ser dimensionado considerando as condições ambientais mais desfavoráveis.
+
+## 7. Inputs, Tipos e Callbacks
+
+### 7.1. Inputs e Tipos
+
+#### 7.1.1. Parâmetros de Temperatura
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| ambient-temperature | number | Temperatura ambiente em °C |
+| oil-temperature-rise | number | Elevação de temperatura do óleo em K |
+| winding-temperature-rise | number | Elevação de temperatura dos enrolamentos em K |
+| hotspot-factor | number | Fator de ponto quente |
+
+#### 7.1.2. Parâmetros de Carga
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| load-factor | number | Fator de carga |
+| load-cycle | dropdown | Ciclo de carga (Contínuo/Cíclico) |
+| cooling-type | dropdown | Tipo de resfriamento (ONAN/ONAF/OFAF/ODAF) |
+
+#### 7.1.3. Parâmetros Térmicos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| oil-time-constant | number | Constante de tempo do óleo em minutos |
+| winding-time-constant | number | Constante de tempo dos enrolamentos em minutos |
+| thermal-capacity | number | Capacidade térmica em Wh/K |
+
+### 7.2. Callbacks Principais
+
+#### 7.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_temperature_rise_page_info_panel | Atualiza painel de informações | Copia o conteúdo do painel global para o painel específico da página |
+| load_temperature_rise_data | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+
+#### 7.2.2. Callbacks de Cálculo
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| calculate_temperature_rise | Calcula elevação de temperatura | Executa os cálculos de elevação de temperatura e atualiza o store |
+| calculate_overload_capacity | Calcula capacidade de sobrecarga | Calcula a capacidade de sobrecarga e o tempo máximo permitido |
+| calculate_life_loss | Calcula perda de vida útil | Calcula a taxa de envelhecimento e a perda de vida útil |
 `;
 
         // Function to generate TOC and add IDs to headings in the actual document

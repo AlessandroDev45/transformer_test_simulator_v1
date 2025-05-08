@@ -317,6 +317,44 @@ Onde:
 2. A rigidez dielétrica dos materiais pode variar conforme a qualidade, temperatura e envelhecimento.
 3. A análise dielétrica deve considerar não apenas condições normais, mas também sobretensões transitórias.
 4. A coordenação de isolamento deve ser verificada considerando a proteção por para-raios, quando aplicável.
+
+## 8. Inputs, Tipos e Callbacks
+
+### 8.1. Inputs e Tipos
+
+#### 8.1.1. Parâmetros de Isolamento
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| altitude-input | number | Altitude de instalação em metros |
+| temperature-input | number | Temperatura ambiente em °C |
+| humidity-input | number | Umidade relativa em % |
+| pollution-level | dropdown | Nível de poluição (I/II/III/IV) |
+
+#### 8.1.2. Parâmetros de Espaçamentos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| phase-phase-spacing | number | Espaçamento fase-fase em mm |
+| phase-ground-spacing | number | Espaçamento fase-terra em mm |
+| terminal-clearance | number | Distância de escoamento em mm |
+| creepage-distance | number | Distância de fuga em mm |
+
+### 8.2. Callbacks Principais
+
+#### 8.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_dielectric_page_info_panel | Atualiza painel de informações | Copia o conteúdo do painel global para o painel específico da página |
+| load_dielectric_data | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+
+#### 8.2.2. Callbacks de Cálculo
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| calculate_dielectric_parameters | Calcula parâmetros dielétricos | Executa os cálculos de análise dielétrica e atualiza o store |
+| update_correction_factors | Atualiza fatores de correção | Calcula fatores de correção para altitude, temperatura e poluição |
 `;
 
         // Function to generate TOC and add IDs to headings in the actual document

@@ -70,7 +70,7 @@ def seed_mcp(mcp_instance=None, app_instance=None) -> bool:
             return False
 
         # Definir dados no MCP
-        mcp.set_data("transformer-inputs-store", default_data, notify=False)
+        mcp.set_data("transformer-inputs-store", default_data)
         log.info("MCP inicializado com dados padrão")
 
         return True

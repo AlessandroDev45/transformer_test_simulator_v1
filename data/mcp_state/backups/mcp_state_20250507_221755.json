@@ -1,0 +1,160 @@
+{
+  "timestamp": "2025-05-07T22:17:55.911786",
+  "version": "1.0",
+  "stores": {
+    "transformer-inputs-store": {
+      "tipo_transformador": "Trifásico",
+      "frequencia": 60,
+      "conexao_at": "estrela_sem_neutro",
+      "conexao_bt": "estrela",
+      "conexao_terciario": "ziguezague",
+      "liquido_isolante": "Mineral",
+      "tipo_isolamento": "progressivo",
+      "potencia_mva": 230,
+      "grupo_ligacao": "Dyn1",
+      "elevacao_oleo_topo": 65,
+      "elevacao_enrol": 55,
+      "tensao_at": 230,
+      "classe_tensao_at": 500,
+      "elevacao_enrol_at": null,
+      "impedancia": 20,
+      "nbi_at": null,
+      "sil_at": null,
+      "tensao_at_tap_maior": 244.9,
+      "impedancia_tap_maior": 10,
+      "tensao_at_tap_menor": 215,
+      "impedancia_tap_menor": 20,
+      "teste_tensao_aplicada_at": null,
+      "teste_tensao_induzida": null,
+      "tensao_bt": 14,
+      "classe_tensao_bt": 15.1,
+      "elevacao_enrol_bt": null,
+      "nbi_bt": null,
+      "sil_bt": null,
+      "teste_tensao_aplicada_bt": null,
+      "tensao_terciario": 0.1,
+      "classe_tensao_terciario": null,
+      "elevacao_enrol_terciario": null,
+      "nbi_terciario": null,
+      "sil_terciario": null,
+      "teste_tensao_aplicada_terciario": null,
+      "tensao_bucha_neutro_at": null,
+      "tensao_bucha_neutro_bt": null,
+      "tensao_bucha_neutro_terciario": null,
+      "nbi_neutro_at": null,
+      "nbi_neutro_bt": null,
+      "nbi_neutro_terciario": null,
+      "peso_total": 100,
+      "peso_parte_ativa": 14,
+      "peso_oleo": 90,
+      "peso_tanque_acessorios": 19,
+      "corrente_nominal_at": 577.35,
+      "corrente_nominal_at_tap_maior": 542.22,
+      "corrente_nominal_at_tap_menor": 617.63,
+      "corrente_nominal_bt": 9485.04,
+      "corrente_nominal_terciario": 1327905.62
+    },
+    "losses-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "impulse-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "dieletric-analysis-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "applied-voltage-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "induced-voltage-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "short-circuit-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "temperature-rise-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "comprehensive-analysis-store": {
+      "transformer_data": {
+        "potencia_mva": 230,
+        "tensao_at": 230,
+        "tensao_bt": 13.9,
+        "corrente_nominal_at": 577.35,
+        "corrente_nominal_bt": 9553.28,
+        "tipo_transformador": "Trifásico",
+        "frequencia": 60,
+        "impedancia": 20
+      }
+    },
+    "front-resistor-data": {},
+    "tail-resistor-data": {},
+    "calculated-inductance": {},
+    "simulation-status": {
+      "running": false
+    }
+  }
+}

@@ -1070,7 +1070,7 @@ def analyze_dielectric_details(n_clicks, dieletric_data):
         )
 
         # Armazenar dados para uso posterior
-        store_data = {
+        transformer_store_data = {
             "enrolamentos": [
                 {"nome": "Alta Tensão", "dados": enrolamentos_map.get("Alta Tensão")},
                 {"nome": "Baixa Tensão", "dados": enrolamentos_map.get("Baixa Tensão")},
@@ -1089,7 +1089,7 @@ def analyze_dielectric_details(n_clicks, dieletric_data):
             duration=4000,
         )
 
-        return at_output, bt_output, terciario_output, store_data, alert
+        return at_output, bt_output, terciario_output, transformer_store_data, alert
 
     except Exception as e:
         log.exception(f"[ANALYZE DETAILS] Erro ao analisar detalhes: {e}")

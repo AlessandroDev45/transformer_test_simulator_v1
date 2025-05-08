@@ -747,11 +747,14 @@ def populate_dielectric_fields(pathname_input, transformer_data, pathname_state)
         Output({"type": "impulso-atm-cortado", "index": "bt"}, "value"),
         Output({"type": "impulso-atm-cortado", "index": "terciario"}, "value"),
     ],
-    [Input("url", "pathname")],
+    [
+        Input("url", "pathname"),
+        Input("dieletric-analysis-store", "data")
+    ],
     [State("transformer-inputs-store", "data")],
     prevent_initial_call=False,  # Executa na carga inicial
 )
-def populate_dielectric_fields_auto(pathname, transformer_data):
+def populate_dielectric_fields_auto(pathname, dieletric_store_data, transformer_data):
     """Preenche automaticamente os campos da análise dielétrica quando a página é carregada."""
     # Verifica se estamos na página correta
     if not pathname:

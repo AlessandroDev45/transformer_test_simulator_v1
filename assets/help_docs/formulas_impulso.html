@@ -333,6 +333,66 @@ Onde:
 2. A forma de onda real pode diferir da simulação devido a efeitos não lineares e parasitas.
 3. A indutância do circuito pode afetar significativamente a forma de onda, especialmente no caso de impulso cortado.
 4. O teste de impulso é um teste destrutivo e deve ser realizado com cuidado para evitar danos ao transformador.
+
+## 8. Inputs, Tipos e Callbacks
+
+### 8.1. Inputs e Tipos
+
+#### 8.1.1. Parâmetros Básicos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| impulse-type | radioitems | Tipo de impulso (Atmosférico/Manobra/Cortado) |
+| test-voltage | number | Tensão de teste em kV |
+| generator-config | dropdown | Configuração do gerador (estágios e paralelos) |
+| simulation-model-type | dropdown | Tipo de modelo de simulação (RLC+K/RLC) |
+| test-object-capacitance | number | Capacitância do objeto de teste em pF |
+| stray-capacitance | number | Capacitância parasita em pF |
+| shunt-resistor | dropdown | Resistor shunt em Ω |
+
+#### 8.1.2. Parâmetros de Resistores e Indutância
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| front-resistor-expression | text | Expressão do resistor frontal |
+| tail-resistor-expression | text | Expressão do resistor de cauda |
+| inductance-adjustment-factor | number | Fator de ajuste da indutância |
+| tail-resistance-adjustment-factor | number | Fator de ajuste da resistência de cauda |
+| external-inductance | number | Indutância externa em μH |
+| transformer-inductance | number | Indutância do transformador em H |
+
+#### 8.1.3. Parâmetros Específicos por Tipo de Impulso
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| gap-distance | number | Distância do gap para impulso cortado em mm |
+| si-capacitor-value | number | Valor do capacitor para impulso de manobra em pF |
+
+### 8.2. Callbacks Principais
+
+#### 8.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| load_impulse_data_on_page_load | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+| update_impulse_simulation | Atualiza simulação e store | Executa a simulação e salva os resultados no store |
+
+#### 8.2.2. Callbacks de Simulação
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| toggle_simulation | Controla simulação automática | Inicia/para a simulação automática da forma de onda |
+| update_dynamic_controls | Atualiza controles dinâmicos | Mostra/esconde controles específicos baseados no tipo de impulso |
+| update_rf_value | Atualiza valor do resistor frontal | Incrementa/decrementa o valor do resistor frontal |
+| update_rt_value | Atualiza valor do resistor de cauda | Incrementa/decrementa o valor do resistor de cauda |
+
+#### 8.2.3. Callbacks de Cálculo de Indutância
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| toggle_transformer_calc | Mostra/esconde calculadora | Controla a visibilidade da calculadora de indutância |
+| calculate_transformer_inductance_callback | Calcula indutância | Calcula a indutância do transformador a partir dos parâmetros |
+| use_transformer_data | Usa dados do transformador | Preenche os campos com dados do transformador armazenados |
 `;
 
         // Function to generate TOC and add IDs to headings in the actual document

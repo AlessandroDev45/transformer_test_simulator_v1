@@ -1,6 +1,17 @@
 # layouts/transformer_inputs.py
 """ Defines the layout for the Transformer Inputs (Dados Básicos) section. """
 import logging
+import sys
+import os
+
+# Configurar logging básico para execução standalone
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log = logging.getLogger(__name__)
+
+# Adicionar o diretório raiz ao path quando executado diretamente
+if __name__ == "__main__":
+    # Adiciona o diretório pai ao path para permitir importações relativas
+    sys.path.insert(0, os.path.abspath('..'))
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -8,12 +19,9 @@ from dash import dcc, html
 # Importar estilos diretamente de utils.styles
 try:
     from utils.styles import COLORS, COMPONENTS, SPACING, TYPOGRAPHY
-
-    log = logging.getLogger(__name__)
     log.debug("Estilos importados com sucesso de utils.styles")
 except ImportError as e:
     # Fallback básico se a importação falhar
-    log = logging.getLogger(__name__)
     log.error(f"Falha ao importar estilos: {e}. Usando fallbacks.")
     COLORS = {
         "primary": "#007bff",
@@ -74,48 +82,48 @@ LABEL_STYLE = {
     "textAlign": "left",
     "whiteSpace": "nowrap",
     "marginBottom": "0.2rem",
-    "display": "inline-block",
+    "display": "block", # Alterado para block para que o input fique abaixo
     "width": "100%",
     "color": COLORS.get("text_light", "#f0f0f0"),
-    "fontSize": "0.8rem",  # Aumentado para melhor legibilidade
+    "fontSize": "0.8rem",
 }
 INPUT_STYLE = {
     **COMPONENTS.get("input", {}),
-    "height": "32px",  # Aumentado para melhor clicabilidade
-    "fontSize": "0.8rem",  # Aumentado para melhor legibilidade
+    "height": "32px",
+    "fontSize": "0.8rem",
     "backgroundColor": COLORS.get("background_input", "#444"),
     "color": COLORS.get("text_light", "#f0f0f0"),
     "border": f"1px solid {COLORS.get('border', '#555')}",
-    "padding": "0.375rem 0.75rem",  # Padding melhorado
-    "width": "100%",  # Garantir largura completa
+    "padding": "0.375rem 0.75rem",
+    "width": "100%", # Input ocupa 100% da coluna pai
 }
 DROPDOWN_STYLE = {
     **COMPONENTS.get("dropdown", {}),
-    "height": "32px",  # Aumentado para melhor clicabilidade
-    "minHeight": "32px",  # Aumentado para melhor clicabilidade
-    "fontSize": "0.8rem",  # Aumentado para melhor legibilidade
-    "width": "100%",  # Garantir largura completa
+    "height": "32px",
+    "minHeight": "32px",
+    "fontSize": "0.8rem",
+    "width": "100%", # Dropdown ocupa 100% da coluna pai
     "display": "inline-block",
     "backgroundColor": COLORS.get("background_input", "#444"),
-    "color": COLORS.get("text_dark", "#212529"),
+    "color": COLORS.get("text_dark", "#212529"), # Ajustar se o tema do dropdown for escuro
     "border": f"1px solid {COLORS.get('border', '#555')}",
-}  # Color ajustada para texto escuro no dropdown claro
+}
 READ_ONLY_STYLE = {
     **COMPONENTS.get("read_only", {}),
-    "height": "32px",  # Aumentado para melhor clicabilidade
-    "fontSize": "0.8rem",  # Aumentado para melhor legibilidade
+    "height": "32px",
+    "fontSize": "0.8rem",
     "backgroundColor": COLORS.get("background_card_header", "#555"),
     "color": COLORS.get("text_muted", "#aaa"),
     "border": f"1px solid {COLORS.get('border', '#555')}",
-    "padding": "0.375rem 0.75rem",  # Padding melhorado
-    "width": "100%",  # Garantir largura completa
+    "padding": "0.375rem 0.75rem",
+    "width": "100%",
 }
 SECTION_TITLE_STYLE = {
     **TYPOGRAPHY.get("section_title", {}),
     "marginTop": "0.75rem",
     "marginBottom": "0.75rem",
     "color": COLORS.get("text_light", "#f0f0f0"),
-    "fontSize": "1rem",  # Aumentado para melhor legibilidade
+    "fontSize": "1rem",
     "fontWeight": "bold",
     "textAlign": "center",
     "backgroundColor": COLORS.get("primary", "#007bff"),
@@ -125,8 +133,8 @@ SECTION_TITLE_STYLE = {
 SUBSECTION_TITLE_STYLE = {
     "backgroundColor": COLORS.get("secondary", "#555"),
     "color": COLORS.get("text_header", "#fff"),
-    "fontSize": "0.85rem",  # Aumentado para melhor legibilidade
-    "padding": "3px 8px",  # Padding melhorado
+    "fontSize": "0.85rem",
+    "padding": "3px 8px",
     "borderRadius": "3px",
     "textAlign": "center",
     "marginBottom": "0.6rem",
@@ -135,9 +143,16 @@ SUBSECTION_TITLE_STYLE = {
 }
 BUTTON_STYLE_SECONDARY = {
     **COMPONENTS.get("button_secondary", {}),
-    "padding": "0.2rem 0.3rem",
-    "fontSize": "0.7rem",
-    "height": "28px",
+    "padding": "0.2rem 0.3rem", # Ajustar se necessário
+    "fontSize": "0.75rem", # Ajustar para caber
+    "height": "32px", # Mesma altura dos inputs
+    "width": "100%", # Botão ocupa 100% da coluna pai
+    "lineHeight": "1.5", # Para centralizar texto verticalmente
+    "textAlign": "center",
+    # Se o botão tiver cor de fundo diferente, ajuste as cores do texto
+    # "backgroundColor": COLORS.get("secondary"),
+    # "color": COLORS.get("text_header"),
+    # "border": f"1px solid {COLORS.get('border_strong')}"
 }
 CARD_HEADER_STYLE_PRIMARY = {
     **COMPONENTS.get("card_header", {}),
@@ -162,14 +177,11 @@ CARD_STYLE = {
 
 def create_transformer_inputs_layout():
     """Creates the layout component for the Transformer Inputs section."""
-    log.info("Criando layout Dados Básicos (v4 - Baseado nos callbacks MCP)...")
+    log.info("Criando layout Dados Básicos (v5 - Layout Geral e Pesos em 2 linhas)...")
 
-    # Layout principal
     transformer_inputs_layout = html.Div(
         [
-            # Stores globais já estão no main_layout
-            # Botões de forçar atualização do MCP e limpar cache local foram removidos
-            # Divs ocultas para compatibilidade com o callback global_updates
+            # ... (stores globais e divs ocultas permanecem aqui) ...
             html.Div(html.Div(), id="transformer-info-losses", style={"display": "none"}),
             html.Div(html.Div(), id="transformer-info-impulse", style={"display": "none"}),
             html.Div(html.Div(), id="transformer-info-dieletric", style={"display": "none"}),
@@ -178,6 +190,9 @@ def create_transformer_inputs_layout():
             html.Div(html.Div(), id="transformer-info-short-circuit", style={"display": "none"}),
             html.Div(html.Div(), id="transformer-info-temperature-rise", style={"display": "none"}),
             html.Div(html.Div(), id="transformer-info-comprehensive", style={"display": "none"}),
+
+
+
             # --- Especificações Gerais e Pesos ---
             dbc.Card(
                 [
@@ -194,478 +209,77 @@ def create_transformer_inputs_layout():
                             ],
                             className="d-flex align-items-center justify-content-center",
                         ),
-                        style=CARD_HEADER_STYLE_PRIMARY,  # Usar estilo primário
+                        style=CARD_HEADER_STYLE_PRIMARY,
                     ),
                     dbc.CardBody(
                         [
-                            # Linha 1: Potência, Frequência, Grupo, Líquido
+                            # LINHA 1: Potência, Frequência, Tipo Trafo, Grupo Ligação, Líq. Isolante, Tipo Isolamento, Norma
                             dbc.Row(
                                 [
-                                    # Coluna 1 - Potência
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Potência (MVA):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="potencia_mva",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="potencia_mva",
-                                                                placeholder="MVA",
-                                                                style=INPUT_STYLE,
-                                                                step=0.1,
-                                                                max=9999.9,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 2 - Frequência
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Frequência (Hz):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="frequencia",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="frequencia",
-                                                                placeholder="Hz",
-                                                                style=INPUT_STYLE,
-                                                                value=60,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 3 - Grupo Ligação
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Grupo Ligação:",
-                                                                style=LABEL_STYLE,
-                                                                html_for="grupo_ligacao",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="text",
-                                                                id="grupo_ligacao",
-                                                                placeholder="Ex: Dyn1",
-                                                                style=INPUT_STYLE,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 4 - Líquido Isolante
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Líq. Isolante:",
-                                                                style=LABEL_STYLE,
-                                                                html_for="liquido_isolante",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="text",
-                                                                id="liquido_isolante",
-                                                                value="Mineral",
-                                                                style=INPUT_STYLE,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
+                                    dbc.Col([
+                                        dbc.Label("Potência (MVA):", style=LABEL_STYLE, html_for="potencia_mva"),
+                                        dbc.Input(type="number", id="potencia_mva", placeholder="MVA", style=INPUT_STYLE, step=0.1, max=9999.9, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Frequência (Hz):", style=LABEL_STYLE, html_for="frequencia"),
+                                        dbc.Input(type="number", id="frequencia", placeholder="Hz", style=INPUT_STYLE, value=60, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Tipo Trafo:", style=LABEL_STYLE, html_for="tipo_transformador"),
+                                        dcc.Dropdown(id="tipo_transformador", options=[{"label": "Trifásico", "value": "Trifásico"}, {"label": "Monofásico", "value": "Monofásico"}], value="Trifásico", clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type="local", className="dash-dropdown-dark")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Grupo Ligação:", style=LABEL_STYLE, html_for="grupo_ligacao"),
+                                        dbc.Input(type="text", id="grupo_ligacao", placeholder="Ex: Dyn1", style=INPUT_STYLE, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Líq. Isolante:", style=LABEL_STYLE, html_for="liquido_isolante"),
+                                        dbc.Input(type="text", id="liquido_isolante", value="Mineral", style=INPUT_STYLE, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Tipo Isolamento:", style=LABEL_STYLE, html_for="tipo_isolamento"),
+                                        dcc.Dropdown(id="tipo_isolamento", options=[{"label": "Uniforme", "value": "Uniforme"}, {"label": "Progressivo", "value": "Progressivo"}], value="Uniforme", clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type="local", className="dash-dropdown-dark")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Norma:", style=LABEL_STYLE, html_for="norma_iso"),
+                                        dcc.Dropdown(id="norma_iso", options=[{"label": "IEC NBR 5356", "value": "IEC"},{"label": "IEEE C57.12", "value": "IEEE"}], value="IEC", clearable=False, style=DROPDOWN_STYLE, persistence=True, persistence_type="local", className="dash-dropdown-dark")
+                                    ]),
                                 ],
-                                className="g-2 mb-2",
+                                className="g-2 mb-3", # g-2 para gutter (espaçamento), mb-3 para margem inferior
                             ),
-                            # Linha 2: Elev. Óleo, Elev. Enrol., Tipo Trafo, Tipo Isolamento
+                            # LINHA 2: Elev. Óleo, Elev. Enrol., Peso P.Ativa, Peso Tanque, Peso Óleo, Peso Total, LIMPAR
                             dbc.Row(
                                 [
-                                    # Coluna 1 - Elevação Óleo
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Elev. Óleo (°C/K):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="elevacao_oleo_topo",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="elevacao_oleo_topo",
-                                                                style=INPUT_STYLE,
-                                                                step=1,
-                                                                max=999,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 2 - Elevação Enrolamento (Novo)
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Elev. Enrol. (°C):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="elevacao_enrol",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="elevacao_enrol",
-                                                                style=INPUT_STYLE,
-                                                                step=1,
-                                                                max=999,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 3 - Tipo Trafo
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Tipo Trafo:",
-                                                                style=LABEL_STYLE,
-                                                                html_for="tipo_transformador",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dcc.Dropdown(
-                                                                id="tipo_transformador",
-                                                                options=[
-                                                                    {
-                                                                        "label": "Trifásico",
-                                                                        "value": "Trifásico",
-                                                                    },
-                                                                    {
-                                                                        "label": "Monofásico",
-                                                                        "value": "Monofásico",
-                                                                    },
-                                                                ],
-                                                                value="Trifásico",  # Default
-                                                                clearable=False,
-                                                                style=DROPDOWN_STYLE,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                                className="dash-dropdown-dark",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 4 - Tipo Isolamento e Botão Limpar
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Tipo Isolamento:",
-                                                                style=LABEL_STYLE,
-                                                                html_for="tipo_isolamento",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dcc.Dropdown(
-                                                                id="tipo_isolamento",
-                                                                options=[
-                                                                    {
-                                                                        "label": "Uniforme",
-                                                                        "value": "uniforme",
-                                                                    },
-                                                                    {
-                                                                        "label": "Progressivo",
-                                                                        "value": "progressivo",
-                                                                    },
-                                                                ],
-                                                                value="uniforme",
-                                                                clearable=False,
-                                                                style=DROPDOWN_STYLE,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                                className="dash-dropdown-dark",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Button(
-                                                                "Limpar",
-                                                                id="limpar-transformer-inputs",
-                                                                className="w-100",
-                                                                title="Limpar Campos Gerais e Pesos",
-                                                                style=BUTTON_STYLE_SECONDARY,
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
+                                    dbc.Col([
+                                        dbc.Label("Elev. Óleo (°C/K):", style=LABEL_STYLE, html_for="elevacao_oleo_topo"),
+                                        dbc.Input(type="number", id="elevacao_oleo_topo", style=INPUT_STYLE, step=1, max=999, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Elev. Enrol. (°C):", style=LABEL_STYLE, html_for="elevacao_enrol"),
+                                        dbc.Input(type="number", id="elevacao_enrol", style=INPUT_STYLE, step=1, max=999, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Peso P.Ativa (ton):", style=LABEL_STYLE, html_for="peso_parte_ativa"),
+                                        dbc.Input(type="number", id="peso_parte_ativa", style=INPUT_STYLE, step=0.1, max=999.9, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Peso Tanque (ton):", style=LABEL_STYLE, html_for="peso_tanque_acessorios"),
+                                        dbc.Input(type="number", id="peso_tanque_acessorios", style=INPUT_STYLE, step=0.1, max=999.9, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Peso Óleo (ton):", style=LABEL_STYLE, html_for="peso_oleo"),
+                                        dbc.Input(type="number", id="peso_oleo", style=INPUT_STYLE, step=0.1, max=999.9, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("Peso Total (ton):", style=LABEL_STYLE, html_for="peso_total"),
+                                        dbc.Input(type="number", id="peso_total", style=INPUT_STYLE, step=0.1, max=999.9, persistence=True, persistence_type="local")
+                                    ]),
+                                    dbc.Col([
+                                        dbc.Label("\u00A0", style=LABEL_STYLE), # Espaço para alinhar com os labels dos inputs
+                                        dbc.Button("LIMPAR", id="limpar-transformer-inputs", title="Limpar Campos Gerais e Pesos", style=BUTTON_STYLE_SECONDARY)
+                                    ]),
                                 ],
-                                className="g-2 mb-2",
-                            ),
-                            # Linha 3: Pesos
-                            dbc.Row(
-                                [
-                                    # Coluna 1 - Peso Total
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Peso Total (ton):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="peso_total",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="peso_total",
-                                                                style=INPUT_STYLE,
-                                                                step=0.1,
-                                                                max=999.9,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 2 - Peso Parte Ativa
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Peso P.Ativa (ton):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="peso_parte_ativa",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="peso_parte_ativa",
-                                                                style=INPUT_STYLE,
-                                                                step=0.1,
-                                                                max=999.9,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 3 - Peso Óleo
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Peso Óleo (ton):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="peso_oleo",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="peso_oleo",
-                                                                style=INPUT_STYLE,
-                                                                step=0.1,
-                                                                max=999.9,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                    # Coluna 4 - Peso Tanque
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Label(
-                                                                "Peso Tanque (ton):",
-                                                                style=LABEL_STYLE,
-                                                                html_for="peso_tanque_acessorios",
-                                                            ),
-                                                        ],
-                                                        width=12,
-                                                    ),
-                                                    dbc.Col(
-                                                        [
-                                                            dbc.Input(
-                                                                type="number",
-                                                                id="peso_tanque_acessorios",
-                                                                style=INPUT_STYLE,
-                                                                step=0.1,
-                                                                max=999.9,
-                                                                persistence=True,
-                                                                persistence_type="local",
-                                                            )
-                                                        ],
-                                                        width=6,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        width=3,
-                                        className="px-1",
-                                    ),
-                                ],
-                                className="g-2",
+                                className="g-2", # g-2 para gutter (espaçamento)
                             ),
                         ],
                         style=CARD_BODY_STYLE,
@@ -674,6 +288,7 @@ def create_transformer_inputs_layout():
                 style=CARD_STYLE,
             ),
             # --- Parâmetros dos Enrolamentos ---
+            # O restante do layout permanece o mesmo
             dbc.Card(
                 [
                     dbc.CardHeader(
@@ -693,8 +308,7 @@ def create_transformer_inputs_layout():
                     ),
                     dbc.CardBody(
                         [
-                            # Espaçamento adicional para melhorar a aparência
-                            html.Div(style={"height": "15px"}),
+                            # Sem espaçamento adicional para compactar o layout
                             dbc.Row(
                                 [
                                     # --- Coluna Alta Tensão ---
@@ -742,12 +356,14 @@ def create_transformer_inputs_layout():
                                                                 step=0.1,
                                                                 persistence=True,
                                                                 persistence_type="local",
+
                                                             ),
+
                                                         ],
                                                         width=6,
                                                     ),
                                                 ],
-                                                className="g-3 mb-3",
+                                                className="g-2 mb-1",
                                             ),
                                             # Corrente e Impedância lado a lado
                                             dbc.Row(
@@ -801,7 +417,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI (kV):",
+                                                                "NBI/BIL (kV):",
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_at",
                                                             ),
@@ -913,7 +529,7 @@ def create_transformer_inputs_layout():
                                                 ],
                                                 className="g-3 mb-3",
                                             ),
-                                            # NBI/BIL Neutro (agora visível por padrão)
+                                            # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
                                                 id="nbi_neutro_at_col",
                                                 children=[
@@ -926,6 +542,23 @@ def create_transformer_inputs_layout():
                                                             ),
                                                             dcc.Dropdown(
                                                                 id="nbi_neutro_at",
+                                                                options=[],
+                                                                style=DROPDOWN_STYLE,
+                                                                persistence=False,
+                                                                className="dash-dropdown-dark",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "SIL/IM Neutro (kV):",
+                                                                style=LABEL_STYLE,
+                                                                html_for="sil_neutro_at",
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="sil_neutro_at",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
                                                                 persistence=False,
@@ -1184,7 +817,9 @@ def create_transformer_inputs_layout():
                                                                 step=0.1,
                                                                 persistence=True,
                                                                 persistence_type="local",
+
                                                             ),
+
                                                         ],
                                                         width=6,
                                                     ),
@@ -1210,7 +845,7 @@ def create_transformer_inputs_layout():
                                                                 persistence_type="local",
                                                             ),
                                                         ],
-                                                        width=6,
+                                                        width=6, # Ajustado
                                                     ),
                                                 ],
                                                 className="g-3 mb-3",
@@ -1222,7 +857,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI (kV):",
+                                                                "NBI/BIL (kV):",
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_bt",
                                                             ),
@@ -1334,7 +969,7 @@ def create_transformer_inputs_layout():
                                                 ],
                                                 className="g-3 mb-3",
                                             ),
-                                            # NBI/BIL Neutro (agora visível por padrão)
+                                            # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
                                                 id="nbi_neutro_bt_col",
                                                 children=[
@@ -1347,6 +982,23 @@ def create_transformer_inputs_layout():
                                                             ),
                                                             dcc.Dropdown(
                                                                 id="nbi_neutro_bt",
+                                                                options=[],
+                                                                style=DROPDOWN_STYLE,
+                                                                persistence=False,
+                                                                className="dash-dropdown-dark",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "SIL/IM Neutro (kV):",
+                                                                style=LABEL_STYLE,
+                                                                html_for="sil_neutro_bt",
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="sil_neutro_bt",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
                                                                 persistence=False,
@@ -1386,7 +1038,7 @@ def create_transformer_inputs_layout():
                                                                 className="dash-dropdown-dark",
                                                             ),
                                                         ],
-                                                        width=6,
+                                                        width=6, # Ajustado
                                                     ),
                                                 ],
                                                 className="g-3 mb-3",
@@ -1441,7 +1093,9 @@ def create_transformer_inputs_layout():
                                                                 step=0.1,
                                                                 persistence=True,
                                                                 persistence_type="local",
+
                                                             ),
+
                                                         ],
                                                         width=6,
                                                     ),
@@ -1467,7 +1121,7 @@ def create_transformer_inputs_layout():
                                                                 persistence_type="local",
                                                             ),
                                                         ],
-                                                        width=6,
+                                                        width=6, # Ajustado
                                                     ),
                                                 ],
                                                 className="g-3 mb-3",
@@ -1479,7 +1133,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI (kV):",
+                                                                "NBI/BIL (kV):",
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_terciario",
                                                             ),
@@ -1595,7 +1249,7 @@ def create_transformer_inputs_layout():
                                                 ],
                                                 className="g-3 mb-3",
                                             ),
-                                            # NBI/BIL Neutro (agora visível por padrão)
+                                            # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
                                                 id="nbi_neutro_terciario_col",
                                                 children=[
@@ -1608,6 +1262,23 @@ def create_transformer_inputs_layout():
                                                             ),
                                                             dcc.Dropdown(
                                                                 id="nbi_neutro_terciario",
+                                                                options=[],
+                                                                style=DROPDOWN_STYLE,
+                                                                persistence=False,
+                                                                className="dash-dropdown-dark",
+                                                            ),
+                                                        ],
+                                                        width=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Label(
+                                                                "SIL/IM Neutro (kV):",
+                                                                style=LABEL_STYLE,
+                                                                html_for="sil_neutro_terciario",
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="sil_neutro_terciario",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
                                                                 persistence=False,
@@ -1647,7 +1318,7 @@ def create_transformer_inputs_layout():
                                                                 className="dash-dropdown-dark",
                                                             ),
                                                         ],
-                                                        width=6,
+                                                        width=6, # Ajustado
                                                     ),
                                                 ],
                                                 className="g-3 mb-3",
@@ -1657,12 +1328,9 @@ def create_transformer_inputs_layout():
                                         className="ps-1",
                                     ),
                                 ],
-                                className="g-0",
-                            ),  # Fim da Row dos Enrolamentos
-                            # Espaçamento adicional para melhorar a aparência
+                                className="g-0", # No gutter for the main winding columns row
+                            ),
                             html.Div(style={"height": "15px"}),
-
-                            # Indicador de último salvamento automático
                             dbc.Row(
                                 [
                                     dbc.Col(
@@ -1678,11 +1346,7 @@ def create_transformer_inputs_layout():
                                 ],
                                 className="g-2 mb-2",
                             ),
-
-                            # Store para controlar o estado "sujo" do formulário
                             dcc.Store(id="dirty-flag", storage_type="memory"),
-
-                            # Trigger para inicialização da página
                             dcc.Interval(id="page-init-trigger", n_intervals=0, max_intervals=1),
                         ],
                         style={**CARD_BODY_STYLE, "padding": "1rem"},
