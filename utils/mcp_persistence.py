@@ -106,10 +106,11 @@ def ensure_mcp_data_propagation(app, source_store: str, target_stores: list) -> 
             f"[ensure_mcp_data_propagation] Store de origem {source_store} É a fonte-de-verdade para campos básicos"
         )
 
+    # Mesmo sem dados essenciais, continuamos com a propagação
     if not has_essential_data:
         missing_fields = [k for k in ESSENTIAL if source_data.get(k) in (None, "", 0)]
         log.warning(
-            f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}: {missing_fields}"
+            f"[ensure_mcp_data_propagation] Dados essenciais ausentes no store de origem {source_store}: {missing_fields}, mas continuando com a propagação"
         )
 
     # Preparar os dados para propagação

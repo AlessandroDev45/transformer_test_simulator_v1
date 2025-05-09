@@ -147,6 +147,11 @@ def losses_render_tab_content(tab_ativa, losses_store):
     Renderiza o conteúdo da aba selecionada na página de perdas.
     Também é acionado quando o store losses-store é atualizado.
     """
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
+        log.debug(f"Ignorando renderização após cálculo para evitar redefinição. Trigger: {ctx.triggered_id}")
+        raise PreventUpdate
+
     # O parâmetro losses_store é usado apenas para acionar o callback quando o store é atualizado
     # mas não é utilizado diretamente na função
     if tab_ativa == "tab-vazio":
@@ -173,6 +178,11 @@ def losses_load_vazio_values(active_tab):
     """
     Carrega os valores de perdas em vazio do MCP quando a aba é selecionada.
     """
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id == "calcular-perdas-vazio":
+        log.debug("Ignorando carregamento de valores após cálculo para evitar redefinição")
+        return tuple([no_update] * 6)
+
     if active_tab != "tab-vazio":
         raise PreventUpdate
 
@@ -216,6 +226,11 @@ def losses_load_carga_values(active_tab):
     """
     Carrega os valores de perdas em carga do MCP quando a aba é selecionada.
     """
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id == "calcular-perdas-carga":
+        log.debug("Ignorando carregamento de valores após cálculo para evitar redefinição")
+        return tuple([no_update] * 4)
+
     if active_tab != "tab-carga":
         raise PreventUpdate
 
@@ -257,6 +272,11 @@ def update_losses_page_info_panel(global_panel_content):
     Copia o conteúdo do painel de informações global para o painel local da página de perdas.
     Este callback é acionado quando o painel global é atualizado pelo callback global_updates_all_transformer_info_panels.
     """
+    # Verificar se o callback foi acionado pelo botão de calcular
+    if ctx.triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
+        log.debug(f"Ignorando atualização do painel após cálculo para evitar redefinição. Trigger: {ctx.triggered_id}")
+        raise PreventUpdate
+
     log.debug("Atualizando painel de informações do transformador na página de perdas")
     return global_panel_content
 

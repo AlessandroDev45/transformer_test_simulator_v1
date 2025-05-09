@@ -105,11 +105,16 @@ def global_updates_all_transformer_info_panels(
     module_name = "global_updates"
     function_name = "global_updates_all_transformer_info_panels"
 
-    # IMPORTANTE: Evitar execução quando o trigger for mudança de URL
+    # IMPORTANTE: Evitar execução quando o trigger for mudança de URL ou botão de calcular
     # Isso evita que o callback seja executado durante navegação entre páginas
-    # e potencialmente sobrescreva dados válidos com None
+    # ou durante o cálculo de perdas, o que poderia sobrescrever dados válidos
     if triggered_id == "url":
         log.debug(f"[{module_name}] Callback ignorado - trigger é mudança de URL")
+        raise dash.exceptions.PreventUpdate
+
+    # Evitar execução quando o trigger for botão de calcular
+    if triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
+        log.debug(f"[{module_name}] Callback ignorado - trigger é botão de calcular: {triggered_id}")
         raise dash.exceptions.PreventUpdate
 
     log.debug(f"[{module_name}] ========== INICIANDO ATUALIZAÇÃO GLOBAL DE PAINÉIS ==========")
@@ -128,61 +133,28 @@ def global_updates_all_transformer_info_panels(
 
     # --- Obter dados do MCP ---
     # SEMPRE obter os dados diretamente do MCP para garantir que estamos usando os dados mais atualizados
+    # Este é o ponto principal onde o módulo global_updates lê os dados do MCP que foram salvos pelo transformer_inputs
     log.info(f"[{module_name}] Obtendo dados diretamente do MCP")
+
     # Forçar uma leitura fresca do MCP
     app.mcp.save_to_disk(force=True)  # Garante que os dados estão salvos
-    transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")  # Lê os dados atualizados
 
-    # CORREÇÃO PARA EVITAR FLASH-BACK: Verificar se os dados são os antigos (30 MVA / 138 kV)
-    if (
-        transformer_data_mcp
-        and transformer_data_mcp.get("potencia_mva") == 30
-        and transformer_data_mcp.get("tensao_at") == 138
-    ):
-        log.warning(
-            f"[{module_name}] Detectados dados antigos no MCP (30 MVA / 138 kV). Forçando atualização para dados corretos."
-        )
+    # Forçar uma leitura fresca do MCP após salvar
+    transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)  # Lê os dados atualizados
 
-        # Carregar dados corretos do arquivo mcp_state.json
-        import json
-        import os
+    # Log detalhado dos dados obtidos do MCP
+    log.info(f"[{module_name}] Dados obtidos do MCP: potencia_mva={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
 
-        mcp_file_path = os.path.join("data", "mcp_state", "mcp_state.json")
-        try:
-            if os.path.exists(mcp_file_path):
-                with open(mcp_file_path, "r") as f:
-                    mcp_data = json.load(f)
-                    if "stores" in mcp_data and "transformer-inputs-store" in mcp_data["stores"]:
-                        correct_data = mcp_data["stores"]["transformer-inputs-store"]
-                        if (
-                            correct_data.get("potencia_mva") == 100
-                            and correct_data.get("tensao_at") == 230
-                        ):
-                            log.info(
-                                f"[{module_name}] Carregados dados corretos do arquivo mcp_state.json (100 MVA / 230 kV)"
-                            )
-                            # Atualizar o MCP com os dados corretos
-                            app.mcp.set_data("transformer-inputs-store", correct_data)
-                            # Recarregar os dados do MCP
-                            transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
-                            log.info(
-                                f"[{module_name}] MCP atualizado com dados corretos: potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}"
-                            )
-        except Exception as e:
-            log.error(f"[{module_name}] Erro ao carregar dados do arquivo mcp_state.json: {e}")
+    # Verificar se os dados são válidos
+    if transformer_data_mcp.get('potencia_mva') is None or transformer_data_mcp.get('tensao_at') is None or transformer_data_mcp.get('tensao_bt') is None:
+        log.warning(f"[{module_name}] Dados essenciais ausentes no MCP. Tentando recarregar do disco...")
+        # Tentar recarregar do disco novamente
+        app.mcp.save_to_disk(force=True)
+        transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)
+        log.info(f"[{module_name}] Dados após recarga: potencia_mva={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
 
-        # Se não conseguiu carregar do arquivo, definir valores manualmente
-        if transformer_data_mcp.get("potencia_mva") == 30:
-            log.warning(f"[{module_name}] Definindo valores corretos manualmente")
-            transformer_data_mcp["potencia_mva"] = 100
-            transformer_data_mcp["tensao_at"] = 230
-            transformer_data_mcp["tensao_bt"] = 13.8
-            transformer_data_mcp["tensao_terciario"] = 138
-            transformer_data_mcp["corrente_nominal_at"] = 251.02
-            transformer_data_mcp["corrente_nominal_bt"] = 4183.7
-            transformer_data_mcp["corrente_nominal_terciario"] = 418.37
-            app.mcp.set_data("transformer-inputs-store", transformer_data_mcp)
-            log.info(f"[{module_name}] MCP atualizado manualmente com dados corretos")
+    # Removida a correção para FLASH-BACK que usava dados fixos
+    # Agora confiamos nos dados do MCP sem sobrescrever com valores fixos
 
     # Verificar se temos dados essenciais no MCP
     has_essential_data = (
@@ -198,6 +170,11 @@ def global_updates_all_transformer_info_panels(
         and transformer_store_data.get("potencia_mva") is not None
         and transformer_store_data.get("tensao_at") is not None
         and transformer_store_data.get("tensao_bt") is not None
+    )
+
+    # Sempre exibir os dados do MCP, mesmo que sejam None
+    log.debug(
+        f"[{module_name}] Dados do MCP: potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}"
     )
 
     if has_essential_data:
@@ -320,48 +297,68 @@ def global_updates_all_transformer_info_panels(
         else:
             log.debug(f"[{module_name}] Nenhum dado principal disponível no MCP.")
 
-    # Criar o painel HTML
+    # Criar o painel HTML usando dados do MCP
     try:
-        # Obter dados frescos do MCP para garantir que estamos usando os dados mais recentes
-        fresh_data = app.mcp.get_data("transformer-inputs-store")
+        # Forçar uma leitura fresca do MCP para garantir que temos os dados mais recentes
+        app.mcp.save_to_disk(force=True)
+
+        # Obter dados frescos do MCP com force_reload=True para garantir que estamos usando os dados mais recentes
+        fresh_data = app.mcp.get_data("transformer-inputs-store", force_reload=True)
+
+        # Verificar se os dados são válidos
+        if not fresh_data or not isinstance(fresh_data, dict):
+            log.warning(f"[{module_name}] Dados frescos do MCP são inválidos: {fresh_data}")
+            fresh_data = transformer_data_mcp  # Usar os dados obtidos anteriormente
+
+        # Verificar se os dados essenciais estão presentes
+        if fresh_data.get('potencia_mva') is None or fresh_data.get('tensao_at') is None or fresh_data.get('tensao_bt') is None:
+            log.warning(f"[{module_name}] Dados essenciais ausentes nos dados frescos. Tentando recarregar do disco...")
+            # Tentar recarregar do disco novamente
+            app.mcp.save_to_disk(force=True)
+            fresh_data = app.mcp.get_data("transformer-inputs-store", force_reload=True)
+
         log.info(
-            f"[{module_name}] Dados frescos para o painel: potencia={fresh_data.get('potencia_mva')}, tensao_at={fresh_data.get('tensao_at')}"
+            f"[{module_name}] Dados frescos para o painel: potencia={fresh_data.get('potencia_mva')}, tensao_at={fresh_data.get('tensao_at')}, tensao_bt={fresh_data.get('tensao_bt')}"
         )
 
-        # CORREÇÃO PARA EVITAR FLASH-BACK: Verificar se os dados são os antigos (30 MVA / 138 kV)
-        if (
-            fresh_data
-            and fresh_data.get("potencia_mva") == 30
-            and fresh_data.get("tensao_at") == 138
-        ):
-            log.warning(
-                f"[{module_name}] Detectados dados antigos no MCP (30 MVA / 138 kV) ao criar painel. Usando dados corretos."
-            )
-            # Usar dados corretos
-            fresh_data = {
-                "potencia_mva": 100,
-                "tensao_at": 230,
-                "tensao_bt": 13.8,
-                "tensao_terciario": 138,
-                "corrente_nominal_at": 251.02,
-                "corrente_nominal_bt": 4183.7,
-                "corrente_nominal_terciario": 418.37,
-                "tipo_transformador": "Trifásico",
-                "frequencia": 60,
-                "impedancia": 20,
-                "impedancia_nominal": 12.5,
-                "conexao_at": "estrela",
-                "conexao_bt": "triangulo",
-                "conexao_terciario": "estrela",
-                "liquido_isolante": "Mineral",
-                "tipo_isolamento": "Uniforme",
-            }
-            # Atualizar o MCP com os dados corretos
-            app.mcp.set_data("transformer-inputs-store", fresh_data)
-            log.info(
-                f"[{module_name}] Usando dados corretos para o painel: potencia={fresh_data.get('potencia_mva')}, tensao_at={fresh_data.get('tensao_at')}"
-            )
+        # Verificar se os dados ainda estão ausentes após a recarga
+        if fresh_data.get('potencia_mva') is None or fresh_data.get('tensao_at') is None or fresh_data.get('tensao_bt') is None:
+            log.warning(f"[{module_name}] Dados essenciais ainda ausentes após recarga. Usando dados do transformer_inputs_fix...")
+            # Tentar obter dados do transformer_inputs
+            from callbacks.transformer_inputs import get_latest_transformer_data
+            try:
+                latest_data = get_latest_transformer_data()
+                if latest_data and isinstance(latest_data, dict):
+                    log.info(f"[{module_name}] Obtidos dados do transformer_inputs_fix: potencia={latest_data.get('potencia_mva')}, tensao_at={latest_data.get('tensao_at')}, tensao_bt={latest_data.get('tensao_bt')}")
+                    fresh_data = latest_data
 
+                    # IMPORTANTE: Atualizar o MCP com os dados do transformer_inputs_fix
+                    # Isso garante que os dados essenciais estejam disponíveis para outros módulos
+                    if latest_data.get('potencia_mva') is not None and latest_data.get('tensao_at') is not None and latest_data.get('tensao_bt') is not None:
+                        log.info(f"[{module_name}] Atualizando MCP com dados essenciais do transformer_inputs_fix")
+                        app.mcp.set_data("transformer-inputs-store", latest_data)
+
+                        # Propagar dados para outros stores
+                        from utils.mcp_persistence import ensure_mcp_data_propagation
+                        target_stores = [
+                            "losses-store",
+                            "impulse-store",
+                            "dieletric-analysis-store",
+                            "applied-voltage-store",
+                            "induced-voltage-store",
+                            "short-circuit-store",
+                            "temperature-rise-store",
+                            "comprehensive-analysis-store",
+                        ]
+                        propagation_results = ensure_mcp_data_propagation(app, "transformer-inputs-store", target_stores)
+                        log.info(f"[{module_name}] Propagação de dados para outros stores: {propagation_results}")
+            except Exception as e:
+                log.error(f"[{module_name}] Erro ao obter dados do transformer_inputs_fix: {e}", exc_info=True)
+
+        # Removida a correção para FLASH-BACK que usava dados fixos
+        # Agora confiamos nos dados do MCP sem sobrescrever com valores fixos
+
+        # Criar o painel com os dados frescos do MCP
         panel_html = create_transformer_info_panel(fresh_data)
         execution_time = time.time() - start_time
         log.debug(

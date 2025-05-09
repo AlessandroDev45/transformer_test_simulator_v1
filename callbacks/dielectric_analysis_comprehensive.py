@@ -288,27 +288,12 @@ def force_load_dielectric_data(n_clicks, transformer_data):
     log.info(f"[FORCE LOAD] Tipo de transformer_data: {type(transformer_data)}")
     log.info(f"[FORCE LOAD] Conteúdo de transformer_data: {transformer_data}")
 
-    # Mesmo se transformer_data estiver vazio, vamos criar dados padrão
+    # Se transformer_data estiver vazio, retornar um dicionário vazio
     if not transformer_data or not isinstance(transformer_data, dict):
         log.warning(
-            "[FORCE LOAD] Dados do transformador inválidos ou vazios. Criando dados padrão."
+            "[FORCE LOAD] Dados do transformador inválidos ou vazios. Retornando dicionário vazio."
         )
-        transformer_data = {
-            "classe_tensao_at": "500",
-            "classe_tensao_bt": "15",
-            "classe_tensao_terciario": "145",
-            "conexao_at": "estrela",
-            "conexao_bt": "triangulo",
-            "conexao_terciario": "estrela",
-            "nbi_at": "1550",
-            "nbi_bt": "110",
-            "nbi_terciario": "650",
-            "sil_at": "1175",
-            "sil_bt": "0",
-            "sil_terciario": "0",
-            "tipo_isolamento": "uniforme",
-            "tipo_transformador": "Trifásico",
-        }
+        transformer_data = {}
 
     # Função auxiliar para formatar valores com tratamento de erros robusto
     def safe_str_output(value, default=None):

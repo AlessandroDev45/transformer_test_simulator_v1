@@ -7,8 +7,7 @@ import copy
 import logging
 from typing import Any, Dict
 
-import dash
-from dash.exceptions import PreventUpdate
+# Removida a importação de PreventUpdate pois não estamos mais lançando exceções
 
 from utils.mcp_persistence import _dados_ok, ESSENTIAL
 
@@ -149,11 +148,11 @@ def patch_mcp(store_id: str, data: Dict[str, Any], app=None) -> bool:
     else:
         log.info(f"[patch_mcp] Detectadas mudanças em {store_id}: {changed_fields[:5]}{'...' if len(changed_fields) > 5 else ''}")
 
-    # Verificar se os dados essenciais estão presentes antes de salvar
+    # Removida a verificação de dados essenciais para permitir o fluxo de dados
+    # mesmo quando campos obrigatórios estão ausentes
     if store_id == "transformer-inputs-store" and not _dados_ok(updated_data):
         missing_fields = [k for k in ESSENTIAL if updated_data.get(k) in (None, "", 0)]
-        log.error(f"[patch_mcp] Abortando gravação – dados essenciais faltando: {missing_fields}")
-        raise PreventUpdate
+        log.warning(f"[patch_mcp] Dados essenciais faltando: {missing_fields}, mas continuando com a gravação")
 
     # Salvar os dados atualizados no MCP
     app_instance.mcp.set_data(store_id, updated_data)

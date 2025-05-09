@@ -144,17 +144,19 @@ def create_transformer_info_panel(transformer_data):
         corrente_at_valor = transformer_data.get("corrente_nominal_at")
         tensao_at_valor = transformer_data.get("tensao_at")
         tensao_bt_valor = transformer_data.get("tensao_bt")
+        norma_valor = transformer_data.get("norma_iso")
 
         print(f"POTÊNCIA EXIBIDA NO PAINEL: {potencia_valor}")
         print(f"TENSÃO AT EXIBIDA NO PAINEL: {tensao_at_valor} kV")
         print(f"TENSÃO BT EXIBIDA NO PAINEL: {tensao_bt_valor} kV")
         print(f"CORRENTE AT EXIBIDA NO PAINEL: {corrente_at_valor}A")
+        print(f"NORMA EXIBIDA NO PAINEL: {norma_valor}")
 
         # Imprimir todos os dados disponíveis para debug
         print(f"DADOS COMPLETOS NO PAINEL: {transformer_data}")
 
         logger.info(
-            f"Criando painel com dados: potencia={potencia_valor}, tensao_at={tensao_at_valor}, tensao_bt={tensao_bt_valor}, corrente_at={corrente_at_valor}"
+            f"Criando painel com dados: potencia={potencia_valor}, tensao_at={tensao_at_valor}, tensao_bt={tensao_bt_valor}, corrente_at={corrente_at_valor}, norma={norma_valor}"
         )
 
         top_items = [
@@ -163,8 +165,9 @@ def create_transformer_info_panel(transformer_data):
             ("Freq:", "frequencia", "Hz"),
             ("Grupo:", "grupo_ligacao", ""),
             ("Tipo Isolamento:", "tipo_isolamento", ""),
+            ("Norma:", "norma_iso", ""),
         ]
-        col_width = 12 // 5
+        col_width = 12 // 6
         top_col_style = {
             "display": "flex",
             "justifyContent": "center",

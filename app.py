@@ -279,10 +279,10 @@ if not layout_creation_failed:
         decorated_modules = [
             # 'transformer_inputs' removido para evitar importação com erro
             # 'short_circuit' removido para evitar importação com erro
+            # 'temperature_rise' removido para usar registro explícito
             "navigation_dcc_links",
             "losses",
             "dieletric_analysis",
-            "temperature_rise",
             "report_generation",
             "dielectric_analysis_comprehensive",
             "global_updates",
@@ -307,14 +307,15 @@ if not layout_creation_failed:
 
         # Explicitly register callbacks that need app instance
         explicit_registrations = {
-            "transformer_inputs_fix": "register_transformer_inputs_callbacks",  # Usando a versão corrigida
-            "short_circuit_fix": "register_short_circuit_callbacks",  # Usando a versão corrigida
+            "transformer_inputs": "register_transformer_inputs_callbacks",
+            "short_circuit": "register_short_circuit_callbacks",
             "impulse": "register_impulse_callbacks",
             "applied_voltage": "register_applied_voltage_callbacks",
             "induced_voltage": "register_induced_voltage_callbacks",
             "history": "register_history_callbacks",
             "global_actions": "register_global_actions_callbacks",  # Adicionado
-            "isolation_callbacks_fix": "register_isolation_callbacks",  # Corrigido - Callbacks de isolamento automático
+            "isolation_callbacks": "register_isolation_callbacks",  # Callbacks de isolamento automático
+            "temperature_rise": "register_temperature_rise_callbacks",  # Callbacks de elevação de temperatura
             # 'standards_consultation': 'register_standards_consultation_callbacks', # Já são decorados
             # 'standards_management': 'register_standards_management_callbacks' # Já são decorados
             "client_side_callbacks": "register_client_side_callbacks",  # Client-side

@@ -416,7 +416,7 @@ def create_main_layout(uso_atual=0, limite_atingido=False, app=None):
         # CSS personalizado
         html.Link(
             rel="stylesheet",
-            href="/assets/css/custom.css",
+            href="/assets/custom.css",
         ),
         dbc.Modal(
             [
