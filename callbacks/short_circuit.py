@@ -111,10 +111,7 @@ def register_short_circuit_callbacks(app_instance):
     def short_circuit_load_data(stored_data, pathname):
         """Carrega os dados da aba Curto-Circuito armazenados no dcc.Store."""
         ctx_triggered = ctx.triggered_id
-        log.debug(f"load_short_circuit_data triggered by: {ctx_triggered}")
-        print("\n\n***** [LOAD ShortCircuit] CALLBACK INICIADO *****")
-        print(f"[LOAD ShortCircuit] Trigger: {ctx_triggered}")
-        print(f"[LOAD ShortCircuit] Pathname: {pathname}")
+        log.debug(f"[LOAD ShortCircuit] Callback triggered by: {ctx_triggered}")
 
         # Se o callback foi disparado pela URL, verifica se estamos na página correta
         if ctx_triggered == "url":
@@ -128,10 +125,8 @@ def register_short_circuit_callbacks(app_instance):
             if clean_path != "curto-circuito":
                 raise PreventUpdate
 
-        print(f"[LOAD ShortCircuit] Stored data: {stored_data}")
-
         if not stored_data or not isinstance(stored_data, dict):
-            log.debug("Short-circuit store is empty or invalid. Returning defaults.")
+            log.debug("[LOAD ShortCircuit] Store is empty or invalid. Returning defaults.")
             # Return default values for all outputs
             return None, None, 2.55, "AT", None, None, None, None, "-", create_empty_sc_figure(), ""
 
@@ -213,10 +208,7 @@ def register_short_circuit_callbacks(app_instance):
                 log.error(f"Error rebuilding short-circuit graph: {e_fig}")
                 # Keep the empty figure
 
-        print(
-            f"[LOAD ShortCircuit] Returning values: z_before={z_before}, z_after={z_after}, delta_z={delta_z}"
-        )
-        print(f"[LOAD ShortCircuit] Returning figure: {fig}")
+        log.debug(f"[LOAD ShortCircuit] Returning values: z_before={z_before}, z_after={z_after}, delta_z={delta_z}")
 
         return (
             z_before,
@@ -371,11 +363,19 @@ def register_short_circuit_callbacks(app_instance):
             k_peak_factor = input_values["k_peak_factor"]  # This is k*sqrt(2)
 
             # Pega dados do transformador (garantidos que existem e são válidos)
-            potencia_mva = float(transformer_data["potencia_mva"])
-            impedancia_nominal_percent = float(transformer_data["impedancia"])
-            impedancia_pu = impedancia_nominal_percent / 100.0
-            tipo = transformer_data.get("tipo_transformador", "Trifásico")
-            sqrt_3 = math.sqrt(3) if tipo == "Trifásico" else 1.0
+            try:
+                potencia_mva = float(transformer_data["potencia_mva"])
+                impedancia_nominal_percent = float(transformer_data["impedancia"])
+                impedancia_pu = impedancia_nominal_percent / 100.0
+                tipo = transformer_data.get("tipo_transformador", "Trifásico")
+                sqrt_3 = math.sqrt(3) if tipo == "Trifásico" else 1.0
+            except (KeyError, TypeError, ValueError) as e:
+                log.error(f"[Short Circuit] Erro ao obter dados do transformador: {e}")
+                errors.append(f"Erro ao obter dados do transformador: {e}")
+                error_msg = html.Ul(
+                    [html.Li(e) for e in errors], style={"color": "red", "fontSize": "0.7rem"}
+                )
+                return None, None, None, "-", empty_fig, error_msg, no_update
 
             # Pega corrente nominal do lado selecionado
             corrente_nominal_a = None

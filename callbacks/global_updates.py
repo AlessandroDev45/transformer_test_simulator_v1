@@ -5,7 +5,7 @@ Centraliza a atualização dos painéis de informação do transformador lendo d
 """
 import logging
 import time
-from datetime import datetime
+
 
 import dash
 from dash import Input, Output, callback, ctx, html
@@ -39,7 +39,7 @@ info_panel_outputs = [
     Input("url", "pathname"),
     prevent_initial_call=False,
 )
-def diagnose_and_fix_mcp(pathname):
+def diagnose_and_fix_mcp(_):
     """
     Diagnostica e corrige o MCP quando a aplicação iniciar.
     Este callback é executado uma vez na inicialização.
@@ -48,7 +48,7 @@ def diagnose_and_fix_mcp(pathname):
 
     # Executar diagnóstico
     diagnosis = diagnose_mcp(app, verbose=True)
-    log.info(f"[MCP Diagnostics] Resultado do diagnóstico: {diagnosis['status']}")
+    log.debug(f"[MCP Diagnostics] Resultado do diagnóstico: {diagnosis['status']}")
 
     if diagnosis["status"] != "ok":
         log.warning(
@@ -56,16 +56,16 @@ def diagnose_and_fix_mcp(pathname):
         )
 
         # Tentar corrigir problemas
-        log.info("[MCP Diagnostics] Tentando corrigir problemas...")
+        log.debug("[MCP Diagnostics] Tentando corrigir problemas...")
         fix_result = fix_mcp_data(app, verbose=True)
-        log.info(f"[MCP Diagnostics] Resultado da correção: {fix_result['status']}")
+        log.debug(f"[MCP Diagnostics] Resultado da correção: {fix_result['status']}")
 
         if fix_result["status"] == "ok":
-            log.info(f"[MCP Diagnostics] Ações realizadas: {fix_result['actions']}")
+            log.debug(f"[MCP Diagnostics] Ações realizadas: {fix_result['actions']}")
         else:
             log.error(f"[MCP Diagnostics] Erros na correção: {fix_result['errors']}")
     else:
-        log.info("[MCP Diagnostics] MCP em bom estado. Nenhuma correção necessária.")
+        log.debug("[MCP Diagnostics] MCP em bom estado. Nenhuma correção necessária.")
 
     # Retornar string vazia para o search da URL (não afeta a navegação)
     return ""
@@ -100,10 +100,8 @@ def global_updates_all_transformer_info_panels(
     Atualiza TODOS os painéis de informação do transformador lendo do MCP.
     """
     start_time = time.time()
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     triggered_id = ctx.triggered_id if ctx.triggered else "Initial Load / No Trigger"
     module_name = "global_updates"
-    function_name = "global_updates_all_transformer_info_panels"
 
     # IMPORTANTE: Evitar execução quando o trigger for mudança de URL ou botão de calcular
     # Isso evita que o callback seja executado durante navegação entre páginas
@@ -117,8 +115,34 @@ def global_updates_all_transformer_info_panels(
         log.debug(f"[{module_name}] Callback ignorado - trigger é botão de calcular: {triggered_id}")
         raise dash.exceptions.PreventUpdate
 
-    log.debug(f"[{module_name}] ========== INICIANDO ATUALIZAÇÃO GLOBAL DE PAINÉIS ==========")
-    log.debug(f"[{module_name}] Trigger: {triggered_id}")
+    # Verificar se o store que acionou o callback tem dados válidos
+    # Isso evita que dados vazios ou None sobrescrevam dados válidos
+    if triggered_id and triggered_id.endswith("-store"):
+        # Obter os dados do store que acionou o callback
+        store_data = None
+        if triggered_id == "transformer-inputs-store":
+            store_data = transformer_store_data
+        elif triggered_id == "losses-store":
+            store_data = losses_store_data
+        elif triggered_id == "impulse-store":
+            store_data = impulse_store_data
+        elif triggered_id == "dieletric-analysis-store":
+            store_data = dieletric_store_data
+        elif triggered_id == "applied-voltage-store":
+            store_data = applied_voltage_store_data
+        elif triggered_id == "induced-voltage-store":
+            store_data = induced_voltage_store_data
+        elif triggered_id == "short-circuit-store":
+            store_data = short_circuit_store_data
+        elif triggered_id == "temperature-rise-store":
+            store_data = temperature_rise_store_data
+
+        # Se o store que acionou o callback não tem dados válidos, ignorar a atualização
+        if not store_data or not isinstance(store_data, dict) or not store_data:
+            log.debug(f"[{module_name}] Callback ignorado - store {triggered_id} não tem dados válidos")
+            raise dash.exceptions.PreventUpdate
+
+    log.debug(f"[{module_name}] Iniciando atualização global de painéis. Trigger: {triggered_id}")
 
     # Verificar dados do store recebido como trigger
     if not transformer_store_data:
@@ -134,7 +158,7 @@ def global_updates_all_transformer_info_panels(
     # --- Obter dados do MCP ---
     # SEMPRE obter os dados diretamente do MCP para garantir que estamos usando os dados mais atualizados
     # Este é o ponto principal onde o módulo global_updates lê os dados do MCP que foram salvos pelo transformer_inputs
-    log.info(f"[{module_name}] Obtendo dados diretamente do MCP")
+    log.debug(f"[{module_name}] Obtendo dados diretamente do MCP")
 
     # Forçar uma leitura fresca do MCP
     app.mcp.save_to_disk(force=True)  # Garante que os dados estão salvos
@@ -142,16 +166,12 @@ def global_updates_all_transformer_info_panels(
     # Forçar uma leitura fresca do MCP após salvar
     transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)  # Lê os dados atualizados
 
-    # Log detalhado dos dados obtidos do MCP
-    log.info(f"[{module_name}] Dados obtidos do MCP: potencia_mva={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
-
     # Verificar se os dados são válidos
     if transformer_data_mcp.get('potencia_mva') is None or transformer_data_mcp.get('tensao_at') is None or transformer_data_mcp.get('tensao_bt') is None:
         log.warning(f"[{module_name}] Dados essenciais ausentes no MCP. Tentando recarregar do disco...")
         # Tentar recarregar do disco novamente
         app.mcp.save_to_disk(force=True)
         transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)
-        log.info(f"[{module_name}] Dados após recarga: potencia_mva={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}, tensao_bt={transformer_data_mcp.get('tensao_bt')}")
 
     # Removida a correção para FLASH-BACK que usava dados fixos
     # Agora confiamos nos dados do MCP sem sobrescrever com valores fixos
@@ -211,8 +231,8 @@ def global_updates_all_transformer_info_panels(
                     # Obter os dados atualizados do MCP
                     transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
                     has_essential_data = True
-                    log.info(
-                        f"[{module_name}] Dados atualizados no MCP (apenas campos não-básicos): potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}"
+                    log.debug(
+                        f"[{module_name}] Dados atualizados no MCP (apenas campos não-básicos)"
                     )
             else:
                 log.debug(f"[{module_name}] Nenhum campo não-básico para atualizar no MCP")
@@ -225,8 +245,8 @@ def global_updates_all_transformer_info_panels(
                 # Obter os dados atualizados do MCP
                 transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
                 has_essential_data = True
-                log.info(
-                    f"[{module_name}] Dados atualizados no MCP: potencia={transformer_data_mcp.get('potencia_mva')}, tensao_at={transformer_data_mcp.get('tensao_at')}"
+                log.debug(
+                    f"[{module_name}] Dados atualizados no MCP"
                 )
             else:
                 log.debug(f"[{module_name}] Nenhum dado válido para atualizar no MCP")
@@ -317,8 +337,8 @@ def global_updates_all_transformer_info_panels(
             app.mcp.save_to_disk(force=True)
             fresh_data = app.mcp.get_data("transformer-inputs-store", force_reload=True)
 
-        log.info(
-            f"[{module_name}] Dados frescos para o painel: potencia={fresh_data.get('potencia_mva')}, tensao_at={fresh_data.get('tensao_at')}, tensao_bt={fresh_data.get('tensao_bt')}"
+        log.debug(
+            f"[{module_name}] Dados frescos obtidos para o painel"
         )
 
         # Verificar se os dados ainda estão ausentes após a recarga
@@ -329,13 +349,13 @@ def global_updates_all_transformer_info_panels(
             try:
                 latest_data = get_latest_transformer_data()
                 if latest_data and isinstance(latest_data, dict):
-                    log.info(f"[{module_name}] Obtidos dados do transformer_inputs_fix: potencia={latest_data.get('potencia_mva')}, tensao_at={latest_data.get('tensao_at')}, tensao_bt={latest_data.get('tensao_bt')}")
+                    log.debug(f"[{module_name}] Obtidos dados do transformer_inputs_fix")
                     fresh_data = latest_data
 
                     # IMPORTANTE: Atualizar o MCP com os dados do transformer_inputs_fix
                     # Isso garante que os dados essenciais estejam disponíveis para outros módulos
                     if latest_data.get('potencia_mva') is not None and latest_data.get('tensao_at') is not None and latest_data.get('tensao_bt') is not None:
-                        log.info(f"[{module_name}] Atualizando MCP com dados essenciais do transformer_inputs_fix")
+                        log.debug(f"[{module_name}] Atualizando MCP com dados essenciais do transformer_inputs_fix")
                         app.mcp.set_data("transformer-inputs-store", latest_data)
 
                         # Propagar dados para outros stores
@@ -350,8 +370,8 @@ def global_updates_all_transformer_info_panels(
                             "temperature-rise-store",
                             "comprehensive-analysis-store",
                         ]
-                        propagation_results = ensure_mcp_data_propagation(app, "transformer-inputs-store", target_stores)
-                        log.info(f"[{module_name}] Propagação de dados para outros stores: {propagation_results}")
+                        ensure_mcp_data_propagation(app, "transformer-inputs-store", target_stores)
+                        log.debug(f"[{module_name}] Propagação de dados para outros stores concluída")
             except Exception as e:
                 log.error(f"[{module_name}] Erro ao obter dados do transformer_inputs_fix: {e}", exc_info=True)
 

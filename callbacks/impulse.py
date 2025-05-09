@@ -8,7 +8,7 @@ import dash
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
-from dash import Input, Output, State, html
+from dash import Input, Output, State, html, ctx
 from dash.exceptions import PreventUpdate
 from scipy.fftpack import fft, fftfreq, ifft
 from scipy.optimize import OptimizeWarning, curve_fit
@@ -17,7 +17,7 @@ from scipy.optimize import OptimizeWarning, curve_fit
 from app import app  # Import app instance correctly
 from utils import constants as const  # Assuming constants are in utils.constants
 from utils.routes import ROUTE_IMPULSE, normalize_pathname
-from utils.store_diagnostics import convert_numpy_types
+from utils.store_diagnostics import convert_numpy_types, is_json_serializable
 
 # --- Configuração do Logging ---
 logger = logging.getLogger(__name__)
@@ -1853,7 +1853,7 @@ def use_transformer_data(n_clicks, transformer_data):
         Output("impulse-results", "children"),
         Output("impulse-store", "data"),
     ],
-    [Input("run-simulation", "n_clicks")],
+    [Input("run-simulation", "n_clicks_timestamp")],  # Usando n_clicks_timestamp em vez de n_clicks
     [
         State("front-resistor", "value"),
         State("tail-resistor", "value"),
@@ -1964,38 +1964,17 @@ def update_impulse_simulation(
             "timestamp": datetime.datetime.now().isoformat(),
         }
 
-        # Adicionar logs detalhados para diagnóstico
-        print("\n--- [IMPULSE STORE SAVE DEBUG] ---")
-        log.info("--- [IMPULSE STORE SAVE DEBUG] ---")
-
-        print(f"  Tipo de data_for_store: {type(data_for_store)}")
-        if isinstance(data_for_store, dict):
-            print(f"  Chaves principais: {list(data_for_store.keys())}")
-            # Detalhar sub-dicionários importantes
-            inputs = data_for_store.get("inputs", {})
-            results = data_for_store.get("results", {})
-            print(f"  inputs (tipo): {type(inputs).__name__}")
-            if isinstance(inputs, dict):
-                print(f"    inputs chaves: {list(inputs.keys())}")
-            print(f"  results (tipo): {type(results).__name__}")
-            if isinstance(results, dict):
-                print(f"    results chaves: {list(results.keys())}")
-        else:
-            print(f"  Conteúdo: {repr(data_for_store)[:100]}")
-
         # Atualizar o store com os novos dados
         current_store_data.update(data_for_store)
 
-        print(f"  Tipo de current_store_data após update: {type(current_store_data)}")
-        if isinstance(current_store_data, dict):
-            print(f"  Chaves de current_store_data após update: {list(current_store_data.keys())}")
-        else:
-            print(f"  Conteúdo de current_store_data após update: {repr(current_store_data)[:100]}")
+        # Serializar os dados antes de armazenar no MCP
+        serializable_data = convert_numpy_types(current_store_data, debug_path="impulse_update")
 
-        log.info(f"[IMPULSE STORE SAVE] Salvando dados no impulse-store: {data_for_store}")
-        print("--- Fim [IMPULSE STORE SAVE DEBUG] ---")
+        # Salvar no MCP para que outros módulos possam acessar
+        app.mcp.set_data("impulse-store", serializable_data)
+        log.info(f"[IMPULSE] Dados salvos no MCP (impulse-store)")
 
-        return fig, results, convert_numpy_types(current_store_data)
+        return fig, results, serializable_data
 
     except Exception as e:
         logger.error(f"Erro na simulação de impulso: {e}")

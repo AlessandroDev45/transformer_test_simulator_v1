@@ -84,15 +84,6 @@ def temperature_rise_load_data(pathname, transformer_data, stored_temp_rise_data
     """
     triggered_id = callback_context.triggered_id
     log.debug(f"[LOAD TempRise] Callback triggered by: {triggered_id}")
-    print(f"\n\n***** [LOAD TempRise] CALLBACK INICIADO *****")
-    print(f"[LOAD TempRise] Trigger: {triggered_id}")
-    print(f"[LOAD TempRise] Pathname: {pathname}")
-    print(f"[LOAD TempRise] Stored data: {stored_temp_rise_data}")
-
-    # Adicionar logs para debug
-    print(f"\n\n***** [LOAD TempRise] CALLBACK DETALHES *****")
-    print(f"[LOAD TempRise] callback_context.triggered: {callback_context.triggered}")
-    print(f"[LOAD TempRise] callback_context.inputs: {callback_context.inputs}")
 
     normalized_path = normalize_pathname(pathname)
     # Só executa a lógica principal se o trigger for a URL E estiver na página correta,
@@ -135,13 +126,16 @@ def temperature_rise_load_data(pathname, transformer_data, stored_temp_rise_data
     delta_theta_oil_max_global_raw = global_data.get('elevacao_oleo_topo')
     if delta_theta_oil_max_global_raw is not None:
         delta_theta_oil_max_final = safe_float(delta_theta_oil_max_global_raw)
-        log.info(f"[LOAD TempRise] Usando 'elevacao_oleo_topo' ({delta_theta_oil_max_final}) do global store.")
         if delta_theta_oil_max_final is None:
-             log.warning(f"[LOAD TempRise] Falha ao converter 'elevacao_oleo_topo' ({delta_theta_oil_max_global_raw}). Fallback para local.")
+             log.debug(f"[LOAD TempRise] Falha ao converter 'elevacao_oleo_topo' ({delta_theta_oil_max_global_raw}). Fallback para local.")
              delta_theta_oil_max_final = inputs_local.get('input_delta_theta_oil_max') # Já deve ser float
     else:
         delta_theta_oil_max_final = inputs_local.get('input_delta_theta_oil_max')
-        log.info(f"[LOAD TempRise] Global 'elevacao_oleo_topo' não disponível. Usando local: {delta_theta_oil_max_final}")
+
+    # Se ainda for None, usar um valor padrão
+    if delta_theta_oil_max_final is None:
+        delta_theta_oil_max_final = 55.0  # Valor padrão para classe A
+        log.debug(f"[LOAD TempRise] Usando valor padrão para delta_theta_oil_max: {delta_theta_oil_max_final}")
 
     # Tenta carregar a mensagem salva
     message_str = results_local.get('message', "")
@@ -242,9 +236,7 @@ def temperature_rise_calculate(
     button_name = "Calcular" if triggered_id == "calc-temp-rise-btn" else "Limpar"
     n_clicks = calc_clicks if triggered_id == "calc-temp-rise-btn" else limpar_clicks
 
-    log.info(f"***** [CALC TempRise] CALLBACK INICIADO - Botão {button_name}, n_clicks = {n_clicks}, Trigger: {triggered_id} *****")
-    print(f"\n\n[CALC TempRise] Callback disparado por botão {button_name} (n_clicks={n_clicks}). Trigger: {triggered_id}\n\n")
-    print(f"\n\nINPUTS: temp_amb={temp_amb_str}, material={winding_material}, rc={res_cold_str}, tc={temp_cold_str}, rw={res_hot_str}, t_oil={temp_top_oil_str}, delta_theta_oil_max={delta_theta_oil_max_str}\n\n")
+    log.info(f"[CALC TempRise] Callback iniciado - Botão {button_name}, Trigger: {triggered_id}")
 
     # --- 1. Validar e converter inputs locais ---
     input_values_local = {
@@ -262,12 +254,10 @@ def temperature_rise_calculate(
         't_oil': {'required': True, 'label': 'Temp. Topo Óleo Final (Θoil)'},
         'delta_theta_oil_max_ui': {'required': False, 'positive': True, 'label': 'ΔΘoil_max (UI)'},
     }
-    log.info(f"[CALC TempRise] Valores de entrada: {input_values_local}")
     errors = validate_dict_inputs(input_values_local, validation_rules)
     if errors:
-        log.warning(f"[CALC TempRise] Erros de validação Inputs Locais: {errors}")
+        log.warning(f"[CALC TempRise] Erros de validação: {errors}")
         error_msg_div = html.Ul([html.Li(e) for e in errors], style={"color": colors.get('fail', 'red'), "fontSize": "0.7rem"})
-        log.warning(f"[CALC TempRise] Retornando mensagem de erro: {error_msg_div}")
         return None, None, None, None, None, error_msg_div, no_update
 
     temp_amb = input_values_local['ta']; material = input_values_local['material']

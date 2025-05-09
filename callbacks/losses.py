@@ -139,21 +139,16 @@ except ImportError:
     Output("conteudo-perdas", "children"),
     [
         Input("tabs-perdas", "active_tab"),
-        Input("losses-store", "data")
+        # Removido Input("losses-store", "data") para evitar re-renderização quando o store muda
     ]
 )
-def losses_render_tab_content(tab_ativa, losses_store):
+def losses_render_tab_content(tab_ativa):
     """
     Renderiza o conteúdo da aba selecionada na página de perdas.
-    Também é acionado quando o store losses-store é atualizado.
+    Agora é acionado APENAS quando a aba é alterada, não quando o store muda.
     """
-    # Verificar se o callback foi acionado pelo botão de calcular
-    if ctx.triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
-        log.debug(f"Ignorando renderização após cálculo para evitar redefinição. Trigger: {ctx.triggered_id}")
-        raise PreventUpdate
+    log.debug(f"losses_render_tab_content triggered. Active tab: {tab_ativa}, Trigger: {ctx.triggered_id}")
 
-    # O parâmetro losses_store é usado apenas para acionar o callback quando o store é atualizado
-    # mas não é utilizado diretamente na função
     if tab_ativa == "tab-vazio":
         return render_perdas_vazio()
     elif tab_ativa == "tab-carga":
@@ -164,97 +159,113 @@ def losses_render_tab_content(tab_ativa, losses_store):
 # --- Callbacks para Carregar Valores do Store (Perdas Vazio e Carga) ---
 @dash.callback(
     [
-        Output("perdas-vazio-kw", "value", allow_duplicate=True),
-        Output("peso-projeto-Ton", "value", allow_duplicate=True),
-        Output("corrente-excitacao", "value", allow_duplicate=True),
-        Output("inducao-nucleo", "value", allow_duplicate=True),
-        Output("corrente-excitacao-1-1", "value", allow_duplicate=True),
-        Output("corrente-excitacao-1-2", "value", allow_duplicate=True),
+        Output("perdas-vazio-kw", "value"),  # Removido allow_duplicate
+        Output("peso-projeto-Ton", "value"),
+        Output("corrente-excitacao", "value"),
+        Output("inducao-nucleo", "value"),
+        Output("corrente-excitacao-1-1", "value"),
+        Output("corrente-excitacao-1-2", "value"),
     ],
-    [Input("tabs-perdas", "active_tab")],
+    [
+        Input("tabs-perdas", "active_tab"),
+        Input("losses-store", "data")  # Adicionado Input do losses-store
+    ],
     prevent_initial_call=True,
 )
-def losses_load_vazio_values(active_tab):
+def losses_load_vazio_values(active_tab, losses_data_from_store):
     """
-    Carrega os valores de perdas em vazio do MCP quando a aba é selecionada.
+    Carrega os valores de perdas em vazio do MCP quando a aba é selecionada
+    ou quando o store losses-store é atualizado.
     """
-    # Verificar se o callback foi acionado pelo botão de calcular
-    if ctx.triggered_id == "calcular-perdas-vazio":
-        log.debug("Ignorando carregamento de valores após cálculo para evitar redefinição")
-        return tuple([no_update] * 6)
+    log.debug(f"losses_load_vazio_values triggered. Active tab: {active_tab}, Trigger: {ctx.triggered_id}")
 
     if active_tab != "tab-vazio":
+        # Se a aba não é a de vazio, não atualizamos NADA (nem com None).
+        # Isso evita que os valores sejam apagados ao mudar de aba e voltar.
         raise PreventUpdate
 
-    # Verificar se o MCP está disponível
-    if not hasattr(app, "mcp") or app.mcp is None:
-        log.error("MCP não disponível para carregar valores de perdas em vazio")
-        return tuple([no_update] * 6)
+    # Usar os dados do store diretamente, não do MCP
+    losses_data = losses_data_from_store
 
-    # Obter dados do MCP
-    losses_data = app.mcp.get_data("losses-store")
+    # Lista de chaves a serem carregadas
+    keys_to_load = [
+        "perdas_vazio_kw",
+        "peso_nucleo",
+        "corrente_excitacao",
+        "inducao",
+        "corrente_exc_1_1",
+        "corrente_exc_1_2",
+    ]
 
-    outputs = [no_update] * 6
-    if losses_data and "resultados_perdas_vazio" in losses_data:
+    # Sempre retorna valores (None se não encontrado), não no_update.
+    outputs = [None] * len(keys_to_load)
+
+    if losses_data and isinstance(losses_data, dict) and "resultados_perdas_vazio" in losses_data:
         stored = losses_data["resultados_perdas_vazio"]
-        outputs = [
-            stored.get(k, no_update)
-            for k in [
-                "perdas_vazio_kw",
-                "peso_nucleo",
-                "corrente_excitacao",
-                "inducao",
-                "corrente_exc_1_1",
-                "corrente_exc_1_2",
+        if isinstance(stored, dict):
+            outputs = [
+                stored.get(k) for k in keys_to_load
             ]
-        ]
+            log.debug(f"Valores para aba Vazio (de 'losses-store'): {outputs}")
+        else:
+            log.warning("'resultados_perdas_vazio' não é um dicionário. Campos de Vazio serão None.")
+    else:
+        log.debug("Nenhum dado válido em 'losses-store' para perdas em vazio. Campos de Vazio serão None.")
 
     return tuple(outputs)
 
 
 @dash.callback(
     [
-        Output("perdas-carga-kw_U_nom", "value", allow_duplicate=True),
-        Output("perdas-carga-kw_U_min", "value", allow_duplicate=True),
-        Output("perdas-carga-kw_U_max", "value", allow_duplicate=True),
-        Output("temperatura-referencia", "value", allow_duplicate=True),
+        Output("perdas-carga-kw_U_nom", "value"),  # Removido allow_duplicate
+        Output("perdas-carga-kw_U_min", "value"),
+        Output("perdas-carga-kw_U_max", "value"),
+        Output("temperatura-referencia", "value"),
     ],
-    [Input("tabs-perdas", "active_tab")],
+    [
+        Input("tabs-perdas", "active_tab"),
+        Input("losses-store", "data")  # Adicionado Input do losses-store
+    ],
     prevent_initial_call=True,
 )
-def losses_load_carga_values(active_tab):
+def losses_load_carga_values(active_tab, losses_data_from_store):
     """
-    Carrega os valores de perdas em carga do MCP quando a aba é selecionada.
+    Carrega os valores de perdas em carga do MCP quando a aba é selecionada
+    ou quando o store losses-store é atualizado.
     """
-    # Verificar se o callback foi acionado pelo botão de calcular
-    if ctx.triggered_id == "calcular-perdas-carga":
-        log.debug("Ignorando carregamento de valores após cálculo para evitar redefinição")
-        return tuple([no_update] * 4)
+    log.debug(f"losses_load_carga_values triggered. Active tab: {active_tab}, Trigger: {ctx.triggered_id}")
 
     if active_tab != "tab-carga":
         raise PreventUpdate
 
-    # Verificar se o MCP está disponível
-    if not hasattr(app, "mcp") or app.mcp is None:
-        log.error("MCP não disponível para carregar valores de perdas em carga")
-        return tuple([no_update] * 4)
+    # Usar os dados do store diretamente, não do MCP
+    losses_data = losses_data_from_store
 
-    # Obter dados do MCP
-    losses_data = app.mcp.get_data("losses-store")
+    # Lista de chaves a serem carregadas
+    keys_to_load = [
+        "perdas_carga_nom",
+        "perdas_carga_min",
+        "perdas_carga_max",
+        "temperatura_referencia",
+    ]
 
-    if not losses_data or "resultados_perdas_carga" not in losses_data:
-        return tuple([no_update] * 4)
+    # Sempre retorna valores (None se não encontrado), não no_update.
+    outputs = [None] * len(keys_to_load)
+
+    if not losses_data or not isinstance(losses_data, dict) or "resultados_perdas_carga" not in losses_data:
+        log.debug("Nenhum dado válido em 'losses-store' para perdas em carga. Campos de Carga serão None.")
+        return tuple(outputs)
 
     stored = losses_data["resultados_perdas_carga"]
-    # Provide defaults if keys are missing but the main dict exists
-    p_nom = stored.get("perdas_carga_nom", no_update)
-    p_min = stored.get("perdas_carga_min", no_update)
-    p_max = stored.get("perdas_carga_max", no_update)
-    t_ref = stored.get(
-        "temperatura_referencia", 75 if p_nom != no_update else no_update
-    )  # Default 75 only if other data is present
+    if not isinstance(stored, dict):
+        log.warning("'resultados_perdas_carga' não é um dicionário. Campos de Carga serão None.")
+        return tuple(outputs)
 
-    return p_nom, p_min, p_max, t_ref
+    outputs = [
+        stored.get(k) for k in keys_to_load
+    ]
+    log.debug(f"Valores para aba Carga (de 'losses-store'): {outputs}")
+    return tuple(outputs)
 
 
 # --- Callback para Atualizar Cache de Dados do Transformador removido ---
@@ -272,11 +283,6 @@ def update_losses_page_info_panel(global_panel_content):
     Copia o conteúdo do painel de informações global para o painel local da página de perdas.
     Este callback é acionado quando o painel global é atualizado pelo callback global_updates_all_transformer_info_panels.
     """
-    # Verificar se o callback foi acionado pelo botão de calcular
-    if ctx.triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
-        log.debug(f"Ignorando atualização do painel após cálculo para evitar redefinição. Trigger: {ctx.triggered_id}")
-        raise PreventUpdate
-
     log.debug("Atualizando painel de informações do transformador na página de perdas")
     return global_panel_content
 
