@@ -171,7 +171,7 @@ def losses_render_tab_content(tab_ativa):
         Input("tabs-perdas", "active_tab"),
         Input("losses-store", "data")  # Adicionado Input do losses-store
     ],
-    prevent_initial_call=True,
+    # Removido prevent_initial_call=True para garantir que o callback seja executado na carga inicial
 )
 def losses_populate_vazio_inputs(active_tab, losses_data_from_store):
     """
@@ -185,8 +185,19 @@ def losses_populate_vazio_inputs(active_tab, losses_data_from_store):
         # Isso evita que os valores sejam apagados ao mudar de aba e voltar.
         raise PreventUpdate
 
-    # Usar os dados do store diretamente, não do MCP
+    # Tentar usar os dados do store primeiro
     losses_data = losses_data_from_store
+
+    # Se o store estiver vazio, tentar carregar do MCP diretamente
+    if not losses_data or not isinstance(losses_data, dict) or "resultados_perdas_vazio" not in losses_data:
+        log.warning("[LOSSES POPULATE VAZIO] Store vazio ou sem dados de vazio. Tentando carregar do MCP...")
+        if hasattr(app, "mcp") and app.mcp is not None:
+            mcp_data = app.mcp.get_data("losses-store")
+            if mcp_data and isinstance(mcp_data, dict) and "resultados_perdas_vazio" in mcp_data:
+                log.info("[LOSSES POPULATE VAZIO] Dados encontrados no MCP. Usando-os para popular os inputs.")
+                losses_data = mcp_data
+            else:
+                log.warning("[LOSSES POPULATE VAZIO] Nenhum dado encontrado no MCP.")
 
     # Lista de chaves a serem carregadas
     keys_to_load = [
@@ -207,11 +218,11 @@ def losses_populate_vazio_inputs(active_tab, losses_data_from_store):
             outputs = [
                 stored.get(k) for k in keys_to_load
             ]
-            log.debug(f"Valores para aba Vazio (de 'losses-store'): {outputs}")
+            log.info(f"[LOSSES POPULATE VAZIO] Valores encontrados para aba Vazio: {outputs}")
         else:
-            log.warning("'resultados_perdas_vazio' não é um dicionário. Campos de Vazio serão None.")
+            log.warning("[LOSSES POPULATE VAZIO] 'resultados_perdas_vazio' não é um dicionário. Campos de Vazio serão None.")
     else:
-        log.debug("Nenhum dado válido em 'losses-store' para perdas em vazio. Campos de Vazio serão None.")
+        log.warning("[LOSSES POPULATE VAZIO] Nenhum dado válido em 'losses-store' ou MCP para perdas em vazio. Campos de Vazio serão None.")
 
     return tuple(outputs)
 
@@ -227,7 +238,7 @@ def losses_populate_vazio_inputs(active_tab, losses_data_from_store):
         Input("tabs-perdas", "active_tab"),
         Input("losses-store", "data")  # Adicionado Input do losses-store
     ],
-    prevent_initial_call=True,
+    # Removido prevent_initial_call=True para garantir que o callback seja executado na carga inicial
 )
 def losses_populate_carga_inputs(active_tab, losses_data_from_store):
     """
@@ -239,8 +250,19 @@ def losses_populate_carga_inputs(active_tab, losses_data_from_store):
     if active_tab != "tab-carga":
         raise PreventUpdate
 
-    # Usar os dados do store diretamente, não do MCP
+    # Tentar usar os dados do store primeiro
     losses_data = losses_data_from_store
+
+    # Se o store estiver vazio, tentar carregar do MCP diretamente
+    if not losses_data or not isinstance(losses_data, dict) or "resultados_perdas_carga" not in losses_data:
+        log.warning("[LOSSES POPULATE CARGA] Store vazio ou sem dados de carga. Tentando carregar do MCP...")
+        if hasattr(app, "mcp") and app.mcp is not None:
+            mcp_data = app.mcp.get_data("losses-store")
+            if mcp_data and isinstance(mcp_data, dict) and "resultados_perdas_carga" in mcp_data:
+                log.info("[LOSSES POPULATE CARGA] Dados encontrados no MCP. Usando-os para popular os inputs.")
+                losses_data = mcp_data
+            else:
+                log.warning("[LOSSES POPULATE CARGA] Nenhum dado encontrado no MCP.")
 
     # Lista de chaves a serem carregadas
     keys_to_load = [
@@ -253,19 +275,18 @@ def losses_populate_carga_inputs(active_tab, losses_data_from_store):
     # Sempre retorna valores (None se não encontrado), não no_update.
     outputs = [None] * len(keys_to_load)
 
-    if not losses_data or not isinstance(losses_data, dict) or "resultados_perdas_carga" not in losses_data:
-        log.debug("Nenhum dado válido em 'losses-store' para perdas em carga. Campos de Carga serão None.")
-        return tuple(outputs)
+    if losses_data and isinstance(losses_data, dict) and "resultados_perdas_carga" in losses_data:
+        stored = losses_data["resultados_perdas_carga"]
+        if isinstance(stored, dict):
+            outputs = [
+                stored.get(k) for k in keys_to_load
+            ]
+            log.info(f"[LOSSES POPULATE CARGA] Valores encontrados para aba Carga: {outputs}")
+        else:
+            log.warning("[LOSSES POPULATE CARGA] 'resultados_perdas_carga' não é um dicionário. Campos de Carga serão None.")
+    else:
+        log.warning("[LOSSES POPULATE CARGA] Nenhum dado válido em 'losses-store' ou MCP para perdas em carga. Campos de Carga serão None.")
 
-    stored = losses_data["resultados_perdas_carga"]
-    if not isinstance(stored, dict):
-        log.warning("'resultados_perdas_carga' não é um dicionário. Campos de Carga serão None.")
-        return tuple(outputs)
-
-    outputs = [
-        stored.get(k) for k in keys_to_load
-    ]
-    log.debug(f"Valores para aba Carga (de 'losses-store'): {outputs}")
     return tuple(outputs)
 
 
@@ -375,8 +396,8 @@ def losses_handle_perdas_vazio(
         )
         return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
 
-    # Obter dados de perdas existentes do MCP
-    losses_data = app.mcp.get_data("losses-store")
+    # Obter dados de perdas existentes do MCP (já temos via current_losses_store_data)
+    # losses_data = app.mcp.get_data("losses-store")
 
     try:
         # --- Constants & Helpers ---
@@ -1298,14 +1319,15 @@ def losses_handle_perdas_vazio(
         }
 
         # Initialize the store data if it's None
-        current_data = losses_data if isinstance(losses_data, dict) else {}
+        store_para_salvar = current_losses_store_data if isinstance(current_losses_store_data, dict) else {}
 
         # Initialize the resultados_perdas_vazio section if it doesn't exist
-        if "resultados_perdas_vazio" not in current_data:
-            current_data["resultados_perdas_vazio"] = {}
+        if "resultados_perdas_vazio" not in store_para_salvar:
+            store_para_salvar["resultados_perdas_vazio"] = {}
 
         # Update the resultados_perdas_vazio section with the new data
-        current_data["resultados_perdas_vazio"].update(new_data)
+        store_para_salvar["resultados_perdas_vazio"].update(new_data)
+        store_para_salvar["timestamp_vazio"] = datetime.datetime.now().isoformat()
 
         # Validar os dados antes de armazenar no MCP
         validation_rules = {
@@ -1325,11 +1347,11 @@ def losses_handle_perdas_vazio(
             # Continua mesmo com erros, mas loga os problemas
 
         # Serializar os dados antes de armazenar no MCP
-        serializable_data = convert_numpy_types(current_data, debug_path="losses_vazio_update")
+        serializable_data = convert_numpy_types(store_para_salvar, debug_path="losses_vazio_update")
 
         # Armazenar no MCP
         app.mcp.set_data("losses-store", serializable_data)
-        log.info("Dados de perdas em vazio atualizados no MCP")
+        log.critical(f"[LOSSES CALC VAZIO] losses-store atualizado com: {serializable_data.get('resultados_perdas_vazio')}")
 
         # Retornar os dados para o store (para manter compatibilidade)
         final_data = serializable_data
