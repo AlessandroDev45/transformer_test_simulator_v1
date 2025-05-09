@@ -1284,14 +1284,18 @@ def losses_handle_perdas_vazio(
         # --- Update MCP (Vazio) ---
         # Prepare the new data to be stored
         new_data = {
-            "resultados_aco_m4": resultados_aco_m4,
-            "resultados_projeto": resultados_projeto,
+            # Salvar os valores de entrada para manter a persistência
             "perdas_vazio_kw": perdas_vazio,
             "peso_nucleo": peso_nucleo,
             "corrente_excitacao": corrente_excitacao_percentual,
             "inducao": inducao,
             "corrente_exc_1_1": corrente_exc_1_1_input,
             "corrente_exc_1_2": corrente_exc_1_2_input,
+            # Resultados calculados
+            "resultados_aco_m4": resultados_aco_m4,
+            "resultados_projeto": resultados_projeto,
+            "peso_nucleo_calc": peso_nucleo_calc,  # Adicionar o valor calculado como um campo separado
+            "corrente_excitacao_calc": corrente_excitacao_percentual_calc,
             "sut_analysis_data": sut_analysis_data,
         }
 
