@@ -137,17 +137,17 @@ except ImportError:
 # --- Callbacks ---
 @dash.callback(
     Output("conteudo-perdas", "children"),
-    [
-        Input("tabs-perdas", "active_tab"),
-        # Removido Input("losses-store", "data") para evitar re-renderização quando o store muda
-    ]
+    [Input("tabs-perdas", "active_tab")]
+    # A renderização da aba só deve ocorrer pela mudança de aba.
+    # Os valores dos inputs serão gerenciados pelos callbacks de cálculo.
 )
 def losses_render_tab_content(tab_ativa):
     """
     Renderiza o conteúdo da aba selecionada na página de perdas.
     Agora é acionado APENAS quando a aba é alterada, não quando o store muda.
     """
-    log.debug(f"losses_render_tab_content triggered. Active tab: {tab_ativa}, Trigger: {ctx.triggered_id}")
+    triggered_id = ctx.triggered_id if ctx.triggered else "No trigger"
+    log.debug(f"losses_render_tab_content triggered by: {triggered_id}. Active tab: {tab_ativa}")
 
     if tab_ativa == "tab-vazio":
         return render_perdas_vazio()
@@ -156,116 +156,8 @@ def losses_render_tab_content(tab_ativa):
     return html.P("Selecione uma aba.")
 
 
-# --- Callbacks para Carregar Valores do Store (Perdas Vazio e Carga) ---
-@dash.callback(
-    [
-        Output("perdas-vazio-kw", "value"),  # Removido allow_duplicate
-        Output("peso-projeto-Ton", "value"),
-        Output("corrente-excitacao", "value"),
-        Output("inducao-nucleo", "value"),
-        Output("corrente-excitacao-1-1", "value"),
-        Output("corrente-excitacao-1-2", "value"),
-    ],
-    [
-        Input("tabs-perdas", "active_tab"),
-        Input("losses-store", "data")  # Adicionado Input do losses-store
-    ],
-    prevent_initial_call=True,
-)
-def losses_load_vazio_values(active_tab, losses_data_from_store):
-    """
-    Carrega os valores de perdas em vazio do MCP quando a aba é selecionada
-    ou quando o store losses-store é atualizado.
-    """
-    log.debug(f"losses_load_vazio_values triggered. Active tab: {active_tab}, Trigger: {ctx.triggered_id}")
-
-    if active_tab != "tab-vazio":
-        # Se a aba não é a de vazio, não atualizamos NADA (nem com None).
-        # Isso evita que os valores sejam apagados ao mudar de aba e voltar.
-        raise PreventUpdate
-
-    # Usar os dados do store diretamente, não do MCP
-    losses_data = losses_data_from_store
-
-    # Lista de chaves a serem carregadas
-    keys_to_load = [
-        "perdas_vazio_kw",
-        "peso_nucleo",
-        "corrente_excitacao",
-        "inducao",
-        "corrente_exc_1_1",
-        "corrente_exc_1_2",
-    ]
-
-    # Sempre retorna valores (None se não encontrado), não no_update.
-    outputs = [None] * len(keys_to_load)
-
-    if losses_data and isinstance(losses_data, dict) and "resultados_perdas_vazio" in losses_data:
-        stored = losses_data["resultados_perdas_vazio"]
-        if isinstance(stored, dict):
-            outputs = [
-                stored.get(k) for k in keys_to_load
-            ]
-            log.debug(f"Valores para aba Vazio (de 'losses-store'): {outputs}")
-        else:
-            log.warning("'resultados_perdas_vazio' não é um dicionário. Campos de Vazio serão None.")
-    else:
-        log.debug("Nenhum dado válido em 'losses-store' para perdas em vazio. Campos de Vazio serão None.")
-
-    return tuple(outputs)
-
-
-@dash.callback(
-    [
-        Output("perdas-carga-kw_U_nom", "value"),  # Removido allow_duplicate
-        Output("perdas-carga-kw_U_min", "value"),
-        Output("perdas-carga-kw_U_max", "value"),
-        Output("temperatura-referencia", "value"),
-    ],
-    [
-        Input("tabs-perdas", "active_tab"),
-        Input("losses-store", "data")  # Adicionado Input do losses-store
-    ],
-    prevent_initial_call=True,
-)
-def losses_load_carga_values(active_tab, losses_data_from_store):
-    """
-    Carrega os valores de perdas em carga do MCP quando a aba é selecionada
-    ou quando o store losses-store é atualizado.
-    """
-    log.debug(f"losses_load_carga_values triggered. Active tab: {active_tab}, Trigger: {ctx.triggered_id}")
-
-    if active_tab != "tab-carga":
-        raise PreventUpdate
-
-    # Usar os dados do store diretamente, não do MCP
-    losses_data = losses_data_from_store
-
-    # Lista de chaves a serem carregadas
-    keys_to_load = [
-        "perdas_carga_nom",
-        "perdas_carga_min",
-        "perdas_carga_max",
-        "temperatura_referencia",
-    ]
-
-    # Sempre retorna valores (None se não encontrado), não no_update.
-    outputs = [None] * len(keys_to_load)
-
-    if not losses_data or not isinstance(losses_data, dict) or "resultados_perdas_carga" not in losses_data:
-        log.debug("Nenhum dado válido em 'losses-store' para perdas em carga. Campos de Carga serão None.")
-        return tuple(outputs)
-
-    stored = losses_data["resultados_perdas_carga"]
-    if not isinstance(stored, dict):
-        log.warning("'resultados_perdas_carga' não é um dicionário. Campos de Carga serão None.")
-        return tuple(outputs)
-
-    outputs = [
-        stored.get(k) for k in keys_to_load
-    ]
-    log.debug(f"Valores para aba Carga (de 'losses-store'): {outputs}")
-    return tuple(outputs)
+# Os callbacks losses_load_vazio_values e losses_load_carga_values foram removidos.
+# A responsabilidade de popular os inputs após um cálculo agora é dos próprios callbacks de cálculo.
 
 
 # --- Callback para Atualizar Cache de Dados do Transformador removido ---
@@ -290,11 +182,19 @@ def update_losses_page_info_panel(global_panel_content):
 # --- Callback Perdas em Vazio (Unchanged from previous version) ---
 @dash.callback(
     [
+        # Outputs para exibição dos resultados
         Output("parametros-gerais-card-body", "children"),
         Output("dut-voltage-level-results-body", "children"),
         Output("sut-analysis-results-area", "children"),
         Output("legend-observations-area", "children"),
         Output("losses-store", "data", allow_duplicate=True),
+        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Vazio"
+        Output("perdas-vazio-kw", "value"),
+        Output("peso-projeto-Ton", "value"),
+        Output("corrente-excitacao", "value"),
+        Output("inducao-nucleo", "value"),
+        Output("corrente-excitacao-1-1", "value"),
+        Output("corrente-excitacao-1-2", "value"),
     ],
     [Input("calcular-perdas-vazio", "n_clicks")],
     [
@@ -1284,18 +1184,14 @@ def losses_handle_perdas_vazio(
         # --- Update MCP (Vazio) ---
         # Prepare the new data to be stored
         new_data = {
-            # Salvar os valores de entrada para manter a persistência
+            "resultados_aco_m4": resultados_aco_m4,
+            "resultados_projeto": resultados_projeto,
             "perdas_vazio_kw": perdas_vazio,
             "peso_nucleo": peso_nucleo,
             "corrente_excitacao": corrente_excitacao_percentual,
             "inducao": inducao,
             "corrente_exc_1_1": corrente_exc_1_1_input,
             "corrente_exc_1_2": corrente_exc_1_2_input,
-            # Resultados calculados
-            "resultados_aco_m4": resultados_aco_m4,
-            "resultados_projeto": resultados_projeto,
-            "peso_nucleo_calc": peso_nucleo_calc,  # Adicionar o valor calculado como um campo separado
-            "corrente_excitacao_calc": corrente_excitacao_percentual_calc,
             "sut_analysis_data": sut_analysis_data,
         }
 
@@ -1336,24 +1232,34 @@ def losses_handle_perdas_vazio(
         # Retornar os dados para o store (para manter compatibilidade)
         final_data = serializable_data
 
+        # Retornar os valores dos inputs junto com os resultados
         return (
             parametros_gerais_content,
             dut_voltage_results_content,
             layout_analise_sut_content,
             legenda_observacoes_content,
             final_data,
+            # Valores para os inputs (os mesmos que foram usados no cálculo)
+            perdas_vazio,
+            peso_nucleo,
+            corrente_excitacao_percentual,
+            inducao,
+            corrente_exc_1_1_input,
+            corrente_exc_1_2_input,
         )
 
     except ValueError as e:
         log.error(f"ValueError in handle_perdas_vazio: {e}")
         error_msg = f"Erro: Verifique os inputs numéricos. Detalhe: {str(e)}"
         error_div = html.Div(error_msg, style=ERROR_STYLE)
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2
     except Exception as e:
         log.exception(f"Exception in handle_perdas_vazio: {e}")
         error_msg = f"Erro inesperado no cálculo de perdas em vazio: {str(e)}"
         error_div = html.Div(error_msg, style=ERROR_STYLE)
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2
 
 
 # --- Capacitor Bank Suggestion Helper Functions (Unchanged from previous version) ---
@@ -1761,9 +1667,15 @@ def calculate_sut_eps_current_compensated(
 # --- MODIFIED Callback Perdas em Carga ---
 @dash.callback(
     [
+        # Outputs para exibição dos resultados
         Output("resultados-perdas-carga", "children"),
         Output("condicoes-nominais-card-body", "children"),
         Output("losses-store", "data", allow_duplicate=True),
+        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Carga"
+        Output("perdas-carga-kw_U_nom", "value"),
+        Output("perdas-carga-kw_U_min", "value"),
+        Output("perdas-carga-kw_U_max", "value"),
+        Output("temperatura-referencia", "value"),
     ],
     [Input("calcular-perdas-carga", "n_clicks")],
     [
@@ -1800,7 +1712,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "MCP não disponível. Não é possível processar os dados.", style=ERROR_STYLE
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
     # --- Input Validation ---
     required_fields = [perdas_carga_nom, perdas_carga_min, perdas_carga_max]
@@ -1822,7 +1735,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "Por favor, preencha todos os campos de perdas em carga.", style=ERROR_STYLE
         )
-        return initial_detailed_content, error_div, no_update  # Put error in nominal card
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
     # Obter dados do transformador do MCP
     transformer_data = app.mcp.get_data("transformer-inputs-store")
@@ -1833,7 +1747,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "Dados incompletos do transformador. Verifique os dados básicos.", style=ERROR_STYLE
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
     # Obter dados de perdas existentes do MCP
     losses_data = app.mcp.get_data("losses-store")
@@ -1846,7 +1761,8 @@ def losses_handle_perdas_carga(
             "As perdas em vazio não foram calculadas. Calcule-as primeiro na aba 'Perdas em Vazio'.",
             style=ERROR_STYLE,
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
     try:
         # --- Helpers & Constants ---
@@ -1896,7 +1812,8 @@ def losses_handle_perdas_carga(
             error_div = html.Div(
                 "Valores de perdas (carga e vazio) devem ser numéricos.", style=ERROR_STYLE
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
         if any(
             v is not None and v <= 0
             for v in [perdas_totais_nom_input, perdas_totais_min_input, perdas_totais_max_input]
@@ -1904,12 +1821,14 @@ def losses_handle_perdas_carga(
             error_div = html.Div(
                 "Valores de perdas totais em carga devem ser maiores que zero.", style=ERROR_STYLE
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
         if perdas_vazio_nom is not None and perdas_vazio_nom <= 0:
             error_div = html.Div(
                 "Valor de perdas em vazio deve ser maior que zero.", style=ERROR_STYLE
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
         tipo_transformador = transformer_data.get("tipo_transformador", "Trifásico")
         potencia = safe_float(transformer_data.get("potencia_mva"))
@@ -1950,7 +1869,8 @@ def losses_handle_perdas_carga(
                 f"Dados numéricos essenciais do transformador estão faltando: {', '.join(missing_keys)}.",
                 style=ERROR_STYLE,
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
         if any(v is not None and v <= epsilon for v in essential_transformer_nums):
             invalid_keys = [
                 k
@@ -1971,7 +1891,8 @@ def losses_handle_perdas_carga(
                 f"Dados essenciais do transformador devem ser maiores que zero: {', '.join(invalid_keys)}.",
                 style=ERROR_STYLE,
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
         sqrt_3_factor = sqrt_3 if tipo_transformador == "Trifásico" else 1.0
         corrente_at_nom = (
@@ -1995,7 +1916,8 @@ def losses_handle_perdas_carga(
                 "Falha ao calcular correntes nominais AT (resultado zero ou negativo). Verifique tensões e potência.",
                 style=ERROR_STYLE,
             )
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
         # --- Capacitor Bank Calculation Function (For individual scenarios) ---
         def calculate_cap_bank(voltage, power):
@@ -2113,7 +2035,7 @@ def losses_handle_perdas_carga(
                 log.error(error_msg)
                 error_div = html.Div(error_msg, style=ERROR_STYLE)
                 calculation_error = True
-                break  # Stop calculation loop
+                # Não precisamos fazer break aqui, pois o erro será tratado após o loop
 
             res_dict["Perdas Carga Sem Vazio (kW)"] = perdas_carga_sem_vazio
 
@@ -2129,7 +2051,7 @@ def losses_handle_perdas_carga(
                 log.error(error_msg)
                 error_div = html.Div(error_msg, style=ERROR_STYLE)
                 calculation_error = True
-                break
+                # Não precisamos fazer break aqui, pois o erro será tratado após o loop
             res_dict["Perdas a Frio (25°C) (kW)"] = perdas_cc_a_frio
 
             # Calculate "Frio" (Cold Energization - Total Losses) test parameters
@@ -2279,7 +2201,8 @@ def losses_handle_perdas_carga(
 
         if calculation_error:
             # If an error occurred inside the loop, return the error message
-            return initial_detailed_content, error_div, no_update
+            # Retornar os valores originais dos inputs para mantê-los na UI
+            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
 
         # --- Overload Calculations (if applicable) ---
         overload_applicable = tensao_nominal_at >= 230
@@ -5272,14 +5195,25 @@ def losses_handle_perdas_carga(
         )
 
         # --- Return ---
-        return (detailed_results_layout, condicoes_nominais_content, serializable_data)
+        # Retornar os valores dos inputs junto com os resultados
+        return (
+            detailed_results_layout,
+            condicoes_nominais_content,
+            serializable_data,
+            # Valores para os inputs (os mesmos que foram usados no cálculo)
+            perdas_totais_nom_input,
+            perdas_totais_min_input,
+            perdas_totais_max_input,
+            temperatura_ref
+        )
 
     except ValueError as e:
         log.error(f"ValueError in handle_perdas_carga: {e}")
         error_div = html.Div(
             f"Erro ao calcular: Verifique os inputs numéricos. Detalhe: {str(e)}", style=ERROR_STYLE
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
     except KeyError as e:
         log.error(
             f"KeyError in handle_perdas_carga: Missing key {e}. Transformer Data: {transformer_data.keys() if transformer_data else 'None'}. Losses Data: {losses_data.keys() if losses_data else 'None'}"
@@ -5288,10 +5222,12 @@ def losses_handle_perdas_carga(
             f"Erro: Dado necessário ({e}) não encontrado. Verifique os dados do transformador e o cálculo de perdas em vazio.",
             style=ERROR_STYLE,
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
     except Exception as e:
         log.exception(f"Exception in handle_perdas_carga: {e}")  # Log full traceback
         error_div = html.Div(
             f"Erro inesperado ao calcular perdas em carga: {str(e)}", style=ERROR_STYLE
         )
-        return initial_detailed_content, error_div, no_update
+        # Retornar os valores originais dos inputs para mantê-los na UI
+        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
