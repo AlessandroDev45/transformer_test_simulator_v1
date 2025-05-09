@@ -154,8 +154,19 @@ def patch_mcp(store_id: str, data: Dict[str, Any], app=None) -> bool:
         missing_fields = [k for k in ESSENTIAL if updated_data.get(k) in (None, "", 0)]
         log.warning(f"[patch_mcp] Dados essenciais faltando: {missing_fields}, mas continuando com a gravação")
 
+    # Importar a função de conversão de tipos numpy
+    from utils.store_diagnostics import convert_numpy_types
+
+    # Converter os dados para tipos serializáveis antes de salvar no MCP
+    try:
+        serializable_data = convert_numpy_types(updated_data, debug_path=f"patch_mcp.{store_id}")
+        log.info(f"[patch_mcp] Dados convertidos para tipos serializáveis antes de salvar no MCP")
+    except Exception as e:
+        log.error(f"[patch_mcp] Erro ao converter dados para tipos serializáveis: {e}")
+        serializable_data = updated_data  # Usar os dados originais se a conversão falhar
+
     # Salvar os dados atualizados no MCP
-    app_instance.mcp.set_data(store_id, updated_data)
+    app_instance.mcp.set_data(store_id, serializable_data)
 
     log.info(f"[patch_mcp] Atualizado {store_id} com dados válidos")
     return True

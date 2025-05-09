@@ -243,7 +243,6 @@ def register_transformer_inputs_callbacks(app_instance):
                     def keep(new_value, key):
                         """
                         Usa o valor novo se não for None, caso contrário mantém o valor atual.
-                        Para campos essenciais, nunca substitui um valor existente por None.
 
                         Args:
                             new_value: Novo valor a ser considerado
@@ -252,19 +251,6 @@ def register_transformer_inputs_callbacks(app_instance):
                         Returns:
                             O valor a ser usado (novo ou atual)
                         """
-                        # Lista de campos essenciais que nunca devem ser None
-                        essential_fields = [
-                            "potencia_mva", "tensao_at", "tensao_bt", "tensao_terciario",
-                            "tensao_at_tap_maior", "tensao_at_tap_menor", "impedancia",
-                            "impedancia_tap_maior", "impedancia_tap_menor", "frequencia"
-                        ]
-
-                        # Se for um campo essencial e já temos um valor, nunca substituir por None
-                        if key in essential_fields and new_value is None and current_data.get(key) is not None:
-                            log.debug(f"[keep] Mantendo valor existente para campo essencial {key}: {current_data.get(key)}")
-                            return current_data.get(key)
-
-                        # Caso contrário, usar a lógica normal
                         return new_value if new_value is not None else current_data.get(key)
 
                     # Dados básicos
