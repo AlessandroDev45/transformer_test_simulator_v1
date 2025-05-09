@@ -105,11 +105,16 @@ def global_updates_all_transformer_info_panels(
     module_name = "global_updates"
     function_name = "global_updates_all_transformer_info_panels"
 
-    # IMPORTANTE: Evitar execução quando o trigger for mudança de URL
+    # IMPORTANTE: Evitar execução quando o trigger for mudança de URL ou botão de calcular
     # Isso evita que o callback seja executado durante navegação entre páginas
-    # e potencialmente sobrescreva dados válidos com None
+    # ou durante o cálculo de perdas, o que poderia sobrescrever dados válidos
     if triggered_id == "url":
         log.debug(f"[{module_name}] Callback ignorado - trigger é mudança de URL")
+        raise dash.exceptions.PreventUpdate
+
+    # Evitar execução quando o trigger for botão de calcular
+    if triggered_id in ["calcular-perdas-vazio", "calcular-perdas-carga"]:
+        log.debug(f"[{module_name}] Callback ignorado - trigger é botão de calcular: {triggered_id}")
         raise dash.exceptions.PreventUpdate
 
     log.debug(f"[{module_name}] ========== INICIANDO ATUALIZAÇÃO GLOBAL DE PAINÉIS ==========")
@@ -319,13 +324,34 @@ def global_updates_all_transformer_info_panels(
         # Verificar se os dados ainda estão ausentes após a recarga
         if fresh_data.get('potencia_mva') is None or fresh_data.get('tensao_at') is None or fresh_data.get('tensao_bt') is None:
             log.warning(f"[{module_name}] Dados essenciais ainda ausentes após recarga. Usando dados do transformer_inputs_fix...")
-            # Tentar obter dados do transformer_inputs_fix
-            from callbacks.transformer_inputs_fix import get_latest_transformer_data
+            # Tentar obter dados do transformer_inputs
+            from callbacks.transformer_inputs import get_latest_transformer_data
             try:
                 latest_data = get_latest_transformer_data()
                 if latest_data and isinstance(latest_data, dict):
                     log.info(f"[{module_name}] Obtidos dados do transformer_inputs_fix: potencia={latest_data.get('potencia_mva')}, tensao_at={latest_data.get('tensao_at')}, tensao_bt={latest_data.get('tensao_bt')}")
                     fresh_data = latest_data
+
+                    # IMPORTANTE: Atualizar o MCP com os dados do transformer_inputs_fix
+                    # Isso garante que os dados essenciais estejam disponíveis para outros módulos
+                    if latest_data.get('potencia_mva') is not None and latest_data.get('tensao_at') is not None and latest_data.get('tensao_bt') is not None:
+                        log.info(f"[{module_name}] Atualizando MCP com dados essenciais do transformer_inputs_fix")
+                        app.mcp.set_data("transformer-inputs-store", latest_data)
+
+                        # Propagar dados para outros stores
+                        from utils.mcp_persistence import ensure_mcp_data_propagation
+                        target_stores = [
+                            "losses-store",
+                            "impulse-store",
+                            "dieletric-analysis-store",
+                            "applied-voltage-store",
+                            "induced-voltage-store",
+                            "short-circuit-store",
+                            "temperature-rise-store",
+                            "comprehensive-analysis-store",
+                        ]
+                        propagation_results = ensure_mcp_data_propagation(app, "transformer-inputs-store", target_stores)
+                        log.info(f"[{module_name}] Propagação de dados para outros stores: {propagation_results}")
             except Exception as e:
                 log.error(f"[{module_name}] Erro ao obter dados do transformer_inputs_fix: {e}", exc_info=True)
 
