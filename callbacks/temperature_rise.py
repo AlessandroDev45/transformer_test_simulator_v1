@@ -30,15 +30,23 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # --- Callback para exibir informações do transformador na página ---
-# Este callback foi removido pois o painel agora é criado diretamente no layout
-# @app.callback(
-#     Output("transformer-info-temperature-rise-page", "children"),
-#     Input("transformer-info-temperature-rise", "children"),
-#     prevent_initial_call=False
-# )
-# def update_temperature_rise_page_info_panel(global_panel_content):
-#     """Copia o conteúdo do painel global para o painel específico da página."""
-#     return global_panel_content
+@app.callback(
+    Output("transformer-info-temperature-rise-page", "children"),
+    Input("transformer-info-temperature-rise", "children"),
+    prevent_initial_call=False
+)
+def update_temperature_rise_page_info_panel(global_panel_content):
+    """Copia o conteúdo do painel global para o painel específico da página."""
+    log.info("CALLBACK EXECUTADO: Atualizando painel de informações do transformador na página de elevação de temperatura")
+    print("CALLBACK EXECUTADO: Atualizando painel de informações do transformador na página de elevação de temperatura")
+
+    # Verificar se o conteúdo do painel global é válido
+    if global_panel_content is None:
+        log.warning("Conteúdo do painel global é None")
+        from components.transformer_info_template import create_transformer_info_panel
+        return create_transformer_info_panel({})
+
+    return global_panel_content
 
 
 # --- Funções Auxiliares (mantida) ---
@@ -363,3 +371,34 @@ def temperature_rise_calculate(
     return return_values
 
 
+# Função de registro de callbacks para compatibilidade com app.py
+def register_temperature_rise_callbacks(app_instance):
+    """
+    Registra os callbacks do módulo de elevação de temperatura.
+    Esta função é chamada por app.py para garantir que todos os callbacks sejam registrados.
+
+    Args:
+        app_instance: A instância da aplicação Dash
+    """
+    log.info(f"Registrando callbacks do módulo de elevação de temperatura para app {app_instance.title}...")
+
+    # Callback para exibir informações do transformador na página
+    @app_instance.callback(
+        Output("transformer-info-temperature-rise-page", "children"),
+        Input("transformer-info-temperature-rise", "children"),
+        prevent_initial_call=False,
+    )
+    def update_temperature_rise_page_info_panel_explicit(global_panel_content):
+        """Copia o conteúdo do painel global para o painel específico da página."""
+        log.info("CALLBACK EXPLÍCITO EXECUTADO: Atualizando painel de informações do transformador na página de elevação de temperatura")
+        print("CALLBACK EXPLÍCITO EXECUTADO: Atualizando painel de informações do transformador na página de elevação de temperatura")
+
+        # Verificar se o conteúdo do painel global é válido
+        if global_panel_content is None:
+            log.warning("Conteúdo do painel global é None")
+            from components.transformer_info_template import create_transformer_info_panel
+            return create_transformer_info_panel({})
+
+        return global_panel_content
+
+    log.info(f"Callbacks do módulo de elevação de temperatura registrados para app {app_instance.title}")
