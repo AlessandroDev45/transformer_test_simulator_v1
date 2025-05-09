@@ -370,7 +370,7 @@ def losses_handle_perdas_vazio(
         error_div = html.Div(
             "MCP não disponível. Não é possível processar os dados.", style=ERROR_STYLE
         )
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # --- Input Validation ---
     required_inputs = [perdas_vazio, peso_nucleo, corrente_excitacao, inducao]
@@ -379,14 +379,14 @@ def losses_handle_perdas_vazio(
             "Preencha todos os campos obrigatórios (Perdas, Peso, Corr. Exc%, Indução).",
             style=ERROR_STYLE,
         )
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Obter dados do transformador do MCP
     transformer_data = app.mcp.get_data("transformer-inputs-store")
     if not transformer_data:
         log.error("Dados básicos do transformador não encontrados no MCP.")
         error_div = html.Div("Dados básicos do transformador não encontrados.", style=ERROR_STYLE)
-        return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Verificar se os dados essenciais estão presentes
     if (
@@ -401,7 +401,7 @@ def losses_handle_perdas_vazio(
             "Dados essenciais do transformador ausentes. Preencha os dados básicos na página 'Dados Básicos'.",
             style=ERROR_STYLE,
         )
-        return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+        return initial_params, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Obter dados de perdas existentes do MCP
     losses_data = app.mcp.get_data("losses-store")
@@ -505,11 +505,11 @@ def losses_handle_perdas_vazio(
                 f"Fatores de perdas/potência não encontrados para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz.",
                 style=ERROR_STYLE,
             )
-            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         except Exception as e:
             log.error(f"Erro ao buscar fatores no DataFrame: {e}")
             error_div = html.Div(f"Erro ao buscar fatores: {e}", style=ERROR_STYLE)
-            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         if (
             fator_perdas is None
@@ -521,7 +521,7 @@ def losses_handle_perdas_vazio(
                 f"Fatores de perdas/potência inválidos ({fator_perdas=}, {fator_potencia_mag=}) para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz.",
                 style=ERROR_STYLE,
             )
-            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
+            return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         # --- Core & Excitation Calculations ---
         peso_nucleo_calc = perdas_vazio / fator_perdas if fator_perdas > epsilon else 0
