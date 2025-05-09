@@ -1683,6 +1683,7 @@ def update_rf_value(up_clicks, down_clicks, current_value):
         return dash.no_update
 
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    log.critical(f"[IMPULSE RF UPDATE] Botão {trigger_id} clicado. Valor atual: {current_value}")
 
     try:
         # Extrair valor numérico base
@@ -1697,12 +1698,17 @@ def update_rf_value(up_clicks, down_clicks, current_value):
                 current_numeric = 15  # Valor padrão
 
         # Aplicar incremento/decremento
+        new_value = current_numeric
         if trigger_id == "rf-up":
-            return str(current_numeric + 1)
+            new_value = current_numeric + 1
         elif trigger_id == "rf-down":
-            return str(max(1, current_numeric - 1))
+            new_value = max(1, current_numeric - 1)
+
+        new_value_str = str(new_value)
+        log.critical(f"[IMPULSE RF UPDATE] Novo valor: {new_value_str}")
+        return new_value_str
     except Exception as e:
-        logger.error(f"Error updating Rf value: {e}")
+        log.error(f"[IMPULSE RF UPDATE] Erro ao atualizar valor Rf: {e}")
 
     return current_value
 
@@ -1719,6 +1725,7 @@ def update_rt_value(up_clicks, down_clicks, current_value):
         return dash.no_update
 
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    log.critical(f"[IMPULSE RT UPDATE] Botão {trigger_id} clicado. Valor atual: {current_value}")
 
     try:
         # Extrair valor numérico base
@@ -1733,12 +1740,17 @@ def update_rt_value(up_clicks, down_clicks, current_value):
                 current_numeric = 100  # Valor padrão
 
         # Aplicar incremento/decremento
+        new_value = current_numeric
         if trigger_id == "rt-up":
-            return str(current_numeric + 10)
+            new_value = current_numeric + 10
         elif trigger_id == "rt-down":
-            return str(max(10, current_numeric - 10))
+            new_value = max(10, current_numeric - 10)
+
+        new_value_str = str(new_value)
+        log.critical(f"[IMPULSE RT UPDATE] Novo valor: {new_value_str}")
+        return new_value_str
     except Exception as e:
-        logger.error(f"Error updating Rt value: {e}")
+        log.error(f"[IMPULSE RT UPDATE] Erro ao atualizar valor Rt: {e}")
 
     return current_value
 
@@ -1853,16 +1865,16 @@ def use_transformer_data(n_clicks, transformer_data):
         Output("impulse-results", "children"),
         Output("impulse-store", "data"),
     ],
-    [Input("run-simulation", "n_clicks_timestamp")],  # Usando n_clicks_timestamp em vez de n_clicks
+    [Input("simulate-button", "n_clicks")],  # Corrigido para usar o ID correto do botão e n_clicks
     [
-        State("front-resistor", "value"),
-        State("tail-resistor", "value"),
-        State("capacitance", "value"),
+        State("front-resistor-expression", "value"),  # Corrigido para usar o ID correto
+        State("tail-resistor-expression", "value"),   # Corrigido para usar o ID correto
+        State("test-object-capacitance", "value"),    # Corrigido para usar o ID correto
         State("transformer-inductance", "value"),
         State("stray-capacitance", "value"),
-        State("shunt-resistance", "value"),
-        State("simulation-time", "value"),
-        State("time-step", "value"),
+        State("shunt-resistor", "value"),             # Corrigido para usar o ID correto
+        State("test-voltage", "value"),               # Corrigido para usar o ID correto
+        State("external-inductance", "value"),        # Corrigido para usar o ID correto
         State("impulse-type", "value"),
         State("impulse-store", "data"),
     ],
@@ -1870,17 +1882,21 @@ def use_transformer_data(n_clicks, transformer_data):
 )
 def update_impulse_simulation(
     n_clicks,
-    r_front,
-    r_tail,
+    r_front_expr,
+    r_tail_expr,
     capacitance,
     inductance,
     stray_cap,
     shunt_res,
-    sim_time,
-    time_step,
+    test_voltage,
+    external_inductance,
     impulse_type,
     current_store_data,
 ):
+    # Log detalhado para diagnóstico
+    log.critical(f"[IMPULSE SIM START] Botão Simular clicado. n_clicks: {n_clicks}")
+    log.critical(f"[IMPULSE SIM PARAMS] r_front: {r_front_expr}, r_tail: {r_tail_expr}, cap: {capacitance}, ind: {inductance}, stray_cap: {stray_cap}, shunt_res: {shunt_res}, voltage: {test_voltage}, ext_ind: {external_inductance}, type: {impulse_type}")
+
     if n_clicks is None:
         raise dash.exceptions.PreventUpdate
 
@@ -1889,28 +1905,44 @@ def update_impulse_simulation(
     try:
         # Validar entradas
         if None in [
-            r_front,
-            r_tail,
+            r_front_expr,
+            r_tail_expr,
             capacitance,
             inductance,
             stray_cap,
             shunt_res,
-            sim_time,
-            time_step,
+            test_voltage,
+            external_inductance,
         ]:
+            log.warning("[IMPULSE SIM] Campos obrigatórios não preenchidos")
             return dash.no_update, html.Div(
                 "Preencha todos os campos para simular", style={"color": "red"}
-            )
+            ), dash.no_update
+
+        # Extrair valores numéricos das expressões
+        try:
+            # Tenta extrair número da expressão (simplificado, pega o primeiro número)
+            r_front_match = re.search(r"(\d+)", str(r_front_expr))
+            r_front = float(r_front_match.group(1)) if r_front_match else 15.0
+
+            r_tail_match = re.search(r"(\d+)", str(r_tail_expr))
+            r_tail = float(r_tail_match.group(1)) if r_tail_match else 100.0
+        except Exception as e:
+            log.error(f"[IMPULSE SIM] Erro ao extrair valores numéricos das expressões: {e}")
+            r_front = 15.0
+            r_tail = 100.0
 
         # Converter para valores numéricos
-        r_front = float(r_front)
-        r_tail = float(r_tail)
         capacitance = float(capacitance) * 1e-9  # nF para F
         inductance = float(inductance)
         stray_cap = float(stray_cap) * 1e-12  # pF para F
         shunt_res = float(shunt_res)
-        sim_time = float(sim_time) * 1e-6  # µs para s
-        time_step = float(time_step) * 1e-9  # ns para s
+        test_voltage = float(test_voltage)
+        external_inductance = float(external_inductance) * 1e-6  # μH para H
+
+        # Valores fixos para simulação simplificada
+        sim_time = 100.0 * 1e-6  # 100 µs
+        time_step = 10.0 * 1e-9  # 10 ns
 
         # Simular o circuito de impulso
         t, v = simulate_impulse_circuit(
@@ -1946,12 +1978,16 @@ def update_impulse_simulation(
         data_for_store = {
             "impulse_type": impulse_type,
             "inputs": {
+                "r_front_expr": r_front_expr,
+                "r_tail_expr": r_tail_expr,
                 "r_front": r_front,
                 "r_tail": r_tail,
                 "capacitance": capacitance,
                 "inductance": inductance,
                 "stray_cap": stray_cap,
                 "shunt_res": shunt_res,
+                "test_voltage": test_voltage,
+                "external_inductance": external_inductance,
                 "sim_time": sim_time,
                 "time_step": time_step,
             },
@@ -1960,9 +1996,14 @@ def update_impulse_simulation(
                 "rise_time": rise_time,
                 "tail_time": tail_time,
                 "waveform_type": f"{rise_time:.1f}/{tail_time:.1f} µs",
+                "test_voltage_kv": test_voltage,
             },
             "timestamp": datetime.datetime.now().isoformat(),
         }
+
+        # Log detalhado dos resultados
+        log.critical(f"[IMPULSE SIM RESULTS] Pico: {peak_voltage:.2f}, T1: {rise_time:.2f}, T2: {tail_time:.2f}")
+        log.debug(f"[IMPULSE SIM STORE DATA] Dados para store: {data_for_store}")
 
         # Atualizar o store com os novos dados
         current_store_data.update(data_for_store)
