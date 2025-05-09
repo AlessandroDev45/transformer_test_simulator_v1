@@ -16,6 +16,22 @@ log.info(f"Nível de log: {logging.getLevelName(log.getEffectiveLevel())}")
 log.info(f"Handlers configurados: {[h.__class__.__name__ for h in log.handlers]}")
 log.info("=============================================================")
 
+# Variável global para armazenar os dados mais recentes do transformador
+_latest_transformer_data = None
+
+def get_latest_transformer_data():
+    """
+    Retorna os dados mais recentes do transformador.
+    Esta função é usada por outros módulos para obter os dados mais recentes
+    do transformador, mesmo que eles ainda não tenham sido salvos no MCP.
+
+    Returns:
+        dict: Os dados mais recentes do transformador
+    """
+    global _latest_transformer_data
+    log.info(f"[get_latest_transformer_data] Retornando dados mais recentes: {_latest_transformer_data}")
+    return _latest_transformer_data
+
 
 def register_transformer_inputs_callbacks(app_instance):
     """
@@ -45,6 +61,7 @@ def register_transformer_inputs_callbacks(app_instance):
             Input("elevacao_enrol", "value"),
             Input("tipo_transformador", "value"),
             Input("tipo_isolamento", "value"),
+            Input("norma_iso", "value"),
             # Pesos
             Input("peso_total", "value"),
             Input("peso_parte_ativa", "value"),
@@ -100,6 +117,7 @@ def register_transformer_inputs_callbacks(app_instance):
         elevacao_enrol,
         tipo_transformador,
         tipo_isolamento,
+        norma_iso,
         # Pesos
         peso_total,
         peso_parte_ativa,
@@ -249,6 +267,7 @@ def register_transformer_inputs_callbacks(app_instance):
                         tipo_transformador, "tipo_transformador"
                     )
                     current_data["tipo_isolamento"] = keep(tipo_isolamento, "tipo_isolamento")
+                    current_data["norma_iso"] = keep(norma_iso, "norma_iso")
 
                     # Pesos
                     current_data["peso_total"] = keep(peso_total, "peso_total")
@@ -333,7 +352,7 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # Log dos valores principais após aplicar a função keep
                     log.debug(
-                        f"[Update Callback] Após keep - Potência: {current_data.get('potencia_mva')}, Tensão AT: {current_data.get('tensao_at')}, Tensão BT: {current_data.get('tensao_bt')}"
+                        f"[Update Callback] Após keep - Potência: {current_data.get('potencia_mva')}, Tensão AT: {current_data.get('tensao_at')}, Tensão BT: {current_data.get('tensao_bt')}, Norma: {current_data.get('norma_iso')}"
                     )
 
                     # Log dos valores principais que serão salvos no MCP (apenas em nível debug)
@@ -354,6 +373,10 @@ def register_transformer_inputs_callbacks(app_instance):
                     serializable_data = convert_numpy_types(
                         current_data, debug_path="update_transformer_inputs_with_currents"
                     )
+
+                    # Atualizar a variável global com os dados mais recentes
+                    global _latest_transformer_data
+                    _latest_transformer_data = serializable_data.copy()
 
                     # Se não foi acionado pelo botão de salvar, apenas retornar as correntes calculadas
                     if not save_to_mcp:
@@ -390,6 +413,8 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # IMPORTANTE: Usar set_data diretamente em vez de patch_mcp
                     # Isso garante que todos os campos sejam salvos, mesmo os que são None → valor
+                    # Este é o ponto principal onde os dados do transformer inputs são enviados para o MCP
+                    # O módulo global_updates lerá estes dados do MCP para exibir nos painéis
                     log.info(
                         f"[Update Callback] Salvando {len(serializable_data)} campos no MCP via set_data"
                     )
@@ -401,7 +426,7 @@ def register_transformer_inputs_callbacks(app_instance):
                     # Verificar se os dados foram salvos corretamente
                     saved_data = app_instance.mcp.get_data("transformer-inputs-store")
                     log.info(
-                        f"[Update Callback] Verificação após salvar no MCP: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
+                        f"[Update Callback] Verificação após salvar no MCP: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}, norma_iso={saved_data.get('norma_iso')}"
                     )
 
                     # Propagar dados para outros stores usando o novo utilitário
@@ -465,7 +490,7 @@ def register_transformer_inputs_callbacks(app_instance):
                     if log.isEnabledFor(logging.DEBUG):
                         saved_data = app_instance.mcp.get_data("transformer-inputs-store")
                         log.debug(
-                            f"[Update Callback] Verificação final - Potência: {saved_data.get('potencia_mva')}, Tensão AT: {saved_data.get('tensao_at')}, Tensão BT: {saved_data.get('tensao_bt')}"
+                            f"[Update Callback] Verificação final - Potência: {saved_data.get('potencia_mva')}, Tensão AT: {saved_data.get('tensao_at')}, Tensão BT: {saved_data.get('tensao_bt')}, Norma: {saved_data.get('norma_iso')}"
                         )
                         log.debug(f"[Update Callback] Total de campos no MCP: {len(saved_data)}")
 
@@ -568,7 +593,7 @@ def register_transformer_inputs_callbacks(app_instance):
             # Verificar se os dados foram salvos corretamente
             saved_data = app_instance.mcp.get_data("transformer-inputs-store")
             log.info(
-                f"[autosave_with_debounce] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
+                f"[autosave_with_debounce] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}, norma_iso={saved_data.get('norma_iso')}"
             )
 
             # Propagar dados para outros stores
@@ -614,6 +639,10 @@ def register_transformer_inputs_callbacks(app_instance):
                     current_data, debug_path="flush_on_page_change"
                 )
 
+                # Atualizar a variável global com os dados mais recentes
+                global _latest_transformer_data
+                _latest_transformer_data = serializable_data.copy()
+
                 # Verificar se os dados essenciais estão presentes
                 from utils.mcp_persistence import ESSENTIAL, _dados_ok
 
@@ -649,7 +678,7 @@ def register_transformer_inputs_callbacks(app_instance):
                 # Verificar se os dados foram salvos corretamente
                 saved_data = app_instance.mcp.get_data("transformer-inputs-store")
                 log.info(
-                    f"[flush_on_page_change] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
+                    f"[flush_on_page_change] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}, norma_iso={saved_data.get('norma_iso')}"
                 )
 
                 # Propagar dados para outros stores
