@@ -520,6 +520,19 @@ def create_losses_layout():
     layout = dbc.Container(
         [
             # Stores are now defined in components/global_stores.py and included in main_layout.py
+            # Interval para repopular os inputs após um pequeno atraso
+            dcc.Interval(
+                id="losses-repopulate-vazio-interval",
+                interval=100,  # 100ms
+                max_intervals=1,
+                disabled=True,
+            ),
+            dcc.Interval(
+                id="losses-repopulate-carga-interval",
+                interval=100,  # 100ms
+                max_intervals=1,
+                disabled=True,
+            ),
             # Transformer Info Panel
             dbc.Row(
                 [

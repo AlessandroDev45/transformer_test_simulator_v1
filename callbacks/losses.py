@@ -159,11 +159,136 @@ def losses_render_tab_content(tab_ativa):
 
 
 # Os callbacks losses_load_vazio_values e losses_load_carga_values foram removidos.
-# A responsabilidade de popular os inputs após um cálculo agora é dos próprios callbacks de cálculo.
+# A responsabilidade de popular os inputs após um cálculo agora é dos callbacks de repopulação.
+
+# --- Callbacks para Repopular Inputs após Delay ---
+@dash.callback(
+    [
+        Output("perdas-vazio-kw", "value", allow_duplicate=True),
+        Output("peso-projeto-Ton", "value", allow_duplicate=True),
+        Output("corrente-excitacao", "value", allow_duplicate=True),
+        Output("inducao-nucleo", "value", allow_duplicate=True),
+        Output("corrente-excitacao-1-1", "value", allow_duplicate=True),
+        Output("corrente-excitacao-1-2", "value", allow_duplicate=True),
+        Output("losses-repopulate-vazio-interval", "disabled"),
+        Output("losses-repopulate-vazio-interval", "n_intervals")
+    ],
+    [Input("losses-repopulate-vazio-interval", "n_intervals")],
+    [State("losses-store", "data")],
+    prevent_initial_call=True
+)
+def repopulate_vazio_inputs_after_delay(n_intervals, losses_data_from_store):
+    """
+    Repopula os inputs de perdas em vazio após um pequeno atraso.
+    Isso ajuda a evitar condições de corrida na renderização.
+    """
+    if n_intervals is None or n_intervals == 0:
+        raise PreventUpdate
+
+    log.critical("[LOSSES REPOPULATE VAZIO] Acionado após delay!")
+
+    if losses_data_from_store and isinstance(losses_data_from_store.get("inputs_a_repopular_vazio"), dict):
+        repopulate_values = losses_data_from_store["inputs_a_repopular_vazio"]
+        outputs = [
+            repopulate_values.get("perdas_vazio_kw"),
+            repopulate_values.get("peso_nucleo"),
+            repopulate_values.get("corrente_excitacao"),
+            repopulate_values.get("inducao"),
+            repopulate_values.get("corrente_exc_1_1"),
+            repopulate_values.get("corrente_exc_1_2"),
+            True,  # Desabilitar intervalo
+            0      # Resetar n_intervals
+        ]
+        log.critical(f"[LOSSES REPOPULATE VAZIO] Repopulando inputs de vazio com: {outputs[:-2]}")
+        return tuple(outputs)
+
+    log.warning("[LOSSES REPOPULATE VAZIO] Não foi possível repopular inputs de vazio, dados ausentes no store.")
+    return [dash.no_update]*6 + [True, 0]
+
+
+@dash.callback(
+    [
+        Output("perdas-carga-kw_U_nom", "value", allow_duplicate=True),
+        Output("perdas-carga-kw_U_min", "value", allow_duplicate=True),
+        Output("perdas-carga-kw_U_max", "value", allow_duplicate=True),
+        Output("temperatura-referencia", "value", allow_duplicate=True),
+        Output("losses-repopulate-carga-interval", "disabled"),
+        Output("losses-repopulate-carga-interval", "n_intervals")
+    ],
+    [Input("losses-repopulate-carga-interval", "n_intervals")],
+    [State("losses-store", "data")],
+    prevent_initial_call=True
+)
+def repopulate_carga_inputs_after_delay(n_intervals, losses_data_from_store):
+    """
+    Repopula os inputs de perdas em carga após um pequeno atraso.
+    Isso ajuda a evitar condições de corrida na renderização.
+    """
+    if n_intervals is None or n_intervals == 0:
+        raise PreventUpdate
+
+    log.critical("[LOSSES REPOPULATE CARGA] Acionado após delay!")
+
+    if losses_data_from_store and isinstance(losses_data_from_store.get("inputs_a_repopular_carga"), dict):
+        repopulate_values = losses_data_from_store["inputs_a_repopular_carga"]
+        outputs = [
+            repopulate_values.get("perdas_carga_nom"),
+            repopulate_values.get("perdas_carga_min"),
+            repopulate_values.get("perdas_carga_max"),
+            repopulate_values.get("temperatura_referencia"),
+            True,  # Desabilitar intervalo
+            0      # Resetar n_intervals
+        ]
+        log.critical(f"[LOSSES REPOPULATE CARGA] Repopulando inputs de carga com: {outputs[:-2]}")
+        return tuple(outputs)
+
+    log.warning("[LOSSES REPOPULATE CARGA] Não foi possível repopular inputs de carga, dados ausentes no store.")
+    return [dash.no_update]*4 + [True, 0]
 
 
 # --- Callback para Atualizar Cache de Dados do Transformador removido ---
 # Este callback foi removido pois a atualização é feita pelo callback global em global_updates.py
+
+
+# --- Callbacks para Habilitar Intervalos de Repopulação ---
+@dash.callback(
+    Output("losses-repopulate-vazio-interval", "disabled", allow_duplicate=True),
+    Input("losses-store", "data"),
+    State("tabs-perdas", "active_tab"),
+    prevent_initial_call=True
+)
+def trigger_repopulate_vazio_interval(losses_data_from_store, active_tab):
+    """
+    Habilita o intervalo para repopular os inputs de vazio quando o losses-store é atualizado.
+    """
+    # Só habilita o intervalo se a aba correta estiver ativa e
+    # se os dados para repopular existirem no store.
+    if active_tab == "tab-vazio" and \
+       losses_data_from_store and \
+       isinstance(losses_data_from_store.get("inputs_a_repopular_vazio"), dict):
+        log.critical("[TRIGGER VAZIO] Habilitando intervalo para repopular inputs de Vazio.")
+        return False  # Habilita o intervalo
+    return True  # Mantém desabilitado
+
+
+@dash.callback(
+    Output("losses-repopulate-carga-interval", "disabled", allow_duplicate=True),
+    Input("losses-store", "data"),
+    State("tabs-perdas", "active_tab"),
+    prevent_initial_call=True
+)
+def trigger_repopulate_carga_interval(losses_data_from_store, active_tab):
+    """
+    Habilita o intervalo para repopular os inputs de carga quando o losses-store é atualizado.
+    """
+    # Só habilita o intervalo se a aba correta estiver ativa e
+    # se os dados para repopular existirem no store.
+    if active_tab == "tab-carga" and \
+       losses_data_from_store and \
+       isinstance(losses_data_from_store.get("inputs_a_repopular_carga"), dict):
+        log.critical("[TRIGGER CARGA] Habilitando intervalo para repopular inputs de Carga.")
+        return False  # Habilita o intervalo
+    return True  # Mantém desabilitado
 
 
 # --- Callback para atualizar o painel de informações do transformador na página de perdas ---
@@ -1237,36 +1362,60 @@ def losses_handle_perdas_vazio(
         # Retornar os dados para o store (para manter compatibilidade)
         final_data = serializable_data
 
-        # Retornar os valores dos inputs junto com os resultados
-        log.critical(f"[PERDAS VAZIO] FIM DO CÁLCULO - Valores a serem retornados para os inputs: perdas_vazio={perdas_vazio}, peso_nucleo={peso_nucleo}, corrente_excitacao_percentual={corrente_excitacao_percentual}, inducao={inducao}, corrente_exc_1_1_input={corrente_exc_1_1_input}, corrente_exc_1_2_input={corrente_exc_1_2_input}")
+        # Salvar os valores dos inputs em uma chave específica no losses-store
+        valores_para_inputs_vazio = {
+            "perdas_vazio_kw": perdas_vazio,
+            "peso_nucleo": peso_nucleo,
+            "corrente_excitacao": corrente_excitacao_percentual,
+            "inducao": inducao,
+            "corrente_exc_1_1": corrente_exc_1_1_input,
+            "corrente_exc_1_2": corrente_exc_1_2_input,
+        }
 
+        # Adicionar a chave inputs_a_repopular_vazio ao store
+        if "inputs_a_repopular_vazio" not in current_data:
+            current_data["inputs_a_repopular_vazio"] = {}
+        current_data["inputs_a_repopular_vazio"] = valores_para_inputs_vazio
+
+        # Serializar os dados novamente após adicionar a chave inputs_a_repopular_vazio
+        serializable_data = convert_numpy_types(current_data, debug_path="losses_vazio_update_with_inputs")
+
+        # Atualizar o MCP com os novos dados
+        app.mcp.set_data("losses-store", serializable_data)
+
+        # Retornar os dados para o store (para manter compatibilidade)
+        final_data = serializable_data
+
+        log.critical(f"[PERDAS VAZIO] FIM DO CÁLCULO - Valores salvos em inputs_a_repopular_vazio: {valores_para_inputs_vazio}")
+
+        # Retornar no_update para os Outputs dos inputs
         return (
             parametros_gerais_content,
             dut_voltage_results_content,
             layout_analise_sut_content,
             legenda_observacoes_content,
             final_data,
-            # Valores para os inputs (os mesmos que foram usados no cálculo)
-            perdas_vazio,
-            peso_nucleo,
-            corrente_excitacao_percentual,
-            inducao,
-            corrente_exc_1_1_input,
-            corrente_exc_1_2_input,
+            # Retornar no_update para os inputs (serão atualizados pelo callback de repopulação)
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
         )
 
     except ValueError as e:
         log.error(f"ValueError in handle_perdas_vazio: {e}")
         error_msg = f"Erro: Verifique os inputs numéricos. Detalhe: {str(e)}"
         error_div = html.Div(error_msg, style=ERROR_STYLE)
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     except Exception as e:
         log.exception(f"Exception in handle_perdas_vazio: {e}")
         error_msg = f"Erro inesperado no cálculo de perdas em vazio: {str(e)}"
         error_div = html.Div(error_msg, style=ERROR_STYLE)
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, perdas_vazio, peso_nucleo, corrente_excitacao, inducao, corrente_exc_1_1, corrente_exc_1_2
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 # --- Capacitor Bank Suggestion Helper Functions (Unchanged from previous version) ---
@@ -1722,8 +1871,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "MCP não disponível. Não é possível processar os dados.", style=ERROR_STYLE
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # --- Input Validation ---
     required_fields = [perdas_carga_nom, perdas_carga_min, perdas_carga_max]
@@ -1745,8 +1894,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "Por favor, preencha todos os campos de perdas em carga.", style=ERROR_STYLE
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Obter dados do transformador do MCP
     transformer_data = app.mcp.get_data("transformer-inputs-store")
@@ -1757,8 +1906,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             "Dados incompletos do transformador. Verifique os dados básicos.", style=ERROR_STYLE
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Obter dados de perdas existentes do MCP
     losses_data = app.mcp.get_data("losses-store")
@@ -1771,8 +1920,8 @@ def losses_handle_perdas_carga(
             "As perdas em vazio não foram calculadas. Calcule-as primeiro na aba 'Perdas em Vazio'.",
             style=ERROR_STYLE,
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     try:
         # --- Helpers & Constants ---
@@ -1822,8 +1971,8 @@ def losses_handle_perdas_carga(
             error_div = html.Div(
                 "Valores de perdas (carga e vazio) devem ser numéricos.", style=ERROR_STYLE
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         if any(
             v is not None and v <= 0
             for v in [perdas_totais_nom_input, perdas_totais_min_input, perdas_totais_max_input]
@@ -1831,14 +1980,14 @@ def losses_handle_perdas_carga(
             error_div = html.Div(
                 "Valores de perdas totais em carga devem ser maiores que zero.", style=ERROR_STYLE
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         if perdas_vazio_nom is not None and perdas_vazio_nom <= 0:
             error_div = html.Div(
                 "Valor de perdas em vazio deve ser maior que zero.", style=ERROR_STYLE
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         tipo_transformador = transformer_data.get("tipo_transformador", "Trifásico")
         potencia = safe_float(transformer_data.get("potencia_mva"))
@@ -1879,8 +2028,8 @@ def losses_handle_perdas_carga(
                 f"Dados numéricos essenciais do transformador estão faltando: {', '.join(missing_keys)}.",
                 style=ERROR_STYLE,
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         if any(v is not None and v <= epsilon for v in essential_transformer_nums):
             invalid_keys = [
                 k
@@ -1901,8 +2050,8 @@ def losses_handle_perdas_carga(
                 f"Dados essenciais do transformador devem ser maiores que zero: {', '.join(invalid_keys)}.",
                 style=ERROR_STYLE,
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         sqrt_3_factor = sqrt_3 if tipo_transformador == "Trifásico" else 1.0
         corrente_at_nom = (
@@ -1926,8 +2075,8 @@ def losses_handle_perdas_carga(
                 "Falha ao calcular correntes nominais AT (resultado zero ou negativo). Verifique tensões e potência.",
                 style=ERROR_STYLE,
             )
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         # --- Capacitor Bank Calculation Function (For individual scenarios) ---
         def calculate_cap_bank(voltage, power):
@@ -2211,8 +2360,8 @@ def losses_handle_perdas_carga(
 
         if calculation_error:
             # If an error occurred inside the loop, return the error message
-            # Retornar os valores originais dos inputs para mantê-los na UI
-            return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+            # Retornar no_update para os inputs (serão mantidos pelo navegador)
+            return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         # --- Overload Calculations (if applicable) ---
         overload_applicable = tensao_nominal_at >= 230
@@ -5204,19 +5353,38 @@ def losses_handle_perdas_carga(
             f"Sugestão Geral - CS: {cs_config_str}, Q: {q_config_str} ({q_power_mvar_provided_overall:.1f} MVAr)"
         )
 
-        # --- Return ---
-        # Retornar os valores dos inputs junto com os resultados
-        log.critical(f"[PERDAS CARGA] FIM DO CÁLCULO - Valores a serem retornados para os inputs: perdas_totais_nom_input={perdas_totais_nom_input}, perdas_totais_min_input={perdas_totais_min_input}, perdas_totais_max_input={perdas_totais_max_input}, temperatura_ref={temperatura_ref}")
+        # --- Salvar os valores dos inputs em uma chave específica no losses-store ---
+        valores_para_inputs_carga = {
+            "perdas_carga_nom": perdas_totais_nom_input,
+            "perdas_carga_min": perdas_totais_min_input,
+            "perdas_carga_max": perdas_totais_max_input,
+            "temperatura_referencia": temperatura_ref
+        }
 
+        # Adicionar a chave inputs_a_repopular_carga ao store
+        if "inputs_a_repopular_carga" not in current_data:
+            current_data["inputs_a_repopular_carga"] = {}
+        current_data["inputs_a_repopular_carga"] = valores_para_inputs_carga
+
+        # Serializar os dados novamente após adicionar a chave inputs_a_repopular_carga
+        serializable_data = convert_numpy_types(current_data, debug_path="losses_carga_update_with_inputs")
+
+        # Atualizar o MCP com os novos dados
+        app.mcp.set_data("losses-store", serializable_data)
+
+        log.critical(f"[PERDAS CARGA] FIM DO CÁLCULO - Valores salvos em inputs_a_repopular_carga: {valores_para_inputs_carga}")
+
+        # --- Return ---
+        # Retornar no_update para os Outputs dos inputs
         return (
             detailed_results_layout,
             condicoes_nominais_content,
             serializable_data,
-            # Valores para os inputs (os mesmos que foram usados no cálculo)
-            perdas_totais_nom_input,
-            perdas_totais_min_input,
-            perdas_totais_max_input,
-            temperatura_ref
+            # Retornar no_update para os inputs (serão atualizados pelo callback de repopulação)
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update
         )
 
     except ValueError as e:
@@ -5224,8 +5392,8 @@ def losses_handle_perdas_carga(
         error_div = html.Div(
             f"Erro ao calcular: Verifique os inputs numéricos. Detalhe: {str(e)}", style=ERROR_STYLE
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     except KeyError as e:
         log.error(
             f"KeyError in handle_perdas_carga: Missing key {e}. Transformer Data: {transformer_data.keys() if transformer_data else 'None'}. Losses Data: {losses_data.keys() if losses_data else 'None'}"
@@ -5234,12 +5402,12 @@ def losses_handle_perdas_carga(
             f"Erro: Dado necessário ({e}) não encontrado. Verifique os dados do transformador e o cálculo de perdas em vazio.",
             style=ERROR_STYLE,
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     except Exception as e:
         log.exception(f"Exception in handle_perdas_carga: {e}")  # Log full traceback
         error_div = html.Div(
             f"Erro inesperado ao calcular perdas em carga: {str(e)}", style=ERROR_STYLE
         )
-        # Retornar os valores originais dos inputs para mantê-los na UI
-        return initial_detailed_content, error_div, no_update, perdas_carga_nom, perdas_carga_min, perdas_carga_max, temperatura_referencia
+        # Retornar no_update para os inputs (serão mantidos pelo navegador)
+        return initial_detailed_content, error_div, no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
