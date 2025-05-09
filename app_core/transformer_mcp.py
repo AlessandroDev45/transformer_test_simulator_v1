@@ -145,10 +145,36 @@ class TransformerMCP:
         log.info(f"MCP Initialized {len(self._data)} data stores")
         log.info("===============================================================")
 
-    def get_data(self, store_id: str) -> Dict[str, Any]:
+    def get_data(self, store_id: str, force_reload: bool = False) -> Dict[str, Any]:
         """
         Get data from a specific store. Returns a deep copy.
+
+        Args:
+            store_id (str): The ID of the store to get data from
+            force_reload (bool): If True, forces a reload from disk before returning data
+
+        Returns:
+            Dict[str, Any]: A deep copy of the data in the store
         """
+        if force_reload:
+            # Reload data from disk if force_reload is True
+            try:
+                from utils.mcp_disk_persistence import load_mcp_state_from_disk
+                disk_data, success = load_mcp_state_from_disk()
+
+                if success and disk_data and store_id in disk_data:
+                    try:
+                        # Convert data before setting in internal MCP state
+                        from utils.store_diagnostics import convert_numpy_types
+                        converted_data = convert_numpy_types(disk_data[store_id], debug_path=f"mcp_force_reload.{store_id}")
+                        # Update internal data
+                        self._data[store_id] = converted_data
+                        log.info(f"[MCP GET] Forced reload of data for store: {store_id}")
+                    except Exception as e:
+                        log.error(f"[MCP GET] Error converting data during forced reload for store {store_id}: {e}", exc_info=True)
+            except Exception as e:
+                log.error(f"[MCP GET] Error during forced reload from disk: {e}", exc_info=True)
+
         if store_id not in self._data:
             log.warning(f"[MCP GET] Attempted to access non-existent store: {store_id}")
             return {} # Return empty dict if store ID is invalid
@@ -431,11 +457,11 @@ class TransformerMCP:
 
     # --- Business Logic Methods (Delegated Calculations) ---
 
-    def calculate_nominal_currents(self, transformer_data: Optional[Dict[str, Any]] = None) -> Dict[str, Optional[float]]:
+    def calculate_nominal_currents(self, transformer_data: Optional[Dict[str, Any]] = None, force_reload: bool = False) -> Dict[str, Optional[float]]:
         """ Calculates nominal currents based on provided or internal transformer data. """
         if transformer_data is None:
-            transformer_data = self.get_data('transformer-inputs-store')
-            log.info("[MCP Calc Currents] Usando dados do MCP")
+            transformer_data = self.get_data('transformer-inputs-store', force_reload=force_reload)
+            log.info(f"[MCP Calc Currents] Usando dados do MCP (force_reload={force_reload})")
         else:
             log.info("[MCP Calc Currents] Usando dados fornecidos")
 
@@ -460,16 +486,10 @@ class TransformerMCP:
         log.debug("[MCP] Calculating nominal currents...")
         log.info(f"[MCP Calc Currents] Dados de entrada: {transformer_data}")
 
-        # Se transformer_data for None ou vazio, criar um dicionário com valores padrão
+        # Se transformer_data for None ou vazio, retornar valores None
         if not transformer_data:
-            log.warning("[MCP Calc Currents] Dados vazios! Criando dicionário com valores padrão")
-            transformer_data = {
-                'tipo_transformador': 'Trifásico',
-                'potencia_mva': 10.0,
-                'tensao_at': 138.0,
-                'tensao_bt': 13.8,
-                'tensao_terciario': 0.0
-            }
+            log.warning("[MCP Calc Currents] Dados vazios! Retornando valores None")
+            return result  # Retorna o dicionário com todos os valores None
 
         # Extrair valores
         tipo = transformer_data.get('tipo_transformador', 'Trifásico')  # Default para Trifásico
@@ -596,10 +616,11 @@ class TransformerMCP:
         log.debug(f"[MCP] Correntes calculadas: {result}")
         return result
 
-    def calculate_visibility_styles(self, transformer_data: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, str]]:
+    def calculate_visibility_styles(self, transformer_data: Optional[Dict[str, Any]] = None, force_reload: bool = False) -> Dict[str, Dict[str, str]]:
         """ Calculates visibility styles based on provided or internal transformer data. """
         if transformer_data is None:
-            transformer_data = self.get_data('transformer-inputs-store')
+            transformer_data = self.get_data('transformer-inputs-store', force_reload=force_reload)
+            log.info(f"[MCP Visibility] Usando dados do MCP (force_reload={force_reload})")
 
         # Log detalhado dos dados usados para calcular os estilos de visibilidade
         log.info("===============================================================")
