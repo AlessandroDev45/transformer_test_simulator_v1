@@ -147,11 +147,13 @@ def losses_render_tab_content(tab_ativa):
     Agora é acionado APENAS quando a aba é alterada, não quando o store muda.
     """
     triggered_id = ctx.triggered_id if ctx.triggered else "No trigger"
-    log.debug(f"losses_render_tab_content triggered by: {triggered_id}. Active tab: {tab_ativa}")
+    log.critical(f"[LOSSES RENDER TAB] losses_render_tab_content triggered by: {triggered_id}. Active tab: {tab_ativa}")
 
     if tab_ativa == "tab-vazio":
+        log.critical(f"[LOSSES RENDER TAB] Renderizando aba de perdas em vazio")
         return render_perdas_vazio()
     elif tab_ativa == "tab-carga":
+        log.critical(f"[LOSSES RENDER TAB] Renderizando aba de perdas em carga")
         return render_perdas_carga()
     return html.P("Selecione uma aba.")
 
@@ -175,7 +177,7 @@ def update_losses_page_info_panel(global_panel_content):
     Copia o conteúdo do painel de informações global para o painel local da página de perdas.
     Este callback é acionado quando o painel global é atualizado pelo callback global_updates_all_transformer_info_panels.
     """
-    log.debug("Atualizando painel de informações do transformador na página de perdas")
+    log.critical(f"[LOSSES INFO PANEL] Atualizando painel de informações do transformador na página de perdas. Trigger: {ctx.triggered_id}")
     return global_panel_content
 
 
@@ -221,6 +223,7 @@ def losses_handle_perdas_vazio(
 ):
     """
     Processa os inputs de perdas em vazio, atualiza o MCP, e retorna os resultados para a UI.
+    Agora também retorna os valores dos inputs para mantê-los após o cálculo.
     """
     if n_clicks is None:
         raise PreventUpdate
@@ -229,6 +232,8 @@ def losses_handle_perdas_vazio(
     if ctx.triggered_id != "calcular-perdas-vazio":
         log.warning(f"[losses_handle_perdas_vazio] Bloqueando gravação fantasma. Trigger: {ctx.triggered_id}")
         raise PreventUpdate
+
+    log.critical(f"[PERDAS VAZIO] INÍCIO DO CÁLCULO - Valores de entrada: perdas_vazio={perdas_vazio}, peso_nucleo={peso_nucleo}, corrente_excitacao={corrente_excitacao}, inducao={inducao}, corrente_exc_1_1={corrente_exc_1_1}, corrente_exc_1_2={corrente_exc_1_2}")
 
     initial_params = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
     initial_dut_volt = html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE)
@@ -1233,6 +1238,8 @@ def losses_handle_perdas_vazio(
         final_data = serializable_data
 
         # Retornar os valores dos inputs junto com os resultados
+        log.critical(f"[PERDAS VAZIO] FIM DO CÁLCULO - Valores a serem retornados para os inputs: perdas_vazio={perdas_vazio}, peso_nucleo={peso_nucleo}, corrente_excitacao_percentual={corrente_excitacao_percentual}, inducao={inducao}, corrente_exc_1_1_input={corrente_exc_1_1_input}, corrente_exc_1_2_input={corrente_exc_1_2_input}")
+
         return (
             parametros_gerais_content,
             dut_voltage_results_content,
@@ -1694,10 +1701,13 @@ def losses_handle_perdas_carga(
 ):
     """
     Processa os inputs de perdas em carga, atualiza o MCP, e retorna os resultados para a UI.
+    Agora também retorna os valores dos inputs para mantê-los após o cálculo.
     """
     # Verificar se o botão foi clicado
     if n_clicks is None or n_clicks <= 0:
         raise PreventUpdate
+
+    log.critical(f"[PERDAS CARGA] INÍCIO DO CÁLCULO - Valores de entrada: perdas_carga_nom={perdas_carga_nom}, perdas_carga_min={perdas_carga_min}, perdas_carga_max={perdas_carga_max}, temperatura_referencia={temperatura_referencia}")
 
     # Verificar se o callback foi acionado pelo botão de calcular
     if ctx.triggered_id != "calcular-perdas-carga":
@@ -5196,6 +5206,8 @@ def losses_handle_perdas_carga(
 
         # --- Return ---
         # Retornar os valores dos inputs junto com os resultados
+        log.critical(f"[PERDAS CARGA] FIM DO CÁLCULO - Valores a serem retornados para os inputs: perdas_totais_nom_input={perdas_totais_nom_input}, perdas_totais_min_input={perdas_totais_min_input}, perdas_totais_max_input={perdas_totais_max_input}, temperatura_ref={temperatura_ref}")
+
         return (
             detailed_results_layout,
             condicoes_nominais_content,
