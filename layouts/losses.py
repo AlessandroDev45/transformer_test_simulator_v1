@@ -363,7 +363,7 @@ def render_perdas_carga():
                                                                         }
                                                                         for t in [75, 85, 115]
                                                                     ],
-                                                                    value=75,
+                                                                    # Removido value=75 para permitir que o callback defina o valor
                                                                     clearable=False,
                                                                     style=final_dropdown_style,  # Use combined style
                                                                     persistence=True,

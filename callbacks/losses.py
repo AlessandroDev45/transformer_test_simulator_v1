@@ -190,13 +190,13 @@ def update_losses_page_info_panel(global_panel_content):
         Output("sut-analysis-results-area", "children"),
         Output("legend-observations-area", "children"),
         Output("losses-store", "data", allow_duplicate=True),
-        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Vazio"
-        Output("perdas-vazio-kw", "value"),
-        Output("peso-projeto-Ton", "value"),
-        Output("corrente-excitacao", "value"),
-        Output("inducao-nucleo", "value"),
-        Output("corrente-excitacao-1-1", "value"),
-        Output("corrente-excitacao-1-2", "value"),
+        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Vazio" com allow_duplicate=True
+        Output("perdas-vazio-kw", "value", allow_duplicate=True),
+        Output("peso-projeto-Ton", "value", allow_duplicate=True),
+        Output("corrente-excitacao", "value", allow_duplicate=True),
+        Output("inducao-nucleo", "value", allow_duplicate=True),
+        Output("corrente-excitacao-1-1", "value", allow_duplicate=True),
+        Output("corrente-excitacao-1-2", "value", allow_duplicate=True),
     ],
     [Input("calcular-perdas-vazio", "n_clicks")],
     [
@@ -1678,11 +1678,11 @@ def calculate_sut_eps_current_compensated(
         Output("resultados-perdas-carga", "children"),
         Output("condicoes-nominais-card-body", "children"),
         Output("losses-store", "data", allow_duplicate=True),
-        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Carga"
-        Output("perdas-carga-kw_U_nom", "value"),
-        Output("perdas-carga-kw_U_min", "value"),
-        Output("perdas-carga-kw_U_max", "value"),
-        Output("temperatura-referencia", "value"),
+        # NOVOS OUTPUTS para os campos de input da aba "Perdas em Carga" com allow_duplicate=True
+        Output("perdas-carga-kw_U_nom", "value", allow_duplicate=True),
+        Output("perdas-carga-kw_U_min", "value", allow_duplicate=True),
+        Output("perdas-carga-kw_U_max", "value", allow_duplicate=True),
+        Output("temperatura-referencia", "value", allow_duplicate=True),
     ],
     [Input("calcular-perdas-carga", "n_clicks")],
     [
