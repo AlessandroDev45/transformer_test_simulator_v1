@@ -27,7 +27,7 @@ from components.formatters import (  # Formatadores
 from layouts import COLORS  # Para estilos padronizados
 from utils import constants  # Para RESOANT_SYSTEM_CONFIGS
 from utils.store_diagnostics import convert_numpy_types
-from utils.validators import validate_dict_inputs_enhanced as validate_dict_inputs  # Para validação
+from components.validators import validate_dict_inputs  # Para validação
 
 log = logging.getLogger(__name__)
 

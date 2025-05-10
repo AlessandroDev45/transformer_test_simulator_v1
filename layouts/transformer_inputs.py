@@ -363,7 +363,7 @@ def create_transformer_inputs_layout():
                                                         width=6,
                                                     ),
                                                 ],
-                                                className="g-2 mb-1",
+                                                className="g-3 mb-3", # ALTERADO de g-2 mb-1 para g-3 mb-3
                                             ),
                                             # Corrente e Impedância lado a lado
                                             dbc.Row(
@@ -417,7 +417,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL (kV):",
+                                                                "NBI/BIL (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_at",
                                                             ),
@@ -431,16 +431,16 @@ def create_transformer_inputs_layout():
                                                         ],
                                                         width=6,
                                                     ),
-                                                    # SIL/IM (agora visível por padrão)
+                                                    # SIL/IM
                                                     dbc.Col(
                                                         id="sil_at_col",
                                                         children=[
                                                             dbc.Label(
-                                                                "SIL/IM (kV):",
+                                                                "SIL/IM (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_at",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_at",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -531,12 +531,12 @@ def create_transformer_inputs_layout():
                                             ),
                                             # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
-                                                id="nbi_neutro_at_col",
+                                                id="at_neutral_fields_row",
                                                 children=[
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL Neutro (kV):",
+                                                                "NBI/BIL Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_neutro_at",
                                                             ),
@@ -553,11 +553,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "SIL/IM Neutro (kV):",
+                                                                "SIL/IM Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_neutro_at",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_neutro_at",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -733,11 +733,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "Aplicada (kV):",
+                                                                "Aplicada (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="teste_tensao_aplicada_at",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="teste_tensao_aplicada_at",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -750,11 +750,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "Induzida (kV):",
+                                                                "Induzida (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="teste_tensao_induzida",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="teste_tensao_induzida",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -857,7 +857,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL (kV):",
+                                                                "NBI/BIL (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_bt",
                                                             ),
@@ -871,16 +871,16 @@ def create_transformer_inputs_layout():
                                                         ],
                                                         width=6,
                                                     ),
-                                                    # SIL/IM (agora visível por padrão)
+                                                    # SIL/IM
                                                     dbc.Col(
                                                         id="sil_bt_col",
                                                         children=[
                                                             dbc.Label(
-                                                                "SIL/IM (kV):",
+                                                                "SIL/IM (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_bt",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_bt",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -971,12 +971,12 @@ def create_transformer_inputs_layout():
                                             ),
                                             # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
-                                                id="nbi_neutro_bt_col",
+                                                id="bt_neutral_fields_row",
                                                 children=[
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL Neutro (kV):",
+                                                                "NBI/BIL Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_neutro_bt",
                                                             ),
@@ -993,11 +993,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "SIL/IM Neutro (kV):",
+                                                                "SIL/IM Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_neutro_bt",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_neutro_bt",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -1026,11 +1026,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "Aplicada (kV):",
+                                                                "Aplicada (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="teste_tensao_aplicada_bt",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="teste_tensao_aplicada_bt",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -1038,7 +1038,7 @@ def create_transformer_inputs_layout():
                                                                 className="dash-dropdown-dark",
                                                             ),
                                                         ],
-                                                        width=6, # Ajustado
+                                                        width=6, 
                                                     ),
                                                 ],
                                                 className="g-3 mb-3",
@@ -1133,7 +1133,7 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL (kV):",
+                                                                "NBI/BIL (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_terciario",
                                                             ),
@@ -1147,16 +1147,16 @@ def create_transformer_inputs_layout():
                                                         ],
                                                         width=6,
                                                     ),
-                                                    # SIL/IM (agora visível por padrão)
+                                                    # SIL/IM
                                                     dbc.Col(
                                                         id="sil_terciario_col",
                                                         children=[
                                                             dbc.Label(
-                                                                "SIL/IM (kV):",
+                                                                "SIL/IM (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_terciario",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_terciario",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,
@@ -1251,12 +1251,12 @@ def create_transformer_inputs_layout():
                                             ),
                                             # NBI/BIL Neutro e SIL/IM Neutro lado a lado
                                             dbc.Row(
-                                                id="nbi_neutro_terciario_col",
+                                                id="terciario_neutral_fields_row",
                                                 children=[
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "NBI/BIL Neutro (kV):",
+                                                                "NBI/BIL Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="nbi_neutro_terciario",
                                                             ),
@@ -1273,11 +1273,11 @@ def create_transformer_inputs_layout():
                                                     dbc.Col(
                                                         [
                                                             dbc.Label(
-                                                                "SIL/IM Neutro (kV):",
+                                                                "SIL/IM Neutro (kV):", # Label original
                                                                 style=LABEL_STYLE,
                                                                 html_for="sil_neutro_terciario",
                                                             ),
-                                                            dcc.Dropdown(
+                                                            dcc.Dropdown( # REVERTIDO PARA DROPDOWN
                                                                 id="sil_neutro_terciario",
                                                                 options=[],
                                                                 style=DROPDOWN_STYLE,

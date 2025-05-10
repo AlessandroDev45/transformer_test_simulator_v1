@@ -8,7 +8,7 @@ import logging
 from dash import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app_core.isolation_repo import derive_um, get_isolation_levels
+from app_core.isolation_repo import get_isolation_levels
 from utils.store_diagnostics import convert_numpy_types
 
 log = logging.getLogger(__name__)
@@ -98,18 +98,26 @@ def register_isolation_callbacks(app_instance):
             raise PreventUpdate
 
         try:
-            # Converter para float com tratamento de erros
-            v_nom_float = float(v_nom) if v_nom else 0
-            v_tap_plus_float = float(v_tap_plus) if v_tap_plus else 0
+            # Não derivamos mais a classe de tensão automaticamente
+            # Usamos o valor atual da classe de tensão do store
+            store = store or {}
 
-            # Maior tensão fase-fase (kV)
-            v_max = max(v_nom_float, v_tap_plus_float)
+            # Obter dados atuais do MCP para garantir que temos todos os dados
+            if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
+                mcp_data = app_instance.mcp.get_data("transformer-inputs-store")
+                if mcp_data and isinstance(mcp_data, dict):
+                    # Usar os dados do MCP como base para garantir que não perdemos dados
+                    for key, value in mcp_data.items():
+                        if key not in store:
+                            store[key] = value
 
-            # Aplicar tolerância (10%)
-            v_max_with_tolerance = v_max * 1.1
+            # Usar a classe de tensão atual (não derivar automaticamente)
+            um = store.get("classe_tensao_at")
 
-            # Derivar a classe de tensão
-            um = derive_um(v_max_with_tolerance)
+            # Se não tiver classe de tensão definida, não faz nada
+            if um is None:
+                log.warning("Classe de tensão AT não definida. Não é possível calcular níveis de isolamento.")
+                raise PreventUpdate
 
             # Mapear o valor de conexão
             conexao_mapped = map_conexao(conexao)
@@ -323,14 +331,26 @@ def register_isolation_callbacks(app_instance):
             raise PreventUpdate
 
         try:
-            # Converter para float com tratamento de erros
-            v_nom_float = float(v_nom) if v_nom else 0
+            # Não derivamos mais a classe de tensão automaticamente
+            # Usamos o valor atual da classe de tensão do store
+            store = store or {}
 
-            # Aplicar tolerância (10%)
-            v_max_with_tolerance = v_nom_float * 1.1
+            # Obter dados atuais do MCP para garantir que temos todos os dados
+            if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
+                mcp_data = app_instance.mcp.get_data("transformer-inputs-store")
+                if mcp_data and isinstance(mcp_data, dict):
+                    # Usar os dados do MCP como base para garantir que não perdemos dados
+                    for key, value in mcp_data.items():
+                        if key not in store:
+                            store[key] = value
 
-            # Derivar a classe de tensão
-            um = derive_um(v_max_with_tolerance)
+            # Usar a classe de tensão atual (não derivar automaticamente)
+            um = store.get("classe_tensao_bt")
+
+            # Se não tiver classe de tensão definida, não faz nada
+            if um is None:
+                log.warning("Classe de tensão BT não definida. Não é possível calcular níveis de isolamento.")
+                raise PreventUpdate
 
             # Mapear o valor de conexão
             conexao_mapped = map_conexao(conexao)
@@ -544,14 +564,26 @@ def register_isolation_callbacks(app_instance):
             raise PreventUpdate
 
         try:
-            # Converter para float com tratamento de erros
-            v_nom_float = float(v_nom) if v_nom else 0
+            # Não derivamos mais a classe de tensão automaticamente
+            # Usamos o valor atual da classe de tensão do store
+            store = store or {}
 
-            # Aplicar tolerância (10%)
-            v_max_with_tolerance = v_nom_float * 1.1
+            # Obter dados atuais do MCP para garantir que temos todos os dados
+            if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
+                mcp_data = app_instance.mcp.get_data("transformer-inputs-store")
+                if mcp_data and isinstance(mcp_data, dict):
+                    # Usar os dados do MCP como base para garantir que não perdemos dados
+                    for key, value in mcp_data.items():
+                        if key not in store:
+                            store[key] = value
 
-            # Derivar a classe de tensão
-            um = derive_um(v_max_with_tolerance)
+            # Usar a classe de tensão atual (não derivar automaticamente)
+            um = store.get("classe_tensao_terciario")
+
+            # Se não tiver classe de tensão definida, não faz nada
+            if um is None:
+                log.warning("Classe de tensão Terciário não definida. Não é possível calcular níveis de isolamento.")
+                raise PreventUpdate
 
             # Mapear o valor de conexão
             conexao_mapped = map_conexao(conexao)
