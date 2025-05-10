@@ -75,25 +75,20 @@ def create_input_row(label, id, placeholder, input_type="number"):
 def render_perdas_vazio():
     """Defines the layout for the 'no-load losses' tab."""
     top_card_min_height = "310px"
-    # Common card style for all three cards in the top row
-    common_card_style = {
+    input_card_style = {
         **COMPONENTS["card"],
         "minHeight": top_card_min_height,
         "height": "100%",
         "display": "flex",
         "flexDirection": "column",
     }
-    # Input card style inherits from common style
-    input_card_style = common_card_style
-    # Card body style for all cards
     input_card_body_style = {
         **COMPONENTS["card_body"],
         "flexGrow": 1,
         "display": "flex",
         "flexDirection": "column",
     }
-    # Results cards now use the same style as input card
-    results_card_style = common_card_style
+    results_card_style = {**COMPONENTS["card"], "minHeight": top_card_min_height, "height": "100%"}
     sut_card_style = {**COMPONENTS["card"], "height": "100%"}
 
     return html.Div(
@@ -226,7 +221,10 @@ def render_perdas_vazio():
                                     dbc.CardBody(
                                         html.Div("Aguardando cálculo...", style=PLACEHOLDER_STYLE),
                                         id="parametros-gerais-card-body",
-                                        style=input_card_body_style,
+                                        style={
+                                            **COMPONENTS["card_body"],
+                                            "minHeight": top_card_min_height,
+                                        },
                                     ),
                                 ],
                                 style=results_card_style,
@@ -253,7 +251,10 @@ def render_perdas_vazio():
                                             style=PLACEHOLDER_STYLE,
                                             id="dut-voltage-level-results-body",
                                         ),
-                                        style=input_card_body_style,
+                                        style={
+                                            **COMPONENTS["card_body"],
+                                            "minHeight": top_card_min_height,
+                                        },
                                     ),
                                 ],
                                 style=results_card_style,
@@ -265,7 +266,6 @@ def render_perdas_vazio():
                 ],
                 className="mb-2 g-2",
                 align="stretch",
-                style={"height": top_card_min_height},
             ),
             dbc.Row(
                 [
