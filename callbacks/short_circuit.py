@@ -20,7 +20,7 @@ from utils import constants  # Para limites de variação de impedância
 from utils.callback_helpers import safe_float
 from utils.mcp_utils import patch_mcp  # Importar função patch_mcp
 from utils.store_diagnostics import convert_numpy_types
-from utils.validators import validate_dict_inputs_enhanced as validate_dict_inputs  # Para validação
+from components.validators import validate_dict_inputs  # Para validação
 
 log = logging.getLogger(__name__)
 

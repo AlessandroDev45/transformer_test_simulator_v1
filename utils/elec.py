@@ -6,7 +6,7 @@ import logging
 import math
 from typing import Any, Dict, Optional
 
-from utils.validators import safe_float
+from components.validators import safe_float
 
 log = logging.getLogger(__name__)
 

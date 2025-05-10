@@ -160,9 +160,6 @@ def global_updates_all_transformer_info_panels(
     # Este é o ponto principal onde o módulo global_updates lê os dados do MCP que foram salvos pelo transformer_inputs
     log.debug(f"[{module_name}] Obtendo dados diretamente do MCP")
 
-    # Forçar uma leitura fresca do MCP
-    app.mcp.save_to_disk(force=True)  # Garante que os dados estão salvos
-
     # Forçar uma leitura fresca do MCP após salvar
     transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)  # Lê os dados atualizados
 
@@ -170,7 +167,7 @@ def global_updates_all_transformer_info_panels(
     if transformer_data_mcp.get('potencia_mva') is None or transformer_data_mcp.get('tensao_at') is None or transformer_data_mcp.get('tensao_bt') is None:
         log.warning(f"[{module_name}] Dados essenciais ausentes no MCP. Tentando recarregar do disco...")
         # Tentar recarregar do disco novamente
-        app.mcp.save_to_disk(force=True)
+        # app.mcp.save_to_disk(force=True) # REMOVIDO: global_updates não deve salvar no disco
         transformer_data_mcp = app.mcp.get_data("transformer-inputs-store", force_reload=True)
 
     # Removida a correção para FLASH-BACK que usava dados fixos
@@ -227,7 +224,7 @@ def global_updates_all_transformer_info_panels(
                         f"[{module_name}] MCP atualizado apenas com campos não-básicos do store"
                     )
                     # Forçar salvamento para garantir persistência
-                    app.mcp.save_to_disk(force=True)
+                    # app.mcp.save_to_disk(force=True) # REMOVIDO: global_updates não deve salvar no disco
                     # Obter os dados atualizados do MCP
                     transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
                     has_essential_data = True
@@ -241,7 +238,7 @@ def global_updates_all_transformer_info_panels(
             if patch_mcp("transformer-inputs-store", transformer_store_data, app):
                 log.debug(f"[{module_name}] MCP atualizado com dados não vazios do store")
                 # Forçar salvamento para garantir persistência
-                app.mcp.save_to_disk(force=True)
+                # app.mcp.save_to_disk(force=True) # REMOVIDO: global_updates não deve salvar no disco
                 # Obter os dados atualizados do MCP
                 transformer_data_mcp = app.mcp.get_data("transformer-inputs-store")
                 has_essential_data = True
@@ -319,9 +316,6 @@ def global_updates_all_transformer_info_panels(
 
     # Criar o painel HTML usando dados do MCP
     try:
-        # Forçar uma leitura fresca do MCP para garantir que temos os dados mais recentes
-        app.mcp.save_to_disk(force=True)
-
         # Obter dados frescos do MCP com force_reload=True para garantir que estamos usando os dados mais recentes
         fresh_data = app.mcp.get_data("transformer-inputs-store", force_reload=True)
 
@@ -334,7 +328,7 @@ def global_updates_all_transformer_info_panels(
         if fresh_data.get('potencia_mva') is None or fresh_data.get('tensao_at') is None or fresh_data.get('tensao_bt') is None:
             log.warning(f"[{module_name}] Dados essenciais ausentes nos dados frescos. Tentando recarregar do disco...")
             # Tentar recarregar do disco novamente
-            app.mcp.save_to_disk(force=True)
+            # app.mcp.save_to_disk(force=True) # REMOVIDO: global_updates não deve salvar no disco
             fresh_data = app.mcp.get_data("transformer-inputs-store", force_reload=True)
 
         log.debug(

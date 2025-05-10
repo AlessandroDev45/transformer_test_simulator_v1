@@ -143,6 +143,7 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
     -------
     tuple
         (dict com níveis de isolamento, lista de opções para dropdown)
+        O dicionário contém tanto valores padrão quanto listas de todas as opções disponíveis
     """
     # Garantir que a norma seja uma das opções válidas
     if norma not in ["IEC", "IEEE"]:
@@ -174,12 +175,19 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
         sil = None if um < 300 else round(nbi * 0.75)
         nbi_neutro = round(nbi * 0.60) if conexao.upper().startswith(("YN", "ZN")) else None
 
+        # Retornar valores únicos e listas com um único elemento para compatibilidade
         return {
+            # Valores padrão (compatibilidade com código existente)
             "nbi": nbi,
             "sil_im": sil,
-            "nbi_neutro": nbi_neutro
+            "nbi_neutro": nbi_neutro,
+            # Listas de valores (para suportar múltiplas opções)
+            "nbi_list": [nbi],
+            "sil_im_list": [sil] if sil is not None else [],
+            "nbi_neutro_list": [nbi_neutro] if nbi_neutro is not None else []
         }, []
 
+    # Escolher um valor padrão para compatibilidade com código existente
     escolha = pick_level(cands)
 
     # Criar lista de opções para dropdown
@@ -192,12 +200,27 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
         if c["bil_kvp"] is not None
     ]
 
+    # Valores padrão (do item escolhido)
     nbi = escolha["bil_kvp"]
     sil = escolha["sil_kvp"]
     nbi_neutro = round(nbi * 0.60) if conexao.upper().startswith(("YN", "ZN")) else None
 
+    # Extrair todas as opções disponíveis
+    nbi_list = [c["bil_kvp"] for c in cands if c["bil_kvp"] is not None]
+    sil_list = [c["sil_kvp"] for c in cands if c["sil_kvp"] is not None]
+
+    # Calcular NBI do neutro para cada opção de NBI
+    nbi_neutro_list = []
+    if conexao.upper().startswith(("YN", "ZN")):
+        nbi_neutro_list = [round(n * 0.60) for n in nbi_list if n is not None]
+
     return {
+        # Valores padrão (compatibilidade com código existente)
         "nbi": nbi,
         "sil_im": sil,
-        "nbi_neutro": nbi_neutro
+        "nbi_neutro": nbi_neutro,
+        # Listas de valores (para suportar múltiplas opções)
+        "nbi_list": nbi_list,
+        "sil_im_list": sil_list,
+        "nbi_neutro_list": nbi_neutro_list
     }, lista

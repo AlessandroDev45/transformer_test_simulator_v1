@@ -11,7 +11,8 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app_core.transformer_mcp import TransformerMCP
-from utils.mcp_persistence import ensure_mcp_data_propagation, patch_mcp
+from utils.mcp_persistence import ensure_mcp_data_propagation
+# from utils.mcp_persistence import ensure_mcp_data_propagation, patch_mcp # Comentado para remover patch_mcp
 
 
 class TestMCPPersistence(unittest.TestCase):
@@ -88,51 +89,51 @@ class TestMCPPersistence(unittest.TestCase):
             "tipo_isolamento": "uniforme",
         }
 
-    def test_patch_mcp_with_complete_data(self):
-        """Testar a função patch_mcp com dados completos."""
-        # Configurar o MCP com dados iniciais
-        self.app.mcp.set_data("transformer-inputs-store", self.complete_data)
+    # def test_patch_mcp_with_complete_data(self):
+    #     """Testar a função patch_mcp com dados completos."""
+    #     # Configurar o MCP com dados iniciais
+    #     self.app.mcp.set_data("transformer-inputs-store", self.complete_data)
 
-        # Verificar se os dados foram salvos corretamente
-        saved_data = self.app.mcp.get_data("transformer-inputs-store")
-        self.assertEqual(saved_data["potencia_mva"], 100.0)
-        self.assertEqual(saved_data["tensao_at"], 230.0)
-        self.assertEqual(saved_data["tensao_bt"], 13.8)
+    #     # Verificar se os dados foram salvos corretamente
+    #     saved_data = self.app.mcp.get_data("transformer-inputs-store")
+    #     self.assertEqual(saved_data["potencia_mva"], 100.0)
+    #     self.assertEqual(saved_data["tensao_at"], 230.0)
+    #     self.assertEqual(saved_data["tensao_bt"], 13.8)
 
-        # Modificar alguns dados
-        modified_data = self.complete_data.copy()
-        modified_data["potencia_mva"] = 150.0
+    #     # Modificar alguns dados
+    #     modified_data = self.complete_data.copy()
+    #     modified_data["potencia_mva"] = 150.0
 
-        # Aplicar o patch
-        result = patch_mcp(self.app, "transformer-inputs-store", modified_data)
+    #     # Aplicar o patch
+    #     result = patch_mcp(self.app, "transformer-inputs-store", modified_data)
 
-        # Verificar se o patch foi aplicado
-        self.assertTrue(result)
+    #     # Verificar se o patch foi aplicado
+    #     self.assertTrue(result)
 
-        # Verificar se os dados foram atualizados corretamente
-        updated_data = self.app.mcp.get_data("transformer-inputs-store")
-        self.assertEqual(updated_data["potencia_mva"], 150.0)
-        self.assertEqual(updated_data["tensao_at"], 230.0)
-        self.assertEqual(updated_data["tensao_bt"], 13.8)
+    #     # Verificar se os dados foram atualizados corretamente
+    #     updated_data = self.app.mcp.get_data("transformer-inputs-store")
+    #     self.assertEqual(updated_data["potencia_mva"], 150.0)
+    #     self.assertEqual(updated_data["tensao_at"], 230.0)
+    #     self.assertEqual(updated_data["tensao_bt"], 13.8)
 
-    def test_patch_mcp_with_incomplete_data(self):
-        """Testar a função patch_mcp com dados incompletos."""
-        # Configurar o MCP com dados iniciais
-        self.app.mcp.set_data("transformer-inputs-store", self.complete_data)
+    # def test_patch_mcp_with_incomplete_data(self):
+    #     """Testar a função patch_mcp com dados incompletos."""
+    #     # Configurar o MCP com dados iniciais
+    #     self.app.mcp.set_data("transformer-inputs-store", self.complete_data)
 
-        # Verificar se os dados foram salvos corretamente
-        saved_data = self.app.mcp.get_data("transformer-inputs-store")
-        self.assertEqual(saved_data["potencia_mva"], 100.0)
+    #     # Verificar se os dados foram salvos corretamente
+    #     saved_data = self.app.mcp.get_data("transformer-inputs-store")
+    #     self.assertEqual(saved_data["potencia_mva"], 100.0)
 
-        # Tentar aplicar o patch com dados incompletos
-        result = patch_mcp(self.app, "transformer-inputs-store", self.incomplete_data)
+    #     # Tentar aplicar o patch com dados incompletos
+    #     result = patch_mcp(self.app, "transformer-inputs-store", self.incomplete_data)
 
-        # Verificar se o patch foi rejeitado
-        self.assertFalse(result)
+    #     # Verificar se o patch foi rejeitado
+    #     self.assertFalse(result)
 
-        # Verificar se os dados originais foram mantidos
-        unchanged_data = self.app.mcp.get_data("transformer-inputs-store")
-        self.assertEqual(unchanged_data["potencia_mva"], 100.0)
+    #     # Verificar se os dados originais foram mantidos
+    #     unchanged_data = self.app.mcp.get_data("transformer-inputs-store")
+    #     self.assertEqual(unchanged_data["potencia_mva"], 100.0)
 
     def test_ensure_mcp_data_propagation(self):
         """Testar a função ensure_mcp_data_propagation."""

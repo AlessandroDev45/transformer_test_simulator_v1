@@ -366,8 +366,10 @@ def register_transformer_inputs_callbacks(app_instance):
                         f"[Update Callback] Salvando {len(serializable_data)} campos no MCP via set_data"
                     )
                     app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
+                    # Forçar salvamento para disco para garantir que global_updates leia os dados corretos
+                    app_instance.mcp.save_to_disk(force=True)
                     log.debug(
-                        "[Update Callback] MCP atualizado com TODOS os valores do formulário via set_data"
+                        "[Update Callback] MCP atualizado com TODOS os valores do formulário via set_data e salvo no disco"
                     )
 
                     # Propagar dados para outros stores usando o novo utilitário

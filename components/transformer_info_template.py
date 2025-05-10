@@ -16,15 +16,18 @@ logger = logging.getLogger(__name__)
 def _create_info_item(label, value, unit="", label_style_override=None, value_style_override=None):
     """Cria um item de informação (label: valor unidade) compacto."""
     base_label_style = {
-        "fontSize": "0.65rem",
+        "fontFamily": "var(--bs-body-font-family, Segoe UI, Arial, sans-serif)",
+        "fontSize": "0.73125rem",  # Increased by 12.5% from 0.65rem
         "fontWeight": "normal",
         "color": COLORS["text_muted"],
         "whiteSpace": "nowrap",
         "lineHeight": "1.1",
         "display": "inline-block",
+        "marginRight": "4px",  # Adicionado para espaço entre label e value
     }
     base_value_style = {
-        "fontSize": "0.65rem",
+        "fontFamily": "var(--bs-body-font-family, Segoe UI, Arial, sans-serif)",
+        "fontSize": "0.73125rem",  # Increased by 12.5% from 0.65rem
         "fontWeight": "600",
         "color": COLORS["text_light"],
         "lineHeight": "1.1",
@@ -50,10 +53,14 @@ def _create_info_item(label, value, unit="", label_style_override=None, value_st
     else:
         display_value = value
 
+    # Remove colon from label if it exists
+    if label and label.endswith(':'):
+        label = label[:-1]
+
     formatted_label = label[0].upper() + label[1:] if label and len(label) > 0 else label
     content = [
-        html.Span(f"{formatted_label} ", style=final_label_style),  # Removido ':'
-        html.Span(f" {display_value} {unit}".strip(), style=final_value_style),
+        html.Span(f"{formatted_label} ", style=final_label_style),  # Space without colon
+        html.Span(f"{display_value} {unit}".strip(), style=final_value_style),  # No leading space
     ]
     div_style = {
         "marginBottom": "3px",
@@ -222,12 +229,12 @@ def create_transformer_info_panel(transformer_data):
                     ("Classe:", "classe_tensao_at", "kV"),
                     ("Corrente:", "corrente_nominal_at", "A"),
                     ("Z:", "impedancia", "%"),
-                    ("NBI:", "nbi_at", "kV"),
-                    ("IM / SIL:", "sil_at", "kV"),
+                    ("NBI:", "nbi_at", "kVp"),
+                    ("IM / SIL:", "sil_at", "kVp"),
                     ("Elev. Enrol.:", "elevacao_enrol_at", "°C"),
                     ("Conexão:", "conexao_at", ""),
                     ("Classe Neutro:", "tensao_bucha_neutro_at", "kV"),
-                    ("NBI Neutro:", "nbi_neutro_at", "kV"),
+                    ("NBI Neutro:", "nbi_neutro_at", "kVp"),
                 ],
                 "style": col_style_with_border,
             },
@@ -248,12 +255,12 @@ def create_transformer_info_panel(transformer_data):
                     ("Tensão:", "tensao_bt", "kV"),
                     ("Classe:", "classe_tensao_bt", "kV"),
                     ("Corrente:", "corrente_nominal_bt", "A"),
-                    ("NBI:", "nbi_bt", "kV"),
-                    ("IM / SIL:", "sil_bt", "kV"),
+                    ("NBI:", "nbi_bt", "kVp"),
+                    ("IM / SIL:", "sil_bt", "kVp"),
                     ("Elev. Enrol.:", "elevacao_enrol_bt", "°C"),
                     ("Conexão:", "conexao_bt", ""),
                     ("Classe Neutro:", "tensao_bucha_neutro_bt", "kV"),
-                    ("NBI Neutro:", "nbi_neutro_bt", "kV"),
+                    ("NBI Neutro:", "nbi_neutro_bt", "kVp"),
                 ],
                 "style": col_style_with_border,
             },
@@ -264,12 +271,12 @@ def create_transformer_info_panel(transformer_data):
                     ("Tensão:", "tensao_terciario", "kV"),
                     ("Classe:", "classe_tensao_terciario", "kV"),
                     ("Corrente:", "corrente_nominal_terciario", "A"),
-                    ("NBI:", "nbi_terciario", "kV"),
-                    ("IM / SIL:", "sil_terciario", "kV"),
+                    ("NBI:", "nbi_terciario", "kVp"),
+                    ("IM / SIL:", "sil_terciario", "kVp"),
                     ("Elev. Enrol.:", "elevacao_enrol_terciario", "°C"),
                     ("Conexão:", "conexao_terciario", ""),
                     ("Classe Neutro:", "tensao_bucha_neutro_terciario", "kV"),
-                    ("NBI Neutro:", "nbi_neutro_terciario", "kV"),
+                    ("NBI Neutro:", "nbi_neutro_terciario", "kVp"),
                 ],
                 "style": col_style_with_border,
             },
