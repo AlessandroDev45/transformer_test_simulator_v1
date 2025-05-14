@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Estilos do Simulador de Testes de Transformadores - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Guia de Estilos do Simulador de Testes de Transformadores
+
+Este documento descreve a organização e uso dos estilos na aplicação.
+
+## Estrutura de Estilos
+
+A aplicação utiliza uma combinação de estilos Python (inline) e CSS para manter a consistência visual.
+
+### Arquivos Principais
+
+1. **utils/styles.py**
+   - Fonte central de verdade para todos os estilos em Python
+   - Define cores, tipografia, estilos de componentes e espaçamento
+   - Usado para estilos inline em componentes Dash
+
+2. **assets/base.css**
+   - Estilos CSS base e utilitários
+   - Independentes do tema (claro/escuro)
+   - Inclui reset, utilitários de espaçamento, flexbox, etc.
+
+3. **assets/theme-dark.css**
+   - Estilos específicos para o tema escuro
+   - Usa variáveis CSS para cores e propriedades
+   - Estiliza componentes como cards, dropdowns, inputs, etc.
+
+4. **config.py**
+   - Importa estilos de utils/styles.py
+   - Mantém aliases para compatibilidade com código existente
+   - Não define mais estilos diretamente
+
+5. **layouts/__init__.py**
+   - Importa e reexporta estilos de utils/styles.py
+   - Mantém compatibilidade com módulos de layout existentes
+
+## Uso dos Estilos
+
+### Em Componentes Dash (Python)
+
+\`\`\`python
+from utils.styles import COLORS, TYPOGRAPHY, COMPONENTS
+
+# Exemplo de uso em um componente
+html.Div("Texto de exemplo", style=TYPOGRAPHY['title'])
+
+# Exemplo de uso em um card
+dbc.Card([
+    dbc.CardHeader("Título do Card", style=COMPONENTS['card_header']),
+    dbc.CardBody("Conteúdo do Card", style=COMPONENTS['card_body'])
+], style=COMPONENTS['card'])
+\`\`\`
+
+### Em CSS (Classes)
+
+\`\`\`html
+<!-- Exemplo de uso de classes CSS -->
+<div class="card">
+    <div class="card-header">Título do Card</div>
+    <div class="card-body">Conteúdo do Card</div>
+</div>
+
+<!-- Exemplo de uso de utilitários -->
+<div class="d-flex justify-content-between align-items-center mb-3 p-2">
+    Conteúdo flexível
+</div>
+\`\`\`
+
+## Paleta de Cores
+
+A paleta de cores está definida em \`utils/styles.py\` e é usada consistentemente em toda a aplicação:
+
+- **Cores primárias**
+  - \`primary\`: #26427A (Azul principal)
+  - \`secondary\`: #6c757d (Cinza padrão)
+  - \`accent\`: #007BFF (Azul de destaque)
+
+- **Cores de fundo**
+  - \`background_main\`: #4F4F4F (Fundo principal - tema escuro)
+  - \`background_card\`: #595959 (Fundo de cards - tema escuro)
+  - \`background_card_header\`: #3A3A3A (Fundo de cabeçalhos - tema escuro)
+  - \`background_input\`: #3A3A3A (Fundo de inputs - tema escuro)
+
+- **Cores de texto**
+  - \`text_light\`: #E0E0E0 (Texto claro para fundos escuros)
+  - \`text_dark\`: #212529 (Texto escuro para fundos claros)
+  - \`text_muted\`: #AAAAAA (Texto atenuado)
+
+- **Cores de status**
+  - \`success\`: #198754 (Verde / Sucesso)
+  - \`danger\`: #dc3545 (Vermelho / Erro)
+  - \`warning\`: #ffc107 (Amarelo / Aviso)
+  - \`info\`: #0dcaf0 (Azul claro / Informação)
+
+## Tipografia
+
+A tipografia está definida em \`utils/styles.py\` e inclui estilos para:
+
+- Títulos
+- Cabeçalhos de card
+- Títulos de seção
+- Labels
+- Inputs
+- Botões
+- Texto pequeno
+- Abas
+- Mensagens de erro
+
+## Espaçamento
+
+O sistema de espaçamento segue o padrão Bootstrap com classes utilitárias:
+
+- Margens: \`m-1\`, \`m-2\`, \`m-3\`, \`m-4\`, \`m-5\`
+- Margens direcionais: \`mt-*\`, \`mb-*\`, \`ml-*\`, \`mr-*\`
+- Padding: \`p-1\`, \`p-2\`, \`p-3\`, \`p-4\`, \`p-5\`
+- Padding direcionais: \`pt-*\`, \`pb-*\`, \`pl-*\`, \`pr-*\`
+
+## Boas Práticas
+
+1. **Centralização**: Sempre use os estilos definidos em \`utils/styles.py\` em vez de definir cores ou estilos inline.
+
+2. **Consistência**: Use as mesmas cores e estilos em toda a aplicação para manter a consistência visual.
+
+3. **Responsividade**: Use classes utilitárias para criar layouts responsivos.
+
+4. **Manutenção**: Se precisar adicionar novos estilos, adicione-os em \`utils/styles.py\` e não diretamente nos componentes.
+
+5. **Documentação**: Documente novos estilos adicionados para facilitar o uso por outros desenvolvedores.
+
+## Migração de Código Existente
+
+Se você estiver trabalhando com código existente que ainda usa estilos antigos:
+
+1. Importe os estilos de \`utils/styles.py\`
+2. Substitua referências a estilos inline por referências aos estilos centralizados
+3. Use classes CSS quando apropriado em vez de estilos inline
+
+Exemplo de migração:
+
+\`\`\`python
+# Antes
+html.Div("Texto", style={"color": "#26427A", "fontSize": "1rem", "fontWeight": "bold"})
+
+# Depois
+from utils.styles import TYPOGRAPHY
+html.Div("Texto", style=TYPOGRAPHY['title'])
+\`\`\`
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

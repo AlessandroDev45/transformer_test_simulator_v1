@@ -1,0 +1,146 @@
+/* Estilos para o módulo de consulta de normas técnicas */
+
+/* Destaque para termos de busca */
+.search-highlight {
+    background-color: #ffeb3b;
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Estilo para snippets de resultados de busca */
+.search-snippet {
+    font-size: 0.9rem;
+    color: #555;
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid #0078D7;
+}
+
+/* Estilo para o conteúdo Markdown */
+.standards-markdown-content {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+.standards-markdown-content h1 {
+    color: #0078D7;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.standards-markdown-content h2 {
+    color: #0078D7;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.standards-markdown-content h3 {
+    color: #0078D7;
+    margin-top: 1.5rem;
+}
+
+.standards-markdown-content table {
+    width: 100%;
+    margin-bottom: 1rem;
+    border-collapse: collapse;
+}
+
+.standards-markdown-content table,
+.standards-markdown-content th,
+.standards-markdown-content td {
+    border: 1px solid #dee2e6;
+}
+
+.standards-markdown-content th,
+.standards-markdown-content td {
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.standards-markdown-content th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.standards-markdown-content tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.standards-markdown-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.standards-markdown-content blockquote {
+    border-left: 4px solid #0078D7;
+    padding-left: 1rem;
+    margin-left: 0;
+    color: #6c757d;
+}
+
+.standards-markdown-content code {
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.standards-markdown-content pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* Estilos para o modo escuro */
+@media (prefers-color-scheme: dark) {
+    .standards-markdown-content {
+        color: #e9ecef;
+    }
+
+    .standards-markdown-content h1,
+    .standards-markdown-content h2,
+    .standards-markdown-content h3 {
+        color: #B9D1EA;
+    }
+
+    .standards-markdown-content table,
+    .standards-markdown-content th,
+    .standards-markdown-content td {
+        border-color: #495057;
+    }
+
+    .standards-markdown-content th {
+        background-color: #343a40;
+    }
+
+    .standards-markdown-content tr:nth-child(even) {
+        background-color: #343a40;
+    }
+
+    .standards-markdown-content img {
+        border-color: #495057;
+    }
+
+    .standards-markdown-content blockquote {
+        border-left-color: #B9D1EA;
+        color: #adb5bd;
+    }
+
+    .standards-markdown-content code,
+    .standards-markdown-content pre {
+        background-color: #343a40;
+    }
+
+    .search-snippet {
+        background-color: #343a40;
+        color: #e9ecef;
+    }
+}

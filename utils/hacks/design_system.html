@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Design - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Sistema de Design
+
+Este documento define o sistema de design para a aplicação, incluindo tipografia, espaçamento e estilos de componentes.
+
+## Tipografia
+
+### Tamanhos de Fonte
+
+| Elemento | Tamanho | Peso | Uso |
+|----------|---------|------|-----|
+| Título Principal | 1.1rem | Bold | Título da aplicação |
+| Título de Seção | 0.9rem | Bold | Cabeçalhos de cards e seções |
+| Subtítulo | 0.85rem | Bold | Subtítulos e cabeçalhos secundários |
+| Texto Normal | 0.75rem | Normal | Texto principal, labels, valores |
+| Texto Pequeno | 0.7rem | Normal | Texto secundário, notas, legendas |
+
+### Estilos de Texto
+
+| Estilo | Propriedades | Uso |
+|--------|--------------|-----|
+| Título | \`fontSize: '1rem', fontWeight: 'bold'\` | Títulos principais |
+| Cabeçalho de Card | \`fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '0.03rem', textTransform: 'uppercase'\` | Cabeçalhos de cards |
+| Título de Seção | \`fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '0.02rem', borderLeft: '3px solid [primary]'\` | Títulos de seções |
+| Label | \`fontSize: '0.75rem', fontWeight: '500', marginBottom: '0'\` | Labels de campos |
+| Input | \`fontSize: '0.75rem'\` | Texto em campos de entrada |
+| Botão | \`fontSize: '0.75rem', fontWeight: 'bold'\` | Texto em botões |
+| Texto Pequeno | \`fontSize: '0.7rem'\` | Texto secundário |
+| Texto de Erro | \`fontSize: '0.75rem', fontWeight: 'bold', color: [danger]\` | Mensagens de erro |
+
+## Espaçamento
+
+### Margens
+
+| Classe | Valor | Uso |
+|--------|-------|-----|
+| \`mb-1\` | 0.5rem | Margem inferior pequena |
+| \`mb-2\` | 1rem | Margem inferior média |
+| \`mb-3\` | 1.5rem | Margem inferior grande |
+| \`mb-4\` | 2rem | Margem inferior extra grande |
+| \`mb-5\` | 3rem | Margem inferior muito grande |
+
+### Padding
+
+| Classe | Valor | Uso |
+|--------|-------|-----|
+| \`p-1\` | 0.5rem | Padding pequeno |
+| \`p-2\` | 1rem | Padding médio |
+| \`p-3\` | 1.5rem | Padding grande |
+| \`p-4\` | 2rem | Padding extra grande |
+| \`p-5\` | 3rem | Padding muito grande |
+
+### Grid
+
+| Classe | Valor | Uso |
+|--------|-------|-----|
+| \`g-1\` | 0.5rem | Espaçamento pequeno entre colunas |
+| \`g-2\` | 1rem | Espaçamento médio entre colunas |
+| \`g-3\` | 1.5rem | Espaçamento grande entre colunas |
+
+## Componentes
+
+### Cards
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-card\` (#595959) | \`--light-background-card\` (#B9D1EA) |
+| Borda | \`--dark-border\` (#6E6E6E) | \`--light-border\` (#26427A) |
+| Raio da Borda | 4px | 4px |
+| Sombra | \`0 2px 4px rgba(0,0,0,0.2)\` | \`0 2px 4px rgba(0,0,0,0.2)\` |
+| Margem Inferior | 0.75rem | 0.75rem |
+
+#### Cabeçalho de Card
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-card-header\` (#3A3A3A) | \`--light-background-card-header\` (#26427A) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-header\` (#FFFFFF) |
+| Padding | 0.4rem 0.5rem | 0.4rem 0.5rem |
+| Borda Inferior | \`1px solid --dark-border\` | \`1px solid --light-border\` |
+| Sombra | \`0 1px 2px rgba(0,0,0,0.1)\` | \`0 1px 2px rgba(0,0,0,0.1)\` |
+
+#### Corpo de Card
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-card\` (#595959) | \`--light-background-card\` (#B9D1EA) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-dark\` (#333333) |
+| Padding | 0.5rem | 0.5rem |
+
+### Inputs
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-input\` (#3A3A3A) | \`--light-background-input\` (#FFFFFF) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-dark\` (#333333) |
+| Borda | \`1px solid --dark-border\` | \`1px solid --light-input-border\` |
+| Raio da Borda | 3px | 3px |
+| Altura | 26px | 26px |
+| Padding | 0.15rem 0.3rem | 0.15rem 0.3rem |
+
+### Dropdowns
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-input\` (#3A3A3A) | \`--light-background-input\` (#FFFFFF) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-dark\` (#333333) |
+| Borda | \`1px solid --dark-border\` | \`1px solid --light-input-border\` |
+| Raio da Borda | 3px | 3px |
+| Altura | 26px | 26px |
+| Min-Height | 26px | 26px |
+
+### Botões
+
+#### Botão Primário
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-primary\` (#26427A) | \`--light-primary\` (#26427A) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-header\` (#FFFFFF) |
+| Borda | none | none |
+| Raio da Borda | 3px | 3px |
+| Padding | 0.25rem 0.5rem | 0.25rem 0.5rem |
+
+#### Botão Secundário
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-secondary\` (#6c757d) | \`--light-secondary\` (#6c757d) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-header\` (#FFFFFF) |
+| Borda | none | none |
+| Raio da Borda | 3px | 3px |
+| Padding | 0.25rem 0.5rem | 0.25rem 0.5rem |
+
+### Tabelas
+
+#### Cabeçalho de Tabela
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-table-header\` (#808080) | \`--light-background-card-header\` (#26427A) |
+| Cor do Texto | white | white |
+| Alinhamento | center | center |
+| Tamanho da Fonte | 0.75rem | 0.75rem |
+| Padding | 0.2rem | 0.2rem |
+| Peso da Fonte | bold | bold |
+
+#### Célula de Tabela
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Tamanho da Fonte | 0.75rem | 0.75rem |
+| Padding | 0.2rem | 0.2rem |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-dark\` (#333333) |
+
+### Abas
+
+#### Aba Normal
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-background-card-header\` (#3A3A3A) | \`--light-background-card\` (#B9D1EA) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-dark\` (#333333) |
+| Borda | \`1px solid --dark-border\` | \`1px solid --light-border\` |
+| Raio da Borda | 3px 3px 0 0 | 3px 3px 0 0 |
+| Padding | 0.25rem 0.5rem | 0.25rem 0.5rem |
+| Margem Direita | 2px | 2px |
+| Peso da Fonte | bold | bold |
+
+#### Aba Selecionada
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Fundo | \`--dark-primary\` (#26427A) | \`--light-primary\` (#26427A) |
+| Cor do Texto | \`--dark-text-light\` (#E0E0E0) | \`--light-text-header\` (#FFFFFF) |
+| Borda | \`1px solid --dark-border\` | \`1px solid --light-border\` |
+| Raio da Borda | 3px 3px 0 0 | 3px 3px 0 0 |
+| Padding | 0.25rem 0.5rem | 0.25rem 0.5rem |
+| Margem Direita | 2px | 2px |
+| Peso da Fonte | bold | bold |
+
+## Cores de Status
+
+### Status de Sucesso
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Cor do Texto | \`--dark-success\` (#198754) | \`--light-success\` (#198754) |
+| Fundo | \`--dark-pass-bg\` (#1e4620) | \`#d1e7dd\` |
+
+### Status de Erro
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Cor do Texto | \`--dark-danger\` (#dc3545) | \`--light-danger\` (#dc3545) |
+| Fundo | \`--dark-fail-bg\` (#5c1c1c) | \`#f8d7da\` |
+
+### Status de Aviso
+
+| Propriedade | Tema Escuro | Tema Claro |
+|-------------|-------------|------------|
+| Cor do Texto | \`--dark-warning\` (#ffc107) | \`--light-warning\` (#ffc107) |
+| Fundo | \`--dark-warning-bg\` (#5c4d10) | \`#fff3cd\` |
+
+## Uso em Código
+
+### Em Componentes Dash (Python)
+
+\`\`\`python
+from utils.styles import COLORS, TYPOGRAPHY, COMPONENTS
+
+# Exemplo de uso em um componente
+html.Div("Texto de exemplo", style=TYPOGRAPHY['title'])
+
+# Exemplo de uso em um card
+dbc.Card([
+    dbc.CardHeader("Título do Card", style=COMPONENTS['card_header']),
+    dbc.CardBody("Conteúdo do Card", style=COMPONENTS['card_body'])
+], style=COMPONENTS['card'])
+\`\`\`
+
+### Em CSS (Classes)
+
+\`\`\`css
+/* Exemplo de uso de variáveis CSS */
+.card {
+    background-color: var(--dark-background-card);
+    border-color: var(--dark-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 0.75rem;
+}
+
+body.light-theme .card {
+    background-color: var(--light-background-card);
+    border-color: var(--light-border);
+}
+\`\`\`
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhamento dos Cálculos de Elevação de Temperatura - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Detalhamento dos Cálculos de Elevação de Temperatura
+
+Este documento detalha as fórmulas e parâmetros usados nos cálculos de elevação de temperatura para transformadores.
+
+---
+
+## 1. Parâmetros de Entrada
+
+Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de elevação de temperatura:
+
+| Parâmetro                     | Descrição                              | Unidade | Variável no Código                   |
+| :---------------------------- | :------------------------------------- | :------ | :--------------------------------- |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | \`tipo_transformador\`               |
+| Potência Nominal              | Potência nominal do transformador      | MVA     | \`potencia_nominal\`                 |
+| Perdas em Vazio               | Perdas no núcleo                       | kW      | \`perdas_vazio\`                     |
+| Perdas em Carga               | Perdas nos enrolamentos a 75°C         | kW      | \`perdas_carga\`                     |
+| Temperatura Ambiente          | Temperatura ambiente de referência     | °C      | \`temp_ambiente\`                    |
+| Elevação de Temperatura       | Elevação de temperatura garantida      | K       | \`elevacao_temp\`                    |
+| Tipo de Resfriamento          | Sistema de resfriamento (ONAN, ONAF, etc.) | -   | \`tipo_resfriamento\`               |
+| Constantes Térmicas           | Constantes de tempo térmico            | min     | \`constantes_termicas\`              |
+| Peso do Óleo                  | Peso total do óleo isolante            | kg      | \`peso_oleo\`                        |
+| Peso do Núcleo                | Peso do núcleo                         | kg      | \`peso_nucleo\`                      |
+| Peso dos Enrolamentos         | Peso total dos enrolamentos            | kg      | \`peso_enrolamentos\`                |
+
+## 2. Fundamentos Teóricos
+
+### 2.1. Equação de Balanço Térmico
+
+* \`P_perdas = C * dθ/dt + K * θ\`
+
+Onde:
+* \`P_perdas\` é a potência de perdas em Watts
+* \`C\` é a capacidade térmica em J/K
+* \`dθ/dt\` é a taxa de variação da temperatura em K/s
+* \`K\` é o coeficiente de transferência de calor em W/K
+* \`θ\` é a elevação de temperatura acima da ambiente em K
+
+### 2.2. Solução da Equação Diferencial
+
+* \`θ(t) = θ_final * (1 - e^(-t/τ))\` (aquecimento)
+* \`θ(t) = θ_inicial * e^(-t/τ)\` (resfriamento)
+
+Onde:
+* \`θ(t)\` é a elevação de temperatura no tempo t
+* \`θ_final\` é a elevação de temperatura em regime permanente
+* \`θ_inicial\` é a elevação de temperatura inicial
+* \`τ\` é a constante de tempo térmica (τ = C/K)
+
+## 3. Cálculos de Elevação de Temperatura
+
+### 3.1. Elevação de Temperatura do Óleo
+
+#### 3.1.1. Elevação de Temperatura do Óleo no Topo em Regime Permanente
+
+* \`Δθ_oleo_topo = Δθ_oleo_topo_nominal * (P_total / P_total_nominal)^n\`
+
+Onde:
+* \`Δθ_oleo_topo\` é a elevação de temperatura do óleo no topo
+* \`Δθ_oleo_topo_nominal\` é a elevação nominal (geralmente 55K para ONAN)
+* \`P_total\` é a potência total de perdas
+* \`P_total_nominal\` é a potência total de perdas nominal
+* \`n\` é o expoente que depende do tipo de resfriamento (0.8 para ONAN, 0.9 para ONAF, 1.0 para OFAF)
+
+#### 3.1.2. Elevação de Temperatura do Óleo Média
+
+* \`Δθ_oleo_media = 0.8 * Δθ_oleo_topo\`
+
+#### 3.1.3. Elevação de Temperatura do Óleo no Tempo
+
+* \`Δθ_oleo(t) = Δθ_oleo_final + (Δθ_oleo_inicial - Δθ_oleo_final) * e^(-t/τ_oleo)\`
+
+Onde:
+* \`τ_oleo\` é a constante de tempo do óleo (tipicamente 150-200 minutos para ONAN)
+
+### 3.2. Elevação de Temperatura dos Enrolamentos
+
+#### 3.2.1. Gradiente de Temperatura Enrolamento-Óleo em Regime Permanente
+
+* \`Δθ_ew = Δθ_ew_nominal * (I / I_nominal)^2\`
+
+Onde:
+* \`Δθ_ew\` é o gradiente de temperatura enrolamento-óleo
+* \`Δθ_ew_nominal\` é o gradiente nominal (geralmente 20-25K)
+* \`I\` é a corrente de carga
+* \`I_nominal\` é a corrente nominal
+
+#### 3.2.2. Elevação de Temperatura do Ponto Mais Quente
+
+* \`Δθ_hotspot = Δθ_oleo_topo + H * Δθ_ew\`
+
+Onde:
+* \`Δθ_hotspot\` é a elevação de temperatura do ponto mais quente
+* \`H\` é o fator de ponto quente (tipicamente 1.1-1.3)
+
+#### 3.2.3. Elevação de Temperatura dos Enrolamentos no Tempo
+
+* \`Δθ_ew(t) = Δθ_ew_final + (Δθ_ew_inicial - Δθ_ew_final) * e^(-t/τ_ew)\`
+
+Onde:
+* \`τ_ew\` é a constante de tempo dos enrolamentos (tipicamente 5-10 minutos)
+
+### 3.3. Temperatura Absoluta
+
+* \`T_oleo_topo = T_ambiente + Δθ_oleo_topo\`
+* \`T_hotspot = T_ambiente + Δθ_hotspot\`
+
+## 4. Cálculos de Capacidade de Sobrecarga
+
+### 4.1. Fator de Carga Máximo em Regime Permanente
+
+* \`K_max = √((Δθ_oleo_max / Δθ_oleo_nominal)^(1/n))\`
+
+Onde:
+* \`K_max\` é o fator de carga máximo
+* \`Δθ_oleo_max\` é a elevação máxima permitida do óleo
+
+### 4.2. Tempo Máximo de Sobrecarga
+
+* \`t_max = -τ_oleo * ln((Δθ_oleo_max - Δθ_oleo_final) / (Δθ_oleo_inicial - Δθ_oleo_final))\`
+
+Onde:
+* \`t_max\` é o tempo máximo de sobrecarga
+* \`Δθ_oleo_max\` é a elevação máxima permitida do óleo
+* \`Δθ_oleo_final\` é a elevação final do óleo com a sobrecarga
+* \`Δθ_oleo_inicial\` é a elevação inicial do óleo
+
+### 4.3. Perda de Vida Útil
+
+* \`V = 2^((T_hotspot - 98) / 6)\` (para papel Kraft)
+* \`V = 2^((T_hotspot - 110) / 6)\` (para papel termoestabilizado)
+
+Onde:
+* \`V\` é a taxa relativa de envelhecimento
+* \`T_hotspot\` é a temperatura do ponto mais quente em °C
+
+## 5. Análise de Resfriamento
+
+### 5.1. Capacidade de Dissipação de Calor
+
+* \`P_dissipacao = K * Δθ_oleo_topo\`
+
+Onde:
+* \`P_dissipacao\` é a potência de dissipação em Watts
+* \`K\` é o coeficiente de transferência de calor em W/K
+
+### 5.2. Eficiência do Sistema de Resfriamento
+
+* \`η_resfriamento = P_dissipacao / P_total\`
+
+Onde:
+* \`η_resfriamento\` é a eficiência do sistema de resfriamento
+
+## 6. Recomendações para Projeto
+
+### 6.1. Margens de Segurança
+
+* **Elevação de Temperatura**: Considerar 5-10K abaixo do limite máximo
+* **Capacidade de Sobrecarga**: Limitar a 1.3-1.5 vezes a potência nominal
+* **Perda de Vida Útil**: Limitar a taxa relativa de envelhecimento a 2-3 vezes a normal
+
+### 6.2. Considerações Especiais
+
+* **Altitude**: Corrigir a capacidade de resfriamento para altitudes elevadas
+* **Temperatura Ambiente**: Considerar variações sazonais e diárias
+* **Ciclo de Carga**: Otimizar o projeto para o ciclo de carga específico
+
+---
+
+## Notas Importantes
+
+1. Os valores de elevação de temperatura são geralmente especificados pelas normas técnicas (IEC, IEEE, ABNT).
+2. As constantes de tempo térmicas podem variar significativamente dependendo do projeto e tamanho do transformador.
+3. A perda de vida útil é cumulativa e deve ser considerada ao longo de toda a vida do transformador.
+4. O sistema de resfriamento deve ser dimensionado considerando as condições ambientais mais desfavoráveis.
+
+## 7. Inputs, Tipos e Callbacks
+
+### 7.1. Inputs e Tipos
+
+#### 7.1.1. Parâmetros de Temperatura
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| ambient-temperature | number | Temperatura ambiente em °C |
+| oil-temperature-rise | number | Elevação de temperatura do óleo em K |
+| winding-temperature-rise | number | Elevação de temperatura dos enrolamentos em K |
+| hotspot-factor | number | Fator de ponto quente |
+
+#### 7.1.2. Parâmetros de Carga
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| load-factor | number | Fator de carga |
+| load-cycle | dropdown | Ciclo de carga (Contínuo/Cíclico) |
+| cooling-type | dropdown | Tipo de resfriamento (ONAN/ONAF/OFAF/ODAF) |
+
+#### 7.1.3. Parâmetros Térmicos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| oil-time-constant | number | Constante de tempo do óleo em minutos |
+| winding-time-constant | number | Constante de tempo dos enrolamentos em minutos |
+| thermal-capacity | number | Capacidade térmica em Wh/K |
+
+### 7.2. Callbacks Principais
+
+#### 7.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_temperature_rise_page_info_panel | Atualiza painel de informações | Copia o conteúdo do painel global para o painel específico da página |
+| load_temperature_rise_data | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+
+#### 7.2.2. Callbacks de Cálculo
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| calculate_temperature_rise | Calcula elevação de temperatura | Executa os cálculos de elevação de temperatura e atualiza o store |
+| calculate_overload_capacity | Calcula capacidade de sobrecarga | Calcula a capacidade de sobrecarga e o tempo máximo permitido |
+| calculate_life_loss | Calcula perda de vida útil | Calcula a taxa de envelhecimento e a perda de vida útil |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            // First pass: assign IDs to headings in our temporary container
+            headings.forEach((heading, index) => {
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+
+                heading.id = slug || `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+                    }
+                });
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setTimeout(() => {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100); // Small delay to ensure rendering is complete
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

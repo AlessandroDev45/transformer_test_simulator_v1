@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhamento dos Cálculos de Perdas - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Detalhamento dos Cálculos de Perdas
+
+Este documento detalha as fórmulas e parâmetros usados nos cálculos de perdas em vazio e em carga.
+
+---
+
+## 1. Perdas em Vazio (No-Load Losses)
+
+Cálculos relacionados às perdas que ocorrem no núcleo do transformador quando energizado sem carga.
+
+### 1.1. Parâmetros de Entrada
+
+Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de perdas em vazio:
+
+| Parâmetro                     | Descrição                              | Unidade | Variável no Código                   | Status |
+| :---------------------------- | :------------------------------------- | :------ | :--------------------------------- | :----- |
+| Perdas em Vazio               | Perdas medidas no núcleo               | kW      | \`perdas_vazio\`                     | OK     |
+| Peso do Núcleo                | Peso estimado/real do núcleo           | Ton     | \`peso_nucleo\`                      | OK     |
+| Corrente de Excitação (%)     | Corrente de excitação nominal          | %       | \`corrente_excitacao_percentual\`    | OK     |
+| Indução do Núcleo             | Nível de indução magnética no núcleo   | T       | \`inducao\`                          | OK     |
+| Frequência                    | Frequência nominal da rede             | Hz      | \`frequencia\`                       | OK     |
+| Tensão BT                     | Tensão nominal do lado de Baixa Tensão | kV      | \`tensao_bt\`                        | OK     |
+| Corrente Nominal BT           | Corrente nominal do lado de Baixa Tensão| A       | \`corrente_nominal_bt\`              | OK     |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | \`tipo_transformador\`               | OK     |
+| Corrente Excitação 1.1pu (%)  | Corrente medida/esperada a 110% Vnom   | %       | \`corrente_exc_1_1_input\`         | OK     |
+| Corrente Excitação 1.2pu (%)  | Corrente medida/esperada a 120% Vnom   | %       | \`corrente_exc_1_2_input\`         | OK     |
+
+### 1.2. Tabelas de Referência Usadas
+
+* **\`perdas_nucleo\`**: Tabela com dados de perdas específicas (W/kg) vs. Indução (T) para diferentes tipos de aço (ex: M4). Status: OK
+* **\`potencia_magnet\`**: Tabela com dados de potência magnetizante específica (VAR/kg) vs. Indução (T). Status: OK
+
+### 1.3. Comparações: Aço M4 (Referência) vs. Projeto (Dados Entrada)
+
+Comparações entre os valores calculados com base nas tabelas de referência (Aço M4) e os valores derivados dos dados de entrada (Projeto).
+
+* **Fator de Perdas (W/kg):**
+  * Aço M4: \`fator_perdas\` (obtido da tabela \`perdas_nucleo\` baseado na \`inducao\`). Status: OK
+  * Projeto: \`fator_perdas_projeto\` = \`perdas_vazio\` / \`peso_nucleo\`. Status: OK
+* **Peso do Núcleo (Ton):**
+  * Aço M4 (Estimado): \`peso_nucleo_calc\` = \`perdas_vazio\` / \`fator_perdas\`. Status: OK
+  * Projeto: \`peso_nucleo\` (Valor de entrada). Status: OK
+* **Fator de Potência Magnética (VAR/kg):**
+  * Aço M4: \`fator_potencia_mag\` (obtido da tabela \`potencia_magnet\` baseado na \`inducao\`). Status: OK
+  * Projeto: \`fator_potencia_mag_projeto\` = \`potencia_mag_projeto\` / \`peso_nucleo\`. Status: OK
+* **Potência Magnética (kVAR):**
+  * Aço M4 (Estimada): \`potencia_mag\` = \`fator_potencia_mag\` * \`peso_nucleo_calc\`. Status: OK
+  * Projeto: \`potencia_mag_projeto\` (calculada a partir da \`potencia_ensaio_1pu_projeto\`, veja abaixo). Status: OK
+
+### 1.4. Cálculo da Corrente de Excitação (Nominal - 1.0 pu)
+
+* **Constante:** \`sqrt_3\` (√3, usado para trifásicos). Status: OK
+* **Aço M4 (Estimada):** \`corrente_excitacao_calc\` = \`potencia_mag\` / (\`tensao_bt\` * \`sqrt_3\`). Status: OK
+* **Projeto (Baseado na Entrada):** \`corrente_excitacao_projeto\` = \`corrente_nominal_bt\` * (\`corrente_excitacao_percentual\` / 100). Status: OK
+
+### 1.5. Cálculo da Potência Aparente de Ensaio (kVA)
+
+#### 1.5.1. Tensão Nominal (1.0 pu)
+
+* **Aço M4:** \`potencia_ensaio_1pu\` = \`tensao_bt\` *\`corrente_excitacao_calc\`* \`sqrt_3\`. Status: OK
+* **Projeto:** \`potencia_ensaio_1pu_projeto\` = \`tensao_bt\` *\`corrente_excitacao_projeto\`* \`sqrt_3\`. Status: OK
+  * *Nota: Este valor (\`potencia_ensaio_1pu_projeto\`) é usado para calcular a \`potencia_mag_projeto\` na seção 1.3.*
+
+#### 1.5.2. Tensão Elevada (1.1 pu)
+
+* **Tensão de Teste:** \`tensao_teste_1_1\` = \`tensao_bt\` * 1.1. Status: OK
+* **Corrente de Excitação (1.1 pu):**
+  * Aço M4 (Estimada): \`corrente_excitacao_1_1_calc\` = 2 * \`corrente_excitacao_calc\`. Status: OK
+    * *(Correção: Implementação usa 2x a corrente nominal, não um fator complexo)*
+  * Projeto: Usa \`corrente_exc_1_1_input\` se fornecido, senão estima com base em \`corrente_excitacao_projeto\` e \`fator_excitacao\` (3 para trifásico, 5 para monofásico). Status: OK
+* **Potência de Ensaio (1.1 pu):**
+  * Aço M4: \`potencia_ensaio_1_1pu\` = \`tensao_teste_1_1\` *\`corrente_excitacao_1_1_calc\`* \`sqrt_3\`. Status: OK
+  * Projeto: \`potencia_ensaio_1_1pu_projeto\` (calculada usando a \`corrente_excitacao_1_1\` do Projeto). Status: OK
+
+#### 1.5.3. Tensão Elevada (1.2 pu)
+
+* **Tensão de Teste:** \`tensao_teste_1_2\` = \`tensao_bt\` * 1.2. Status: OK
+* **Corrente de Excitação (1.2 pu):**
+  * Aço M4 (Estimada): \`corrente_excitacao_1_2_calc\` = 4 * \`corrente_excitacao_calc\`. Status: OK
+  * Projeto: Usa \`corrente_exc_1_2_input\` se fornecido, senão estima com base em \`corrente_excitacao_projeto\` e \`fator_excitacao\`. Status: OK
+* **Potência de Ensaio (1.2 pu):**
+  * Aço M4: \`potencia_ensaio_1_2pu_calc\` = \`tensao_teste_1_2\` *\`corrente_excitacao_1_2_calc\`* \`sqrt_3\`. Status: OK
+  * Projeto: \`potencia_ensaio_1_2pu_projeto\` (calculada usando a \`corrente_excitacao_1_2\` do Projeto). Status: OK
+
+---
+
+## 2. Perdas em Carga (Load Losses)
+
+Cálculos relacionados às perdas que ocorrem nos enrolamentos devido à corrente de carga.
+
+### 2.1. Parâmetros de Entrada
+
+Valores fornecidos ou obtidos para os cálculos de perdas em carga:
+
+| Parâmetro                 | Descrição                                      | Unidade | Variável no Código         | Status |
+| :------------------------ | :--------------------------------------------- | :------ | :------------------------- | :----- |
+| Perdas Totais (Nominal)   | Perdas totais medidas no tap nominal           | kW      | \`perdas_totais_nom_input\`  | OK     |
+| Perdas Totais (Menor Tap) | Perdas totais medidas no tap de menor tensão   | kW      | \`perdas_totais_min_input\`  | OK     |
+| Perdas Totais (Maior Tap) | Perdas totais medidas no tap de maior tensão   | kW      | \`perdas_totais_max_input\`  | OK     |
+| Perdas em Vazio           | Perdas no núcleo (resultado da Seção 1)        | kW      | \`perdas_vazio_nom\`         | OK     |
+| Tensão AT Nominal         | Tensão nominal do lado de Alta Tensão          | kV      | \`tensao_nominal_at\`        | OK     |
+| Tensão AT Tap Maior       | Tensão AT no tap de maior tensão               | kV      | \`tensao_at_tap_maior\`      | OK     |
+| Tensão AT Tap Menor       | Tensão AT no tap de menor tensão               | kV      | \`tensao_at_tap_menor\`      | OK     |
+| Impedância Nominal (%)    | Impedância no tap nominal                      | %       | \`impedancia\`               | OK     |
+| Impedância Tap Maior (%)  | Impedância no tap de maior tensão              | %       | \`impedancia_tap_maior\`     | OK     |
+| Impedância Tap Menor (%)  | Impedância no tap de menor tensão              | %       | \`impedancia_tap_menor\`     | OK     |
+| Tipo de Transformador     | Configuração (Monofásico/Trifásico)            | -       | \`tipo_transformador\`       | OK     |
+| Potência Nominal          | Potência Aparente Nominal                      | MVA     | \`potencia\`                 | OK     |
+
+### 2.2. Cálculos Básicos (para cada Tap - Nominal, Maior, Menor)
+
+* **Perdas em Carga (Pcc - sem vazio):** \`perdas_carga_sem_vazio\` = \`perdas_totais\` - \`perdas_vazio_nom\`. Status: OK
+* **Perdas CC a Frio (25°C):** \`perdas_cc_a_frio\` = \`perdas_carga_sem_vazio\` * ((235 + 25) / (235 + temperatura_ref)). *(Fator de correção para Cobre)*. Status: OK
+* **Tensão de Curto-Circuito (Vcc):** \`vcc\` = (\`tensao_at\` / 100) * \`impedancia_percentual\`. Status: OK
+* **Corrente Nominal AT:** \`corrente_at\` (calculada com base na \`potencia\` e \`tensao_at\`). Status: OK
+
+### 2.3. Cálculos para Condição a Frio (Referência 25°C)
+
+* **Tensão de Ensaio (Frio):** \`tensao_frio\` = √(\`perdas_totais\` / \`perdas_cc_a_frio\`) * \`vcc\`. Status: OK
+* **Corrente de Ensaio (Frio):** \`corrente_frio\` = √(\`perdas_totais\` / \`perdas_cc_a_frio\`) * \`corrente_at\`. Status: OK
+* **Potência Aparente de Ensaio (Frio - kVA):** \`pteste_frio\` = \`tensao_frio\` *\`corrente_frio\`* \`sqrt_3\` / 1000. Status: OK
+* **Potência Ativa EPS (Frio - kW):** \`potencia_ativa_eps_frio\` = \`perdas_totais\`. Status: OK
+
+### 2.4. Cálculos para Condição a Quente (Referência 75°C)
+
+* **Tensão de Ensaio (Quente):** \`tensao_quente\` = √(\`perdas_carga_sem_vazio\` / \`perdas_cc_a_frio\`) * \`vcc\`. Status: OK
+* **Corrente de Ensaio (Quente):** \`corrente_quente\` = √(\`perdas_carga_sem_vazio\` / \`perdas_cc_a_frio\`) * \`corrente_at\`. Status: OK
+* **Potência Aparente de Ensaio (Quente - kVA):** \`pteste_quente\` = \`tensao_quente\` *\`corrente_quente\`* \`sqrt_3\` / 1000. Status: OK
+* **Potência Ativa EPS (Quente - kW):** \`potencia_ativa_eps_quente\` = \`perdas_carga_sem_vazio\` * 1.1 *(Fator de segurança/margem)*. Status: OK
+
+### 2.5. Cálculos para Sobrecarga (Aplicável se Tensão AT ≥ 230kV)
+
+#### 2.5.1. Sobrecarga 1.2 pu (120% Corrente Nominal)
+
+* **Corrente de Sobrecarga:** \`corrente_1_2\` = \`corrente_at\` * 1.2. Status: OK
+* **Tensão de Ensaio (1.2 pu):** \`tensao_1_2\` = \`vcc\` * 1.2 *(Assumindo Vcc proporcional à corrente)*. Status: OK
+* **Potência Aparente de Ensaio (1.2 pu - kVA):** \`pteste_1_2\` = \`tensao_1_2\` *\`corrente_1_2\`* \`sqrt_3\` / 1000. Status: OK
+* **Perdas em Carga Estimadas (1.2 pu - kW):** \`perdas_1_2\` = \`perdas_carga_sem_vazio\` * (1.2**2). Status: OK
+  * **Correção:** A fórmula base não inclui correção adicional de temperatura para sobrecarga, apenas o fator quadrático da corrente.
+* **Potência Ativa EPS (1.2 pu - kW):** \`potencia_ativa_eps_1_2\` = \`perdas_1_2\`. Status: OK
+
+#### 2.5.2. Sobrecarga 1.4 pu (140% Corrente Nominal)
+
+* **Corrente de Sobrecarga:** \`corrente_1_4\` = \`corrente_at\` * 1.4. Status: OK
+* **Tensão de Ensaio (1.4 pu):** \`tensao_1_4\` = \`vcc\` * 1.4 *(Assumindo Vcc proporcional à corrente)*. Status: OK
+* **Potência Aparente de Ensaio (1.4 pu - kVA):** \`pteste_1_4\` = \`tensao_1_4\` *\`corrente_1_4\`* \`sqrt_3\` / 1000. Status: OK
+* **Perdas em Carga Estimadas (1.4 pu - kW):** \`perdas_1_4\` = \`perdas_carga_sem_vazio\` * (1.4**2). Status: OK
+  * **Correção:** Similar à 1.2 pu, sem correção adicional de temperatura na fórmula base.
+* **Potência Ativa EPS (1.4 pu - kW):** \`potencia_ativa_eps_1_4\` = \`perdas_1_4\`. Status: OK
+
+---
+
+## 3. Cálculos do Banco de Capacitores (Cap Bank)
+
+Estimativa da necessidade de capacitores para compensar a reatância durante os ensaios (principalmente Perdas em Carga e Tensão Induzida). Para detalhes específicos sobre os cálculos de tensão induzida, consulte o arquivo \`formulas_induzida.md\`.
+
+### 3.1. Tensões Disponíveis dos Bancos (kV)
+
+* Lista padrão de tensões nominais dos bancos disponíveis: \`cap_bank_voltages\` = [13.8, 23.8, 27.6, 41.4, 47.8, 55.2, 71.7, 95.6]. Status: OK
+
+### 3.2. Seleção da Tensão Nominal do Banco
+
+Seleciona a menor tensão de banco que seja maior ou igual à \`tensão_teste\` calculada para a condição específica (frio, quente, sobrecarga, etc.), considerando ou não um fator de segurança.
+
+* **Com Fator 1.1 (Segurança):** \`cap_bank_voltage_com_fator\` = Próxima tensão de banco ≥ (\`tensão_teste\` / 1.1). Status: OK
+* **Sem Fator 1.1:** \`cap_bank_voltage_sem_fator\` = Próxima tensão de banco ≥ \`tensão_teste\`. Status: OK
+
+### 3.3. Fator de Correção (Capacidade Efetiva)
+
+Fator que ajusta a capacidade nominal do banco baseado na sua tensão nominal (bancos de menor tensão podem ter menor capacidade efetiva relativa).
+
+* Fatores aplicados: 0.25 para 13.8kV, 0.75 para 23.8kV, 1.0 para os demais. Status: OK
+
+### 3.4. Cálculo da Potência Reativa Necessária do Banco (kVAR)
+
+Calcula a potência reativa nominal que o banco selecionado precisa ter para fornecer a \`potência_teste\` (potência aparente reativa do ensaio) na \`tensão_teste\`.
+
+* **Com Fator 1.1:**
+    \`pot_cap_bank_com_fator\` = \`potência_teste\` / ((\`tensão_teste\` / \`cap_bank_voltage_com_fator\`)**2 * \`factor_com_fator\`). Status: OK
+* **Sem Fator 1.1:**
+    \`pot_cap_bank_sem_fator\` = \`potência_teste\` / ((\`tensão_teste\` / \`cap_bank_voltage_sem_fator\`)**2 * \`factor_sem_fator\`). Status: OK
+
+---
+
+## 4. Inputs, Tipos e Callbacks
+
+### 4.1. Inputs e Tipos
+
+#### 4.1.1. Perdas em Vazio
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| perdas_vazio | number | Perdas em vazio em kW |
+| peso_nucleo | number | Peso do núcleo em toneladas |
+| corrente_excitacao_percentual | number | Corrente de excitação em percentual |
+| inducao | number | Indução do núcleo em Tesla |
+| tipo_aco | dropdown | Tipo de aço do núcleo |
+| corrente_exc_1_1_input | number | Corrente de excitação a 110% da tensão nominal em percentual |
+| corrente_exc_1_2_input | number | Corrente de excitação a 120% da tensão nominal em percentual |
+
+#### 4.1.2. Perdas em Carga
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| perdas_totais_nom_input | number | Perdas totais no tap nominal em kW |
+| perdas_totais_min_input | number | Perdas totais no tap de menor tensão em kW |
+| perdas_totais_max_input | number | Perdas totais no tap de maior tensão em kW |
+| temperatura_referencia | number | Temperatura de referência para correção das perdas em °C |
+| tipo_ensaio | dropdown | Tipo de ensaio (Frio/Quente) |
+
+#### 4.1.3. Banco de Capacitores
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| cap_bank_voltage_frio | dropdown | Tensão do banco de capacitores para ensaio a frio |
+| cap_bank_voltage_quente | dropdown | Tensão do banco de capacitores para ensaio a quente |
+| cap_bank_voltage_1_2 | dropdown | Tensão do banco de capacitores para ensaio a 120% |
+| cap_bank_voltage_1_4 | dropdown | Tensão do banco de capacitores para ensaio a 140% |
+
+### 4.2. Callbacks Principais
+
+#### 4.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| load_losses_from_store | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+| update_losses_store | Atualiza store de perdas | Salva os resultados dos cálculos no store para uso em outros módulos |
+
+#### 4.2.2. Callbacks de Cálculos de Perdas
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_perdas_vazio_calculations | Calcula perdas em vazio | Realiza os cálculos de perdas em vazio, corrente de excitação e potência de ensaio |
+| update_perdas_carga_calculations | Calcula perdas em carga | Realiza os cálculos de perdas em carga, tensão e corrente de ensaio |
+
+#### 4.2.3. Callbacks de Banco de Capacitores
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_cap_bank_calculations | Calcula banco de capacitores | Calcula a potência reativa necessária do banco de capacitores |
+| update_cap_bank_options | Atualiza opções de banco | Preenche os dropdowns com as tensões disponíveis de banco de capacitores |
+| update_cap_bank_values | Atualiza valores de banco | Atualiza os valores selecionados nos dropdowns de banco de capacitores |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            // First pass: assign IDs to headings in our temporary container
+            headings.forEach((heading, index) => {
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+
+                heading.id = slug || `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+                    }
+                });
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setTimeout(() => {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100); // Small delay to ensure rendering is complete
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

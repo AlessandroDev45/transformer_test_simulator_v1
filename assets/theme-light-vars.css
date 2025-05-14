@@ -1,0 +1,32 @@
+/* assets/theme-light-vars.css */
+:root {
+    --light-primary: #26427A;
+    --light-secondary: #6c757d;
+    --light-accent: #007BFF;
+    --light-accent-alt: #FFD700;
+    --light-background-main: #f0f2f5;
+    --light-background-card: #ffffff;
+    --light-background-card-header: #e9ecef;
+    --light-background-input: #ffffff;
+    --light-background-header: #26427A; /* Azul escuro para header de tabela */
+    --light-background-faint: #f5f5f5;
+    --light-text-light: #f8f9fa;
+    --light-text-dark: #212529;
+    --light-text-muted: #6c757d;
+    --light-text-header: #FFFFFF;
+    --light-border: #dee2e6;
+    --light-border-light: #f8f9fa;
+    --light-border-strong: #adb5bd;
+    --light-success: #198754;
+    --light-danger: #dc3545;
+    --light-warning: #ffc107;
+    --light-info: #0dcaf0;
+    --light-pass-bg: #d1e7dd;
+    --light-fail-bg: #f8d7da;
+    --light-warning-bg: #fff3cd;
+    --light-danger-bg-opaque: #f8d7da;
+    --light-warning-bg-faint-opaque: rgba(255, 243, 205, 0.5);
+    --light-warning-high-bg-faint-opaque: rgba(255, 235, 153, 0.5);
+    --light-ok-bg-faint-opaque: rgba(209, 231, 221, 0.5);
+    --light-info-bg-faint-opaque: rgba(207, 244, 252, 0.5);
+}

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhamento dos Cálculos de Impulso - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Detalhamento dos Cálculos de Impulso
+
+Este documento detalha as fórmulas e parâmetros usados nos cálculos de impulso atmosférico (LI) e impulso cortado (LIC) para transformadores.
+
+---
+
+## 1. Parâmetros de Entrada
+
+Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de impulso:
+
+| Parâmetro                     | Descrição                              | Unidade | Variável no Código                   |
+| :---------------------------- | :------------------------------------- | :------ | :--------------------------------- |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | \`tipo_transformador\`               |
+| Tensão Nominal AT             | Tensão nominal do lado de Alta Tensão  | kV      | \`tensao_at\`                        |
+| Classe de Tensão AT           | Classe de tensão do lado de Alta Tensão| kV      | \`classe_tensao_at\`                 |
+| Nível Básico de Isolamento    | Nível de isolamento (BIL)              | kV      | \`bil\`                              |
+| Resistor Frontal              | Valor do resistor frontal              | Ω       | \`resistor_frontal\`                 |
+| Resistor de Cauda             | Valor do resistor de cauda             | Ω       | \`resistor_cauda\`                   |
+| Capacitância do Gerador       | Capacitância do gerador de impulso     | nF      | \`capacitancia_gerador\`             |
+| Capacitância do Objeto        | Capacitância do objeto de teste        | pF      | \`capacitancia_objeto\`              |
+| Indutância                    | Indutância do circuito                 | μH      | \`indutancia\`                       |
+| Tempo de Corte                | Tempo de corte para impulso cortado    | μs      | \`tempo_corte\`                      |
+
+## 2. Fundamentos Teóricos
+
+### 2.1. Forma de Onda de Impulso Atmosférico
+
+A forma de onda de impulso atmosférico é descrita pela equação:
+
+* \`V(t) = V₀ * (e^(-αt) - e^(-βt))\`
+
+Onde:
+* \`V(t)\` é a tensão no tempo t
+* \`V₀\` é a amplitude da tensão
+* \`α\` e \`β\` são constantes que determinam os tempos de frente e cauda
+* \`t\` é o tempo
+
+### 2.2. Parâmetros da Forma de Onda
+
+* **Tempo de Frente (T₁)**: Tempo para a onda atingir o valor de pico, normalmente 1.2 μs ± 30%
+* **Tempo de Cauda (T₂)**: Tempo para a onda cair a 50% do valor de pico, normalmente 50 μs ± 20%
+* **Eficiência (η)**: Razão entre a tensão de pico e a tensão de carga do gerador
+
+## 3. Cálculos do Circuito de Impulso
+
+### 3.1. Cálculo dos Parâmetros α e β
+
+* \`α = 1 / (R₂ * C₂)\`
+* \`β = 1 / (R₁ * C₁)\`
+
+Onde:
+* \`R₁\` é o resistor frontal
+* \`R₂\` é o resistor de cauda
+* \`C₁\` é a capacitância do gerador
+* \`C₂\` é a capacitância do objeto de teste
+
+### 3.2. Cálculo da Eficiência
+
+* \`η = (β - α) / β * e^(-αT₁)\`
+
+### 3.3. Cálculo da Tensão de Carga
+
+* \`V_carga = V_pico / η\`
+
+Onde:
+* \`V_pico\` é a tensão de pico desejada (geralmente o BIL)
+* \`η\` é a eficiência calculada
+
+### 3.4. Cálculo da Energia do Impulso
+
+* \`E = 0.5 * C₁ * V_carga²\`
+
+Onde:
+* \`E\` é a energia em Joules
+* \`C₁\` é a capacitância do gerador em Farads
+* \`V_carga\` é a tensão de carga em Volts
+
+## 4. Impulso Cortado (LIC)
+
+### 4.1. Tempo de Corte
+
+O tempo de corte é o tempo após o início da onda em que ocorre o corte da tensão. Normalmente entre 2 e 6 μs.
+
+### 4.2. Tensão de Corte
+
+* \`V_corte = V₀ * (e^(-α*t_corte) - e^(-β*t_corte))\`
+
+Onde:
+* \`V_corte\` é a tensão no momento do corte
+* \`t_corte\` é o tempo de corte
+
+### 4.3. Sobretensão de Corte
+
+Devido à indutância do circuito, pode ocorrer uma sobretensão no momento do corte:
+
+* \`V_sobretensao = V_corte * (1 + k)\`
+
+Onde:
+* \`k\` é o fator de sobretensão, que depende da indutância e da impedância do circuito
+
+## 5. Simulação da Forma de Onda
+
+### 5.1. Discretização do Tempo
+
+Para simular a forma de onda, o tempo é discretizado em pequenos intervalos:
+
+* \`t = [0, Δt, 2Δt, ..., t_max]\`
+
+Onde:
+* \`Δt\` é o passo de tempo (tipicamente 0.01 μs)
+* \`t_max\` é o tempo máximo de simulação (tipicamente 100 μs)
+
+### 5.2. Cálculo da Tensão em Cada Ponto
+
+Para cada ponto de tempo \`t[i]\`:
+
+* \`V[i] = V₀ * (e^(-α*t[i]) - e^(-β*t[i]))\` para \`t[i] < t_corte\` (impulso cortado)
+* \`V[i] = V_corte * (1 + k) * e^(-γ*(t[i]-t_corte))\` para \`t[i] ≥ t_corte\` (impulso cortado)
+
+Onde:
+* \`γ\` é a constante de tempo da oscilação após o corte
+
+## 6. Análise dos Resultados
+
+### 6.1. Verificação dos Tempos T₁ e T₂
+
+* **T₁ (Tempo de Frente)**: Deve estar entre 0.84 μs e 1.56 μs (1.2 μs ± 30%)
+* **T₂ (Tempo de Cauda)**: Deve estar entre 40 μs e 60 μs (50 μs ± 20%)
+
+### 6.2. Verificação da Eficiência
+
+* A eficiência típica está entre 80% e 95%
+* Eficiências muito baixas indicam um circuito mal dimensionado
+
+### 6.3. Verificação da Energia
+
+* A energia deve ser compatível com a capacidade do gerador de impulso
+* Energias muito altas podem danificar o gerador
+
+## 7. Recomendações para o Teste
+
+### 7.1. Ajuste dos Parâmetros
+
+* **Resistor Frontal (R₁)**: Afeta principalmente o tempo de frente
+* **Resistor de Cauda (R₂)**: Afeta principalmente o tempo de cauda
+* **Capacitância do Gerador (C₁)**: Afeta a energia disponível
+* **Indutância (L)**: Afeta a sobretensão no corte
+
+### 7.2. Procedimento de Teste
+
+1. Iniciar com tensões reduzidas (50% do BIL)
+2. Verificar a forma de onda
+3. Ajustar os parâmetros se necessário
+4. Aumentar gradualmente a tensão até o valor nominal (BIL)
+5. Realizar o teste completo conforme a norma
+
+---
+
+## Notas Importantes
+
+1. Os valores de BIL são determinados pelas normas técnicas e variam conforme a classe de tensão.
+2. A forma de onda real pode diferir da simulação devido a efeitos não lineares e parasitas.
+3. A indutância do circuito pode afetar significativamente a forma de onda, especialmente no caso de impulso cortado.
+4. O teste de impulso é um teste destrutivo e deve ser realizado com cuidado para evitar danos ao transformador.
+
+## 8. Inputs, Tipos e Callbacks
+
+### 8.1. Inputs e Tipos
+
+#### 8.1.1. Parâmetros Básicos
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| impulse-type | radioitems | Tipo de impulso (Atmosférico/Manobra/Cortado) |
+| test-voltage | number | Tensão de teste em kV |
+| generator-config | dropdown | Configuração do gerador (estágios e paralelos) |
+| simulation-model-type | dropdown | Tipo de modelo de simulação (RLC+K/RLC) |
+| test-object-capacitance | number | Capacitância do objeto de teste em pF |
+| stray-capacitance | number | Capacitância parasita em pF |
+| shunt-resistor | dropdown | Resistor shunt em Ω |
+
+#### 8.1.2. Parâmetros de Resistores e Indutância
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| front-resistor-expression | text | Expressão do resistor frontal |
+| tail-resistor-expression | text | Expressão do resistor de cauda |
+| inductance-adjustment-factor | number | Fator de ajuste da indutância |
+| tail-resistance-adjustment-factor | number | Fator de ajuste da resistência de cauda |
+| external-inductance | number | Indutância externa em μH |
+| transformer-inductance | number | Indutância do transformador em H |
+
+#### 8.1.3. Parâmetros Específicos por Tipo de Impulso
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| gap-distance | number | Distância do gap para impulso cortado em mm |
+| si-capacitor-value | number | Valor do capacitor para impulso de manobra em pF |
+
+### 8.2. Callbacks Principais
+
+#### 8.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| load_impulse_data_on_page_load | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+| update_impulse_simulation | Atualiza simulação e store | Executa a simulação e salva os resultados no store |
+
+#### 8.2.2. Callbacks de Simulação
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| toggle_simulation | Controla simulação automática | Inicia/para a simulação automática da forma de onda |
+| update_dynamic_controls | Atualiza controles dinâmicos | Mostra/esconde controles específicos baseados no tipo de impulso |
+| update_rf_value | Atualiza valor do resistor frontal | Incrementa/decrementa o valor do resistor frontal |
+| update_rt_value | Atualiza valor do resistor de cauda | Incrementa/decrementa o valor do resistor de cauda |
+
+#### 8.2.3. Callbacks de Cálculo de Indutância
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| toggle_transformer_calc | Mostra/esconde calculadora | Controla a visibilidade da calculadora de indutância |
+| calculate_transformer_inductance_callback | Calcula indutância | Calcula a indutância do transformador a partir dos parâmetros |
+| use_transformer_data | Usa dados do transformador | Preenche os campos com dados do transformador armazenados |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            // First pass: assign IDs to headings in our temporary container
+            headings.forEach((heading, index) => {
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+
+                heading.id = slug || `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+                    }
+                });
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setTimeout(() => {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100); // Small delay to ensure rendering is complete
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

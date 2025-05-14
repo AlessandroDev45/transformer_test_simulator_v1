@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventário de Arquivos CSS - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Inventário de Arquivos CSS
+
+Este documento lista todos os arquivos CSS existentes no projeto, seu propósito e status de uso.
+
+## Arquivos CSS Principais
+
+| Arquivo | Propósito | Status |
+|---------|-----------|--------|
+| \`assets/base.css\` | Estilos base da aplicação, independentes do tema | Ativo |
+| \`assets/theme-dark.css\` | Estilos específicos para o tema escuro | Ativo |
+| \`assets/theme-light.css\` | Estilos específicos para o tema claro | Ativo |
+| \`assets/theme-light-vars.css\` | Variáveis CSS para o tema claro | Ativo |
+| \`assets/custom.css\` | Estilos personalizados para sobrescrever comportamentos padrão | Ativo |
+
+## Arquivos CSS Redundantes ou Não Utilizados
+
+| Arquivo | Propósito | Status | Observação |
+|---------|-----------|--------|------------|
+| \`assets/transformer-info-light.css\` | Estilos para o transformer_info_template no tema claro | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-override.css\` | Sobrescreve estilos inline do transformer_info_template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-important.css\` | Estilos !important para o transformer_info_template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-inline.css\` | Estilos para elementos com estilos inline | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-direct.css\` | Estilos diretos para o transformer_info_template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-class.css\` | Estilos para a classe transformer-info-template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-attributes.css\` | Estilos para elementos com atributos específicos | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-style.css\` | Estilos para elementos com atributos de estilo específicos | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-scope.css\` | Estilos para elementos dentro da classe transformer-info-template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-border.css\` | Estilos para elementos com a classe border rounded shadow-sm | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-final.css\` | Estilos finais para o transformer_info_template | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-inline-specific.css\` | Estilos para elementos com estilos inline específicos | Redundante | Pode ser consolidado em theme-light.css |
+| \`assets/transformer-info-template.css\` | Estilos para a classe transformer-info-template | Redundante | Pode ser consolidado em theme-light.css |
+
+## Análise de Uso
+
+### Arquivos CSS Ativos
+
+1. **base.css**
+   - Contém estilos base da aplicação
+   - Define estilos para elementos HTML básicos
+   - Inclui utilitários de espaçamento, flexbox, etc.
+   - Independente do tema (claro/escuro)
+
+2. **theme-dark.css**
+   - Contém estilos específicos para o tema escuro
+   - Define variáveis CSS para cores e propriedades
+   - Estiliza componentes como cards, dropdowns, inputs, etc.
+   - Aplicado quando a classe 'light-theme' NÃO está presente no body
+
+3. **theme-light.css**
+   - Contém estilos específicos para o tema claro
+   - Importa variáveis CSS de theme-light-vars.css
+   - Estiliza componentes como cards, dropdowns, inputs, etc.
+   - Aplicado quando a classe 'light-theme' está presente no body
+
+4. **theme-light-vars.css**
+   - Define variáveis CSS para o tema claro
+   - Usado por theme-light.css
+   - Centraliza as definições de cores para o tema claro
+
+5. **custom.css**
+   - Contém estilos personalizados para sobrescrever comportamentos padrão
+   - Usado para ajustes específicos que não se encaixam nos outros arquivos
+   - Aplicado independentemente do tema
+
+### Arquivos CSS Redundantes
+
+Todos os arquivos \`transformer-info-*.css\` são redundantes e podem ser consolidados em \`theme-light.css\`. Eles foram criados para resolver problemas específicos com o componente \`transformer_info_template\` no tema claro, mas a abordagem resultou em uma fragmentação excessiva dos estilos.
+
+## Recomendações
+
+1. **Consolidar Arquivos Redundantes**:
+   - Consolidar todos os arquivos \`transformer-info-*.css\` em \`theme-light.css\`
+   - Manter apenas os arquivos CSS principais
+
+2. **Centralizar Definições de Cores**:
+   - Manter as variáveis CSS em \`theme-light-vars.css\` e criar um arquivo equivalente para o tema escuro
+   - Garantir que as cores definidas em Python (\`utils/theme_colors.py\`) correspondam às variáveis CSS
+
+3. **Padronizar Nomenclatura**:
+   - Usar kebab-case para nomes de arquivos CSS
+   - Usar nomes descritivos que indiquem claramente o propósito do arquivo
+
+4. **Documentar Propósito**:
+   - Adicionar comentários no início de cada arquivo CSS explicando seu propósito
+   - Manter esta documentação atualizada quando novos arquivos forem adicionados
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+/* Estilos personalizados para o simulador */
+
+/* Estilo para campos desabilitados */
+.disabled-field:disabled {
+    background-color: #2c3034 !important;
+    color: #adb5bd !important;
+    border-color: #495057 !important;
+    opacity: 0.8 !important;
+    cursor: not-allowed !important;
+}
+
+/* Estilo para checkbox de override */
+.override-checkbox {
+    margin-top: 5px;
+    font-size: 0.8rem;
+}
+
+.override-checkbox .form-check-label {
+    color: #adb5bd;
+}
+
+/* Estilo para o checkbox quando marcado */
+.override-checkbox input:checked + .form-check-label {
+    color: #00bc8c;
+}

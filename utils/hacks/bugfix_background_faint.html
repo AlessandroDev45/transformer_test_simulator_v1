@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção de Bug: Chave 'background_faint' Ausente - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Correção de Bug: Chave 'background_faint' Ausente
+
+## Descrição do Problema
+
+Foi identificado um erro no módulo de cálculo de perdas em vazio com a seguinte mensagem:
+
+\`\`\`
+Erro inesperado no cálculo de perdas em vazio: 'background_faint'
+Erro: Dado necessário ('background_faint') não encontrado.
+Verifique os dados do transformador e o cálculo de perdas em vazio.
+\`\`\`
+
+O erro ocorria porque o código estava tentando acessar a chave 'background_faint' nos dicionários DARK_COLORS e LIGHT_COLORS em \`utils/theme_colors.py\`, mas essa chave não estava definida.
+
+## Solução Implementada
+
+1. Adicionada a chave 'background_faint' ao dicionário DARK_COLORS em \`utils/theme_colors.py\`:
+   \`\`\`python
+   'background_faint': '#333333',  # Fundo sutil para elementos de destaque
+   \`\`\`
+
+2. Adicionada a chave 'background_faint' ao dicionário LIGHT_COLORS em \`utils/theme_colors.py\`:
+   \`\`\`python
+   'background_faint': '#f5f5f5',   # Fundo sutil para elementos de destaque
+   \`\`\`
+
+As variáveis CSS correspondentes já estavam definidas nos arquivos CSS:
+- \`--dark-background-faint: #333333;\` em \`assets/theme-dark-vars.css\`
+- \`--light-background-faint: #f5f5f5;\` em \`assets/theme-light-vars.css\`
+
+## Arquivos Modificados
+
+- \`utils/theme_colors.py\`
+
+## Uso da Chave 'background_faint'
+
+A chave 'background_faint' é usada em vários lugares no código, incluindo:
+
+1. No módulo de perdas em vazio para estilizar legendas e elementos de status:
+   \`\`\`python
+   legend_style = {"fontSize": "0.8rem", "marginBottom": "0.5rem", "color": "black", "padding": "4px", "border": f"1px solid {COLORS['border_light']}", "borderRadius": "4px", "backgroundColor": COLORS['background_faint']}
+   \`\`\`
+
+2. Para estilizar elementos de status em tabelas:
+   \`\`\`python
+   html.Span("(V) > Limite", style={**status_styler.status_styles['(V)'], "backgroundColor": COLORS['background_faint']})
+   \`\`\`
+
+3. Para estilizar células de exemplo em tabelas explicativas:
+   \`\`\`python
+   html.Div([html.Span("12.3"), html.Sup(" S/F=C/F")], style={'border': f'1px solid {COLORS["border_light"]}', 'padding': '2px', 'textAlign': 'center', 'width': '120px', 'margin': '0 auto', 'borderRadius': '3px', 'backgroundColor': COLORS['background_faint'], 'fontSize': '0.8em', 'fontWeight': 'bold'})
+   \`\`\`
+
+## Impacto da Correção
+
+Esta correção resolve o erro que impedia o cálculo de perdas em vazio e garante que todos os elementos visuais que dependem da cor 'background_faint' sejam exibidos corretamente em ambos os temas (claro e escuro).
+
+## Recomendações para Evitar Problemas Semelhantes
+
+1. Ao adicionar novas chaves de cores ao código, sempre verificar se elas estão definidas em todos os lugares necessários:
+   - \`utils/theme_colors.py\` (DARK_COLORS e LIGHT_COLORS)
+   - \`assets/theme-dark-vars.css\`
+   - \`assets/theme-light-vars.css\`
+
+2. Considerar a implementação de um mecanismo de validação que verifique se todas as chaves de cores usadas no código estão definidas nos dicionários de cores.
+
+3. Documentar todas as chaves de cores disponíveis para facilitar a referência por desenvolvedores.
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

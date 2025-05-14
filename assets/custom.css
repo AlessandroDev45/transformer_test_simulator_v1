@@ -1,0 +1,55 @@
+/* Estilos personalizados para o simulador */
+
+/* Estilos para campos desabilitados */
+.disabled-field input {
+    background-color: #f9f9f9;
+    cursor: not-allowed;
+}
+
+/* Estilo para campos desabilitados (tema escuro) */
+.disabled-field:disabled {
+    background-color: #2c3034 !important;
+    color: #adb5bd !important;
+    border-color: #495057 !important;
+    opacity: 0.8 !important;
+    cursor: not-allowed !important;
+}
+
+.help-tip {
+    font-size: 0.8rem;
+    color: #777;
+    margin-left: 6px;
+}
+
+/* Estilos para campos calculados automaticamente */
+input:disabled {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* Estilos para campos de isolamento */
+.isolation-field {
+    margin-bottom: 10px;
+}
+
+.isolation-field label {
+    font-weight: 500;
+}
+
+/* Estilos para o botão de override */
+.override-checkbox {
+    margin-top: 4px;
+    font-size: 0.8rem;
+}
+
+/* Estilo para checkbox de override (tema escuro) */
+.override-checkbox .form-check-label {
+    color: #adb5bd;
+}
+
+/* Estilo para o checkbox quando marcado */
+.override-checkbox input:checked + .form-check-label {
+    color: #00bc8c;
+}

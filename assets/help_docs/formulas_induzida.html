@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhamento dos Cálculos de Tensão Induzida - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Detalhamento dos Cálculos de Tensão Induzida
+
+Este documento detalha as fórmulas e parâmetros usados nos cálculos de tensão induzida para transformadores monofásicos e trifásicos.
+
+---
+
+## 1. Parâmetros de Entrada
+
+Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de tensão induzida:
+
+| Parâmetro                     | Descrição                              | Unidade | Variável no Código                   | Status |
+| :---------------------------- | :------------------------------------- | :------ | :--------------------------------- | :----- |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | \`tipo_transformador\`               | OK     |
+| Tensão Nominal AT             | Tensão nominal do lado de Alta Tensão  | kV      | \`tensao_at\`                        | OK     |
+| Tensão Nominal BT             | Tensão nominal do lado de Baixa Tensão | kV      | \`tensao_bt\`                        | OK     |
+| Frequência Nominal            | Frequência nominal da rede             | Hz      | \`freq_nominal\`                     | OK     |
+| Frequência de Teste           | Frequência do ensaio de tensão induzida| Hz      | \`freq_teste\`                       | OK     |
+| Tensão de Prova               | Tensão de ensaio aplicada              | kV      | \`tensao_prova\`                     | OK     |
+| Capacitância AT-GND           | Capacitância entre AT e terra          | pF      | \`capacitancia\`                     | OK     |
+| Indução Nominal               | Nível de indução magnética nominal     | T       | \`inducao_nominal\`                  | OK     |
+| Peso do Núcleo                | Peso do núcleo do transformador        | Ton     | \`peso_nucleo\`                      | OK     |
+| Perdas em Vazio               | Perdas no núcleo                       | kW      | \`perdas_vazio\`                     | OK     |
+
+## 2. Tabelas de Referência Usadas
+
+* **\`potencia_magnet\`**: Tabela com dados de potência magnetizante específica (VAr/kg) vs. Indução (T) e Frequência (Hz).
+* **\`perdas_nucleo\`**: Tabela com dados de perdas específicas (W/kg) vs. Indução (T) e Frequência (Hz).
+
+## 3. Cálculos Intermediários
+
+### 3.1. Relações Básicas
+
+* **Relação entre frequência de teste e frequência nominal:** \`fp_fn = freq_teste / freq_nominal\`
+* **Relação entre tensão de prova e tensão nominal (Up/Un):**
+  * Para transformadores monofásicos: \`up_un = tensao_prova / tensao_at\`
+  * Para transformadores trifásicos: \`up_un = tensao_prova / (tensao_at / sqrt(3))\`
+
+### 3.2. Indução no Núcleo na Frequência de Teste
+
+* **Fórmula:** \`inducao_teste = inducao_nominal * (tensao_induzida / tensao_at) * (freq_nominal / freq_teste)\`
+* **Limitação:** Se \`inducao_teste > 1.9 T\`, então \`inducao_teste = 1.9 T\` (limite físico típico)
+
+### 3.3. Tensão Aplicada no Lado BT
+
+* **Para transformadores monofásicos:** \`tensao_aplicada_bt = (tensao_bt / tensao_at) * tensao_prova\`
+* **Para transformadores trifásicos:** \`tensao_aplicada_bt = (tensao_bt / tensao_at) * tensao_prova\`
+
+### 3.4. Interpolação de Fatores das Tabelas
+
+* **Fator de Potência Magnética:** Obtido por interpolação bilinear da tabela \`potencia_magnet\` usando \`inducao_teste\` e \`freq_teste\`
+* **Fator de Perdas:** Obtido por interpolação bilinear da tabela \`perdas_nucleo\` usando \`inducao_teste\` e \`freq_teste\`
+
+## 4. Cálculos para Transformadores Monofásicos
+
+### 4.1. Potência Ativa (Pw)
+
+* **Fórmula:** \`pot_ativa = fator_perdas * peso_nucleo_kg / 1000.0\` (kW)
+
+### 4.2. Potência Magnética (Sm)
+
+* **Fórmula:** \`pot_magnetica = fator_potencia_mag * peso_nucleo_kg / 1000.0\` (kVA)
+
+### 4.3. Componente Indutiva (Sind)
+
+* **Fórmula:** \`pot_induzida = sqrt(pot_magnetica^2 - pot_ativa^2)\` (kVAr ind)
+* **Verificação:** Se \`pot_magnetica^2 < pot_ativa^2\`, então \`pot_induzida = 0\`
+
+### 4.4. Tensão para Cálculo de Scap (U_calc_scap)
+
+* **Fórmula:** \`u_calc_scap = tensao_prova - (up_un * tensao_bt)\` (kV)
+
+### 4.5. Potência Capacitiva (Scap)
+
+* **Fórmula:** \`pcap = -((u_calc_scap * 1000)^2 * 2 * π * freq_teste * capacitancia * 10^-12) / 3 / 1000\` (kVAr cap)
+* O sinal negativo indica potência reativa capacitiva
+* Divisão por 3 para ajustar o valor da potência capacitiva para transformadores monofásicos
+* Conversão de kV para V (multiplicação por 1000) e de VAr para kVAr (divisão por 1000)
+
+### 4.6. Razão Scap/Sind
+
+* **Fórmula:** \`scap_sind_ratio = abs(pcap) / pot_induzida\` (adimensional)
+* **Verificação:** Se \`pot_induzida = 0\`, então \`scap_sind_ratio = 0\`
+
+## 5. Cálculos para Transformadores Trifásicos
+
+### 5.1. Potência Ativa Total (Pw)
+
+* **Fórmula:** \`pot_ativa_total = fator_perdas * peso_nucleo_kg / 1000.0\` (kW)
+
+### 5.2. Potência Magnética Total (Sm)
+
+* **Fórmula:** \`pot_magnetica_total = fator_potencia_mag * peso_nucleo_kg / 1000.0\` (kVA)
+
+### 5.3. Corrente de Excitação (Iexc)
+
+* **Fórmula:** \`corrente_excitacao = pot_magnetica_total / (tensao_aplicada_bt * sqrt(3))\` (A)
+
+### 5.4. Potência de Teste Total
+
+* **Fórmula:** \`potencia_teste = corrente_excitacao * tensao_aplicada_bt * sqrt(3)\` (kVA)
+
+## 6. Tabela de Frequências
+
+A tabela de frequências calcula os parâmetros acima para diferentes frequências de teste (100, 120, 150, 180, 200, 240 Hz) e apresenta os resultados em formato tabular e gráfico.
+
+### 6.1. Visualização Gráfica
+
+* **Escala Linear:** Apresenta as potências (Ativa, Magnética, Indutiva para monofásicos, Capacitiva) em função da frequência
+* **Escala Logarítmica:** Mesmos dados em escala logarítmica para melhor visualização quando há grandes diferenças de magnitude
+
+### 6.2. Diferenças entre Monofásico e Trifásico
+
+* **Monofásico:** Exibe Frequência, Potência Ativa, Potência Magnética, Componente Indutiva, Potência Capacitiva e razão Scap/Sind
+* **Trifásico:** Exibe Frequência, Potência Ativa, Potência Magnética e Potência Capacitiva
+
+## 7. Recomendações para o Teste
+
+### 7.1. Para Transformadores Monofásicos
+
+* **Potência Total Recomendada:** \`max(pot_magnetica, pot_ativa + pcap) * 1.2\` (kVA)
+* **Tensão de Saída Recomendada:** \`tensao_aplicada_bt * 1.1\` (kV)
+* **Potência Ativa Mínima:** \`pot_ativa * 1.2\` (kW)
+* **Potência Reativa Indutiva:** \`pot_induzida * 1.2\` (kVAr ind)
+* **Potência Reativa Capacitiva:** \`pcap * 1.2\` (kVAr cap)
+
+### 7.2. Para Transformadores Trifásicos
+
+* **Potência Total Recomendada:** \`potencia_teste * 1.2\` (kVA)
+* **Tensão de Saída Recomendada:** \`tensao_aplicada_bt * 1.1\` (kV)
+* **Corrente Nominal Mínima:** \`corrente_excitacao * 1.5\` (A)
+* **Potência Magnética:** \`pot_magnetica_total\` (kVA)
+
+---
+
+## Notas Importantes
+
+1. A indução no núcleo durante o teste é limitada a 1.9 T para evitar saturação excessiva.
+2. Para transformadores trifásicos, a tensão de fase (tensão de linha dividida por √3) é usada como referência para alguns cálculos.
+3. A potência capacitiva é calculada com sinal negativo para indicar que é uma potência reativa capacitiva.
+4. A tabela de frequências permite analisar o comportamento do transformador em diferentes frequências de teste.
+5. Os gráficos em escala logarítmica são úteis quando há grandes diferenças entre os valores das potências.
+
+---
+
+## 8. Inputs, Tipos e Callbacks
+
+### 8.1. Inputs e Tipos
+
+#### 8.1.1. Parâmetros de Teste
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| freq_teste | number | Frequência de teste em Hz |
+| tensao_prova | number | Tensão de prova em kV |
+| capacitancia | number | Capacitância entre AT e terra em pF |
+| frequencia_tabela | dropdown | Frequência para cálculo da tabela |
+
+#### 8.1.2. Parâmetros do Transformador
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| tipo_transformador | dropdown | Tipo do transformador (Trifásico/Monofásico) |
+| freq_nominal | number | Frequência nominal em Hz |
+| tensao_at | number | Tensão nominal AT em kV |
+| tensao_bt | number | Tensão nominal BT em kV |
+
+#### 8.1.3. Parâmetros do Núcleo
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| inducao_nominal | number | Indução nominal em Tesla |
+| peso_nucleo | number | Peso do núcleo em toneladas |
+| perdas_vazio | number | Perdas em vazio em kW |
+| tipo_aco | dropdown | Tipo de aço do núcleo |
+
+### 8.2. Callbacks Principais
+
+#### 8.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| load_induced_voltage_from_store | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+| update_induced_voltage_store | Atualiza store | Salva os resultados dos cálculos no store para uso em outros módulos |
+
+#### 8.2.2. Callbacks de Cálculos
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_induced_voltage_calculations | Calcula tensão induzida | Realiza os cálculos de tensão induzida, potências e correntes |
+
+#### 8.2.3. Callbacks de Visualização
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_frequency_table | Atualiza tabela de frequências | Calcula os parâmetros para diferentes frequências de teste |
+| update_frequency_graphs | Atualiza gráficos | Gera os gráficos de potências em função da frequência |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            // First pass: assign IDs to headings in our temporary container
+            headings.forEach((heading, index) => {
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+
+                heading.id = slug || `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+                    }
+                });
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setTimeout(() => {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100); // Small delay to ensure rendering is complete
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

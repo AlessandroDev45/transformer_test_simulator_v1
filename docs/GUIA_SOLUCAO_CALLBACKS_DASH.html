@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia para Diagnóstico e Solução de Problemas com Callbacks no Dash - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Guia para Diagnóstico e Solução de Problemas com Callbacks no Dash
+
+Este guia foi criado para ajudar a diagnosticar e resolver problemas comuns relacionados ao registro e funcionamento de callbacks em aplicações Dash, especialmente quando o reloader está ativado (modo de depuração).
+
+## Sintomas Comuns
+
+1. **Callbacks não são registrados ou funcionam intermitentemente**
+   - Às vezes os callbacks funcionam, às vezes não
+   - Os callbacks funcionam no processo principal, mas não no processo filho do reloader
+   - Mensagens de erro como "Callback não encontrado" ou "Callback não registrado"
+
+2. **Comportamento inconsistente entre execuções**
+   - Na primeira execução, tudo funciona
+   - Após recarregar a página ou modificar o código, os callbacks param de funcionar
+
+## Diagnóstico Passo a Passo
+
+### 1. Verificar se os callbacks estão sendo registrados
+
+Adicione código para verificar o mapa de callbacks após cada importação:
+
+\`\`\`python
+# No arquivo app.py, após importar cada módulo de callback
+callback_map_sizes = {}
+
+from callbacks import module1
+callback_map_sizes['module1'] = len(app.callback_map)
+print(f"Após importar module1: {callback_map_sizes['module1']} callbacks")
+
+from callbacks import module2
+callback_map_sizes['module2'] = len(app.callback_map)
+print(f"Após importar module2: {callback_map_sizes['module2']} callbacks")
+
+# Verificar se um callback específico está registrado
+output_id = f'{Output("meu-componente", "propriedade").component_id}.{Output("meu-componente", "propriedade").component_property}'
+if output_id in app.callback_map:
+    print(f"Callback para '{output_id}' ENCONTRADO")
+else:
+    print(f"Callback para '{output_id}' NÃO ENCONTRADO")
+\`\`\`
+
+### 2. Verificar importações circulares
+
+As importações circulares são uma causa comum de problemas com callbacks no Dash:
+
+\`\`\`
+app.py -> importa -> callbacks/module.py -> importa -> app.py
+\`\`\`
+
+Para detectar importações circulares:
+
+1. Adicione prints no início e fim de cada arquivo:
+   \`\`\`python
+   print(f">>> Início do arquivo {__name__} <<<")
+   # ... código do arquivo ...
+   print(f">>> Fim do arquivo {__name__} <<<")
+   \`\`\`
+
+2. Observe a ordem dos prints no console. Se você vir algo como:
+   \`\`\`
+   >>> Início do arquivo app <<<
+   >>> Início do arquivo callbacks.module <<<
+   >>> Início do arquivo app <<< (repetido)
+   \`\`\`
+   Isso indica uma importação circular.
+
+### 3. Verificar o tipo do objeto \`app\`
+
+Certifique-se de que o objeto \`app\` usado nos decoradores \`@app.callback\` é realmente uma instância de \`dash.Dash\`:
+
+\`\`\`python
+# No arquivo de callbacks
+try:
+    from app import app
+    print(f"Tipo de app: {type(app)}")
+    if not isinstance(app, dash.Dash):
+        print("ALERTA: app não é uma instância de dash.Dash!")
+except ImportError as e:
+    print(f"Erro ao importar app: {e}")
+\`\`\`
+
+### 4. Verificar o comportamento com e sem reloader
+
+Execute a aplicação com e sem o reloader para isolar o problema:
+
+\`\`\`python
+# Com reloader (debug=True)
+app.run_server(debug=True)
+
+# Sem reloader (debug=False)
+app.run_server(debug=False)
+\`\`\`
+
+## Soluções
+
+### 1. Padrão de Registro Centralizado de Callbacks
+
+Este é o padrão mais robusto para evitar problemas com o reloader:
+
+1. **No arquivo de callbacks (callbacks/module.py)**:
+   \`\`\`python
+   # NÃO importar app diretamente
+   # from app import app  # REMOVER ESTA LINHA
+
+   def register_callbacks(app_instance):
+       """Registra todos os callbacks deste módulo."""
+       @app_instance.callback(
+           Output("componente", "propriedade"),
+           Input("outro-componente", "propriedade")
+       )
+       def meu_callback(valor):
+           # Lógica do callback
+           return valor
+   \`\`\`
+
+2. **No arquivo principal (app.py)**:
+   \`\`\`python
+   # Importar a função de registro, não o módulo inteiro
+   from callbacks.module import register_callbacks
+
+   # Criar a aplicação Dash
+   app = dash.Dash(__name__)
+
+   # Definir o layout
+   app.layout = html.Div([...])
+
+   # Registrar os callbacks APÓS definir o layout
+   register_callbacks(app)
+
+   # Executar o servidor
+   if __name__ == '__main__':
+       app.run_server(debug=True)
+   \`\`\`
+
+### 2. Usar \`dash.callback\` em vez de \`app.callback\`
+
+Em versões mais recentes do Dash, você pode usar \`dash.callback\` para evitar importações circulares:
+
+\`\`\`python
+from dash import callback, Input, Output
+
+@callback(
+    Output("componente", "propriedade"),
+    Input("outro-componente", "propriedade")
+)
+def meu_callback(valor):
+    return valor
+\`\`\`
+
+### 3. Estrutura de Projeto Alternativa
+
+Reorganize seu projeto para evitar importações circulares:
+
+\`\`\`
+projeto/
+  ├── app.py           # Apenas cria a aplicação e executa o servidor
+  ├── layout.py        # Define o layout da aplicação
+  └── callbacks/
+      ├── __init__.py  # Importa e registra todos os callbacks
+      └── module.py    # Define os callbacks
+\`\`\`
+
+## Dicas Adicionais
+
+1. **Limpe o cache do Python**:
+   - Remova os arquivos \`.pyc\` e diretórios \`__pycache__\` antes de testar
+   - \`find . -name "*.pyc" -delete && find . -name "__pycache__" -delete\`
+
+2. **Use \`prevent_initial_call=True\` com cautela**:
+   - Pode mascarar problemas de registro de callbacks
+   - Teste primeiro sem esta opção para garantir que os callbacks estão sendo registrados
+
+3. **Verifique a versão do Dash**:
+   - Algumas versões têm bugs específicos relacionados ao registro de callbacks
+   - Atualize para a versão mais recente se possível
+
+4. **Evite modificar \`app.callback_map\` diretamente**:
+   - Isso pode causar comportamentos inesperados
+   - Use sempre os decoradores \`@app.callback\` ou \`@dash.callback\`
+
+## Exemplo de Diagnóstico Completo
+
+\`\`\`python
+# app.py
+import dash
+from dash import html, dcc
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
+
+# Criar a aplicação
+log.debug("Criando aplicação Dash")
+app = dash.Dash(__name__)
+log.debug(f"Tipo de app: {type(app)}")
+
+# Definir o layout
+log.debug("Definindo layout")
+app.layout = html.Div([
+    html.Button("Clique", id="botao"),
+    html.Div(id="resultado")
+])
+
+# Importar e registrar callbacks
+log.debug("Importando callbacks")
+try:
+    # Método 1: Importação direta (pode causar problemas)
+    # from callbacks import module
+
+    # Método 2: Registro centralizado (recomendado)
+    from callbacks.module import register_callbacks
+    register_callbacks(app)
+    log.debug(f"Callbacks registrados. Total: {len(app.callback_map)}")
+
+    # Verificar se um callback específico está registrado
+    output_id = f'{dash.Output("resultado", "children").component_id}.{dash.Output("resultado", "children").component_property}'
+    if output_id in app.callback_map:
+        log.debug(f"Callback para '{output_id}' ENCONTRADO")
+    else:
+        log.warning(f"Callback para '{output_id}' NÃO ENCONTRADO")
+except Exception as e:
+    log.error(f"Erro ao registrar callbacks: {e}", exc_info=True)
+
+# Executar o servidor
+if __name__ == '__main__':
+    log.debug("Iniciando servidor")
+    app.run_server(debug=True)
+\`\`\`
+
+\`\`\`python
+# callbacks/module.py
+import dash
+from dash import Input, Output
+import logging
+
+log = logging.getLogger(__name__)
+log.debug("Módulo de callbacks carregado")
+
+def register_callbacks(app_instance):
+    """Registra todos os callbacks deste módulo."""
+    log.debug(f"Registrando callbacks com app_instance: {type(app_instance)}")
+
+    @app_instance.callback(
+        Output("resultado", "children"),
+        Input("botao", "n_clicks"),
+        prevent_initial_call=True
+    )
+    def atualizar_resultado(n_clicks):
+        log.debug(f"Callback executado com n_clicks={n_clicks}")
+        if n_clicks:
+            return f"Botão clicado {n_clicks} vezes"
+        return "Clique no botão"
+
+    log.debug("Callbacks registrados com sucesso")
+\`\`\`
+
+## Conclusão
+
+Os problemas com callbacks no Dash geralmente estão relacionados a:
+
+1. **Importações circulares**
+2. **Comportamento do reloader**
+3. **Ordem de definição do layout e registro de callbacks**
+
+Usando o padrão de registro centralizado de callbacks, você pode evitar a maioria desses problemas e criar aplicações Dash mais robustas e fáceis de manter.
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

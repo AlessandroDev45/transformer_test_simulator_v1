@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo de Migração de Estilos - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Exemplo de Migração de Estilos
+
+Este documento apresenta um exemplo prático de como migrar estilos inline para o novo sistema de estilos, sem alterar o layout ou a estrutura dos componentes.
+
+## Exemplo: Card de Resultados
+
+### Antes da Migração
+
+\`\`\`python
+# Código original com estilos inline
+def create_results_card():
+    return dbc.Card([
+        dbc.CardHeader("Resultados", style={
+            "backgroundColor": "#3A3A3A",
+            "color": "#E0E0E0",
+            "padding": "0.4rem 0.5rem",
+            "fontSize": "0.9rem",
+            "fontWeight": "bold",
+            "letterSpacing": "0.03rem",
+            "textTransform": "uppercase",
+            "borderBottom": "1px solid #6E6E6E",
+            "boxShadow": "0 1px 2px rgba(0,0,0,0.1)"
+        }),
+        dbc.CardBody([
+            html.Div([
+                html.Label("Valor:", style={
+                    "fontSize": "0.75rem",
+                    "fontWeight": "500",
+                    "color": "#E0E0E0",
+                    "marginBottom": "0",
+                    "textAlign": "right",
+                    "paddingRight": "5px"
+                }),
+                dbc.Input(
+                    id="result-value",
+                    type="text",
+                    value="",
+                    readonly=True,
+                    style={
+                        "backgroundColor": "#3A3A3A",
+                        "color": "#E0E0E0",
+                        "border": "1px solid #6E6E6E",
+                        "borderRadius": "3px",
+                        "height": "26px",
+                        "padding": "0.15rem 0.3rem",
+                        "fontSize": "0.75rem",
+                        "cursor": "default"
+                    }
+                )
+            ], style={"marginBottom": "0.5rem"}),
+            html.Div([
+                html.Button("Calcular", id="calculate-btn", style={
+                    "backgroundColor": "#26427A",
+                    "color": "white",
+                    "border": "none",
+                    "borderRadius": "3px",
+                    "padding": "0.25rem 0.5rem",
+                    "fontSize": "0.75rem",
+                    "fontWeight": "bold",
+                    "cursor": "pointer"
+                })
+            ], style={"textAlign": "center"})
+        ], style={
+            "backgroundColor": "#595959",
+            "color": "#E0E0E0",
+            "padding": "0.5rem"
+        })
+    ], style={
+        "backgroundColor": "#595959",
+        "borderColor": "#6E6E6E",
+        "borderRadius": "4px",
+        "boxShadow": "0 2px 4px rgba(0,0,0,0.2)",
+        "marginBottom": "0.75rem"
+    })
+\`\`\`
+
+### Após a Migração
+
+\`\`\`python
+# Importações padronizadas
+from utils.style_helpers import (
+    get_card_style, get_card_header_style, get_card_body_style,
+    get_input_style, get_button_style, get_label_style
+)
+from utils.theme_utils import is_light_theme
+
+# Código refatorado usando funções auxiliares
+def create_results_card():
+    # Detecta o tema atual
+    light_theme = is_light_theme()
+
+    return dbc.Card([
+        dbc.CardHeader(
+            "Resultados",
+            style=get_card_header_style(light_theme)
+        ),
+        dbc.CardBody([
+            html.Div([
+                html.Label(
+                    "Valor:",
+                    style=get_label_style(light_theme)
+                ),
+                dbc.Input(
+                    id="result-value",
+                    type="text",
+                    value="",
+                    readonly=True,
+                    style=get_input_style(light_theme, readonly=True)
+                )
+            ], className="mb-2"),
+            html.Div([
+                html.Button(
+                    "Calcular",
+                    id="calculate-btn",
+                    style=get_button_style(light_theme, button_type="primary")
+                )
+            ], className="text-center")
+        ], style=get_card_body_style(light_theme))
+    ], style=get_card_style(light_theme))
+\`\`\`
+
+## Exemplo: Tabela de Resultados
+
+### Antes da Migração
+
+\`\`\`python
+# Código original com estilos inline
+def create_results_table():
+    return html.Table([
+        html.Thead([
+            html.Tr([
+                html.Th("Parâmetro", style={
+                    "backgroundColor": "#808080",
+                    "color": "white",
+                    "textAlign": "center",
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "fontWeight": "bold"
+                }),
+                html.Th("Valor", style={
+                    "backgroundColor": "#808080",
+                    "color": "white",
+                    "textAlign": "center",
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "fontWeight": "bold"
+                })
+            ])
+        ]),
+        html.Tbody([
+            html.Tr([
+                html.Td("Tensão (kV)", style={
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "color": "#E0E0E0"
+                }),
+                html.Td("138", style={
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "color": "#E0E0E0",
+                    "textAlign": "center"
+                })
+            ]),
+            html.Tr([
+                html.Td("Corrente (A)", style={
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "color": "#E0E0E0"
+                }),
+                html.Td("2500", style={
+                    "fontSize": "0.75rem",
+                    "padding": "0.2rem",
+                    "color": "#E0E0E0",
+                    "textAlign": "center",
+                    "backgroundColor": "#5c1c1c"  # Valor acima do limite
+                })
+            ])
+        ])
+    ], style={
+        "width": "100%",
+        "borderCollapse": "collapse",
+        "marginBottom": "1rem"
+    })
+\`\`\`
+
+### Após a Migração
+
+\`\`\`python
+# Importações padronizadas
+from utils.style_helpers import (
+    get_table_header_style, get_table_cell_style, get_conditional_style
+)
+from utils.theme_utils import is_light_theme
+
+# Código refatorado usando funções auxiliares
+def create_results_table():
+    # Detecta o tema atual
+    light_theme = is_light_theme()
+
+    # Valor para comparação condicional
+    current_value = 2500
+    current_threshold = 2000
+
+    return html.Table([
+        html.Thead([
+            html.Tr([
+                html.Th(
+                    "Parâmetro",
+                    style=get_table_header_style(light_theme)
+                ),
+                html.Th(
+                    "Valor",
+                    style=get_table_header_style(light_theme)
+                )
+            ])
+        ]),
+        html.Tbody([
+            html.Tr([
+                html.Td(
+                    "Tensão (kV)",
+                    style=get_table_cell_style(light_theme)
+                ),
+                html.Td(
+                    "138",
+                    style={**get_table_cell_style(light_theme), "textAlign": "center"}
+                )
+            ]),
+            html.Tr([
+                html.Td(
+                    "Corrente (A)",
+                    style=get_table_cell_style(light_theme)
+                ),
+                html.Td(
+                    "2500",
+                    style={
+                        **get_table_cell_style(light_theme),
+                        **get_conditional_style(current_value, current_threshold, "danger", light_theme),
+                        "textAlign": "center"
+                    }
+                )
+            ])
+        ])
+    ], className="app-table")
+\`\`\`
+
+## Exemplo: Formulário de Entrada
+
+### Antes da Migração
+
+\`\`\`python
+# Código original com estilos inline
+def create_input_form():
+    return html.Div([
+        html.Div([
+            html.Label("Tensão (kV):", style={
+                "fontSize": "0.75rem",
+                "fontWeight": "500",
+                "color": "#E0E0E0",
+                "marginBottom": "0",
+                "textAlign": "right",
+                "paddingRight": "5px"
+            }),
+            dbc.Input(
+                id="voltage-input",
+                type="number",
+                value=138,
+                style={
+                    "backgroundColor": "#3A3A3A",
+                    "color": "#E0E0E0",
+                    "border": "1px solid #6E6E6E",
+                    "borderRadius": "3px",
+                    "height": "26px",
+                    "padding": "0.15rem 0.3rem",
+                    "fontSize": "0.75rem"
+                }
+            )
+        ], style={"marginBottom": "0.5rem", "display": "flex", "alignItems": "center"}),
+        html.Div([
+            html.Label("Tipo:", style={
+                "fontSize": "0.75rem",
+                "fontWeight": "500",
+                "color": "#E0E0E0",
+                "marginBottom": "0",
+                "textAlign": "right",
+                "paddingRight": "5px"
+            }),
+            dcc.Dropdown(
+                id="type-dropdown",
+                options=[
+                    {"label": "Tipo A", "value": "A"},
+                    {"label": "Tipo B", "value": "B"}
+                ],
+                value="A",
+                style={
+                    "backgroundColor": "#3A3A3A",
+                    "color": "#E0E0E0",
+                    "border": "1px solid #6E6E6E",
+                    "borderRadius": "3px",
+                    "height": "26px",
+                    "minHeight": "26px",
+                    "fontSize": "0.75rem"
+                }
+            )
+        ], style={"marginBottom": "0.5rem", "display": "flex", "alignItems": "center"})
+    ])
+\`\`\`
+
+### Após a Migração
+
+\`\`\`python
+# Importações padronizadas
+from utils.style_helpers import (
+    get_input_style, get_dropdown_style, get_label_style
+)
+from utils.theme_utils import is_light_theme
+
+# Código refatorado usando funções auxiliares
+def create_input_form():
+    # Detecta o tema atual
+    light_theme = is_light_theme()
+
+    return html.Div([
+        html.Div([
+            html.Label(
+                "Tensão (kV):",
+                style=get_label_style(light_theme)
+            ),
+            dbc.Input(
+                id="voltage-input",
+                type="number",
+                value=138,
+                style=get_input_style(light_theme)
+            )
+        ], className="mb-2 d-flex align-items-center"),
+        html.Div([
+            html.Label(
+                "Tipo:",
+                style=get_label_style(light_theme)
+            ),
+            dcc.Dropdown(
+                id="type-dropdown",
+                options=[
+                    {"label": "Tipo A", "value": "A"},
+                    {"label": "Tipo B", "value": "B"}
+                ],
+                value="A",
+                style=get_dropdown_style(light_theme)
+            )
+        ], className="mb-2 d-flex align-items-center")
+    ])
+\`\`\`
+
+## Observações Importantes
+
+1. **Nenhuma alteração no layout**: A estrutura dos componentes permanece exatamente a mesma.
+2. **Nenhuma alteração no conteúdo**: O texto e os valores permanecem inalterados.
+3. **Nenhuma alteração no comportamento**: Os IDs e as propriedades funcionais permanecem os mesmos.
+4. **Apenas refatoração de estilos**: Apenas os estilos foram migrados para o novo sistema.
+
+## Benefícios da Migração
+
+1. **Consistência visual**: Todos os componentes seguem o mesmo padrão visual.
+2. **Adaptação automática ao tema**: Os componentes se adaptam automaticamente ao tema atual.
+3. **Código mais limpo**: Menos código duplicado e mais fácil de manter.
+4. **Facilidade de manutenção**: Alterações de estilo podem ser feitas em um único lugar.
+`;
+
+        // Function to generate TOC
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+
+            headings.forEach((heading, index) => {
+                // Create an ID for the heading if it doesn't have one
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

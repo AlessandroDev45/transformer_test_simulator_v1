@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhamento dos Cálculos de Curto-Circuito - Documentação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #B9D1EA;
+            --text-color: #f8f9fa;
+            --bg-color: #343a40;
+            --card-bg-color: #495057;
+            --border-color: #6c757d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .content {
+            background-color: var(--card-bg-color);
+            border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6e6e6;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .toc {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .toc a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc .toc-h2 {
+            padding-left: 20px;
+        }
+        .toc .toc-h3 {
+            padding-left: 40px;
+        }
+        .toc .toc-h4 {
+            padding-left: 60px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .home-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <a href="index.html" class="home-link">← Voltar para Índice</a>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar na documentação...">
+                    </div>
+                    <h5>Sumário</h5>
+                    <ul class="toc" id="toc"></ul>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="content">
+                    <div id="markdown-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Markdown content
+        const markdownContent = `# Detalhamento dos Cálculos de Curto-Circuito
+
+Este documento detalha as fórmulas e parâmetros usados nos cálculos de curto-circuito para transformadores.
+
+---
+
+## 1. Parâmetros de Entrada
+
+Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de curto-circuito:
+
+| Parâmetro                     | Descrição                              | Unidade | Variável no Código                   |
+| :---------------------------- | :------------------------------------- | :------ | :--------------------------------- |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | \`tipo_transformador\`               |
+| Potência Nominal              | Potência nominal do transformador      | MVA     | \`potencia_nominal\`                 |
+| Tensão Nominal AT             | Tensão nominal do lado de Alta Tensão  | kV      | \`tensao_at\`                        |
+| Tensão Nominal BT             | Tensão nominal do lado de Baixa Tensão | kV      | \`tensao_bt\`                        |
+| Impedância Percentual         | Impedância de curto-circuito           | %       | \`impedancia_percentual\`            |
+| Potência de Curto-Circuito    | Potência de curto-circuito da rede     | MVA     | \`potencia_cc_rede\`                 |
+| Fator X/R                     | Relação entre reatância e resistência  | -       | \`fator_xr\`                         |
+| Duração do Curto-Circuito     | Tempo de duração do curto-circuito     | s       | \`duracao_cc\`                       |
+
+## 2. Cálculos de Correntes de Curto-Circuito
+
+### 2.1. Corrente Nominal
+
+#### 2.1.1. Para Transformadores Monofásicos
+
+* \`I_nom_at = (S_nom * 1000) / V_at\` (A)
+* \`I_nom_bt = (S_nom * 1000) / V_bt\` (A)
+
+#### 2.1.2. Para Transformadores Trifásicos
+
+* \`I_nom_at = (S_nom * 1000) / (√3 * V_at)\` (A)
+* \`I_nom_bt = (S_nom * 1000) / (√3 * V_bt)\` (A)
+
+Onde:
+* \`I_nom_at\` e \`I_nom_bt\` são as correntes nominais nos lados AT e BT
+* \`S_nom\` é a potência nominal em MVA
+* \`V_at\` e \`V_bt\` são as tensões nominais em kV
+
+### 2.2. Impedância de Curto-Circuito
+
+* \`Z_pu = Z_percentual / 100\`
+* \`Z_ohm_at = Z_pu * (V_at^2 * 1000) / S_nom\` (Ω)
+* \`Z_ohm_bt = Z_pu * (V_bt^2 * 1000) / S_nom\` (Ω)
+
+Onde:
+* \`Z_pu\` é a impedância em p.u.
+* \`Z_ohm_at\` e \`Z_ohm_bt\` são as impedâncias em ohms referidas aos lados AT e BT
+
+### 2.3. Corrente de Curto-Circuito Simétrica
+
+#### 2.3.1. Considerando Apenas o Transformador
+
+* \`I_cc_at = I_nom_at / Z_pu\` (A)
+* \`I_cc_bt = I_nom_bt / Z_pu\` (A)
+
+#### 2.3.2. Considerando a Rede
+
+* \`Z_rede_pu = S_nom / S_cc_rede\`
+* \`Z_total_pu = Z_pu + Z_rede_pu\`
+* \`I_cc_at_rede = I_nom_at / Z_total_pu\` (A)
+* \`I_cc_bt_rede = I_nom_bt / Z_total_pu\` (A)
+
+Onde:
+* \`Z_rede_pu\` é a impedância da rede em p.u.
+* \`S_cc_rede\` é a potência de curto-circuito da rede em MVA
+
+### 2.4. Corrente de Curto-Circuito Assimétrica
+
+* \`I_cc_assim = I_cc_sim * √(1 + 2*e^(-2*π*f*R/X*t))\`
+
+Onde:
+* \`I_cc_assim\` é a corrente de curto-circuito assimétrica
+* \`I_cc_sim\` é a corrente de curto-circuito simétrica
+* \`f\` é a frequência em Hz
+* \`R/X\` é o inverso do fator X/R
+* \`t\` é o tempo em segundos
+
+### 2.5. Corrente de Pico
+
+* \`I_pico = I_cc_sim * √2 * κ\`
+* \`κ = 1.02 + 0.98 * e^(-3*R/X)\`
+
+Onde:
+* \`I_pico\` é a corrente de pico
+* \`κ\` é o fator de assimetria
+
+## 3. Esforços Mecânicos
+
+### 3.1. Força Axial
+
+* \`F_axial = (μ₀ * I₁ * I₂) / (2 * π * r) * L\` (N)
+
+Onde:
+* \`F_axial\` é a força axial em Newtons
+* \`μ₀\` é a permeabilidade do vácuo (4π × 10⁻⁷ H/m)
+* \`I₁\` e \`I₂\` são as correntes nos enrolamentos em Amperes
+* \`r\` é o raio médio entre os enrolamentos em metros
+* \`L\` é o comprimento axial em metros
+
+### 3.2. Força Radial
+
+* \`F_radial = (μ₀ * I₁² * N₁²) / (2 * π * r * h)\` (N/m²)
+
+Onde:
+* \`F_radial\` é a força radial por unidade de área
+* \`N₁\` é o número de espiras
+* \`h\` é a altura do enrolamento
+
+### 3.3. Tensão de Compressão Radial
+
+* \`σ_radial = F_radial * r / t\` (N/m²)
+
+Onde:
+* \`σ_radial\` é a tensão de compressão radial
+* \`t\` é a espessura do enrolamento
+
+### 3.4. Tensão de Tração Circunferencial
+
+* \`σ_circ = F_radial * r\` (N/m²)
+
+Onde:
+* \`σ_circ\` é a tensão de tração circunferencial
+
+## 4. Efeitos Térmicos
+
+### 4.1. Elevação de Temperatura
+
+* \`ΔT = (I_cc / I_nom)² * t / C\` (°C)
+
+Onde:
+* \`ΔT\` é a elevação de temperatura
+* \`I_cc\` é a corrente de curto-circuito
+* \`I_nom\` é a corrente nominal
+* \`t\` é o tempo em segundos
+* \`C\` é a capacidade térmica específica do condutor
+
+### 4.2. Integral de Joule (I²t)
+
+* \`I²t = I_cc² * t\` (A²s)
+
+Onde:
+* \`I²t\` é a integral de Joule
+* \`I_cc\` é a corrente de curto-circuito eficaz
+* \`t\` é o tempo em segundos
+
+### 4.3. Verificação da Capacidade Térmica
+
+* \`I²t ≤ K² * S²\`
+
+Onde:
+* \`K\` é uma constante que depende do material do condutor
+* \`S\` é a seção transversal do condutor em mm²
+
+## 5. Análise de Suportabilidade
+
+### 5.1. Verificação Mecânica
+
+* **Tensão Radial**: \`σ_radial ≤ σ_radial_max\`
+* **Tensão Circunferencial**: \`σ_circ ≤ σ_circ_max\`
+
+Onde:
+* \`σ_radial_max\` e \`σ_circ_max\` são as tensões máximas admissíveis
+
+### 5.2. Verificação Térmica
+
+* **Elevação de Temperatura**: \`ΔT ≤ ΔT_max\`
+* **Integral de Joule**: \`I²t ≤ I²t_max\`
+
+Onde:
+* \`ΔT_max\` é a elevação máxima de temperatura admissível
+* \`I²t_max\` é a integral de Joule máxima admissível
+
+## 6. Recomendações para Projeto
+
+### 6.1. Margens de Segurança
+
+* **Corrente de Curto-Circuito**: Considerar 10-20% acima do calculado
+* **Esforços Mecânicos**: Aplicar fator de segurança de 1.5-2.0
+* **Efeitos Térmicos**: Considerar tempo de atuação da proteção com margem
+
+### 6.2. Considerações Especiais
+
+* **Envelhecimento**: Considerar redução da capacidade mecânica e térmica com o envelhecimento
+* **Múltiplos Curtos-Circuitos**: Considerar o efeito cumulativo de múltiplos eventos
+* **Assimetria**: Considerar o efeito da componente DC na corrente de curto-circuito
+
+---
+
+## Notas Importantes
+
+1. Os valores de impedância percentual são geralmente fornecidos pelo fabricante ou determinados por ensaios.
+2. A potência de curto-circuito da rede deve ser obtida junto à concessionária de energia.
+3. O fator X/R pode variar significativamente dependendo do projeto do transformador e da rede.
+4. A duração do curto-circuito depende do tempo de atuação das proteções.
+
+## 7. Inputs, Tipos e Callbacks
+
+### 7.1. Inputs e Tipos
+
+#### 7.1.1. Parâmetros de Impedância
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| impedance-before | number | Impedância pré-ensaio em % |
+| impedance-after | number | Impedância pós-ensaio em % |
+| peak-factor | number | Fator de pico (k√2) |
+
+#### 7.1.2. Parâmetros de Configuração
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| isc-side | dropdown | Lado para cálculo (AT/BT/TERCIARIO) |
+| power-category | dropdown | Categoria de potência (I/II/III) |
+
+#### 7.1.3. Resultados
+
+| ID do Componente | Tipo | Descrição |
+|------------------|------|-----------|
+| isc-sym-result | number | Corrente de curto-circuito simétrica em kA |
+| isc-peak-result | number | Corrente de curto-circuito de pico em kA |
+| delta-impedance-result | number | Variação de impedância em % |
+| impedance-check-status | div | Status da verificação (APROVADO/REPROVADO) |
+| impedance-variation-graph | graph | Gráfico de variação de impedância |
+
+### 7.2. Callbacks Principais
+
+#### 7.2.1. Callbacks de Inicialização e Armazenamento
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| update_short_circuit_page_info_panel | Atualiza painel de informações | Copia o conteúdo do painel global para o painel específico da página |
+| short_circuit_load_data | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
+
+#### 7.2.2. Callbacks de Cálculo
+
+| Callback | Função | Descrição |
+|----------|--------|-----------|
+| short_circuit_calculate_and_verify | Calcula e verifica | Executa os cálculos de curto-circuito, verifica a conformidade e atualiza o store |
+`;
+
+        // Function to generate TOC and add IDs to headings in the actual document
+        function generateTOC(html) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const toc = document.getElementById('toc');
+            toc.innerHTML = ''; // Clear existing TOC
+
+            // First pass: assign IDs to headings in our temporary container
+            headings.forEach((heading, index) => {
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+
+                heading.id = slug || `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName.substring(1));
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-h${level}`;
+
+                const link = document.createElement('a');
+                link.href = `#${heading.id}`;
+                link.textContent = heading.textContent;
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+                    }
+                });
+
+                tocItem.appendChild(link);
+                toc.appendChild(tocItem);
+            });
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerms(content, term) {
+            if (!term) return content;
+
+            const regex = new RegExp(`(${term})`, 'gi');
+            return content.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Function to render markdown
+        function renderMarkdown() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            let content = markdownContent;
+
+            // Configure marked to add IDs to headings
+            marked.use({
+                headerIds: true,
+                headerPrefix: ''
+            });
+
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+
+            // Apply search highlighting if there's a search term
+            const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
+
+            // Update content
+            document.getElementById('markdown-content').innerHTML = finalHTML;
+
+            // Generate TOC and ensure IDs are properly set
+            generateTOC(finalHTML);
+
+            // Initialize syntax highlighting
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+
+            // Render math expressions
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setTimeout(() => {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100); // Small delay to ensure rendering is complete
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
+
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

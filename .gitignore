@@ -1,0 +1,60 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Log files
+logs/
+*.log
+
+# Usage count
+usage_count.txt
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+test_env/
+.env*
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Builds Front-end (se usa Dash + Webpack)
+assets/bundle/
+assets/*.map
+
+# Dados temporários e dumps
+*.sqlite3
+*.db
+data/*.db
+data/mcp_state/backups/
+
+# Dados temporários de simulação
+front-resistor-data/
+tail-resistor-data/
+calculated-inductance/
+simulation-status/
+
+# Artefatos de diagnóstico
+callback_report.html
+analyze_callbacks*.py
+
+# Relatórios de cobertura
+htmlcov/
+.coverage
