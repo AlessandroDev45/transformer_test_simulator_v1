@@ -535,16 +535,22 @@ def losses_handle_perdas_vazio(
             )
 
             # H110-27 Steel
-            fator_perdas_H110_27 = (
+            # Aplicar fator construtivo (BF - Build Factor) de 1.15 para perdas e 1.2 para potência magnética
+            # Isso compensa perdas nas bordas por perder propriedade em função do corte e distribuição de fluxo nas quinas
+            fator_perdas_H110_27_base = (
                 df_perdas_nucleo_H110_27.loc[lookup_key, "perdas_nucleo"]
                 if lookup_key in df_perdas_nucleo_H110_27.index
                 else None
             )
-            fator_potencia_mag_H110_27 = (
+            fator_potencia_mag_H110_27_base = (
                 df_potencia_magnet_H110_27.loc[lookup_key, "potencia_magnet"]
                 if lookup_key in df_potencia_magnet_H110_27.index
                 else None
             )
+
+            # Aplicar fatores construtivos
+            fator_perdas_H110_27 = fator_perdas_H110_27_base * 1.15 if fator_perdas_H110_27_base is not None else None
+            fator_potencia_mag_H110_27 = fator_potencia_mag_H110_27_base * 1.2 if fator_potencia_mag_H110_27_base is not None else None
 
             # More specific error if lookup worked but value is missing/None for M4 steel
             if fator_perdas is None or fator_potencia_mag is None:
@@ -600,13 +606,12 @@ def losses_handle_perdas_vazio(
         # H110-27 Steel
         peso_nucleo_calc_h110_27 = perdas_vazio / fator_perdas_H110_27 if h110_27_valid and fator_perdas_H110_27 > epsilon else 0
         # Convert VA/kg to kVAR for the entire core
-        # The comment in constants.py says "Usando Ss (VA/kg) como VAR/kg", but the values are ~1000x higher
-        # than M4 steel data, suggesting they might actually be in mVA/kg (milliVA/kg), so we need to:
+        # The values in potencia_magnet_data_H110_27 are now in VA/kg, so we need to:
         # 1. Multiply by peso_nucleo_calc_h110_27 in tons
         # 2. Multiply by 1000 to convert tons to kg
-        # 3. Divide by 1000 to convert mVA to VA
-        # 4. Divide by 1000 to convert VA to kVA (or VAR to kVAR)
-        potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 1000) / 1000000 if h110_27_valid else 0  # kVAR
+        # 3. Divide by 1000 to convert VA to kVA (or VAR to kVAR)
+        # Total: Divide by 1,000 to convert (VA/kg * kg) to kVA
+        potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 1000) / 1000 if h110_27_valid else 0  # kVAR
         corrente_excitacao_calc_h110_27 = (
             potencia_mag_h110_27 / (tensao_bt_kv * sqrt_3) if h110_27_valid and (tensao_bt_kv * sqrt_3) > epsilon else 0
         )  # A
@@ -702,7 +707,7 @@ def losses_handle_perdas_vazio(
             "Potência de Ensaio (1.2 pu) (kVA)": tensao_teste_1_2_kv * corrente_excitacao_1_2_calc_m4 * sqrt_3 if m4_valid else 0,
         }
 
-        # H110-27 Steel Results
+        # H110-27 Steel Results (com fatores construtivos aplicados: 1.15 para perdas e 1.2 para potência magnética)
         resultados_aco_h110_27 = {
             "Perdas em Vazio (kW)": perdas_vazio,
             "Tensão nominal teste 1.0 pu (kV)": tensao_bt_kv,
@@ -716,6 +721,10 @@ def losses_handle_perdas_vazio(
             "Potência Mag. (kVAR)": potencia_mag_h110_27,
             "Fator de perdas Mag. (VAR/kg)": fator_potencia_mag_H110_27,
             "Fator de perdas (W/kg)": fator_perdas_H110_27,
+            "Fator de perdas base (W/kg)": fator_perdas_H110_27_base,
+            "Fator de perdas Mag. base (VAR/kg)": fator_potencia_mag_H110_27_base,
+            "Build Factor perdas": 1.15,
+            "Build Factor potência mag.": 1.2,
             "Peso do núcleo Calculado(Ton)": peso_nucleo_calc_h110_27,
             "Potência de Ensaio (1 pu) (kVA)": tensao_bt_kv * corrente_excitacao_calc_h110_27 * sqrt_3 if h110_27_valid else 0,
             "Potência de Ensaio (1.1 pu) (kVA)": tensao_teste_1_1_kv * corrente_excitacao_1_1_calc_h110_27 * sqrt_3 if h110_27_valid else 0,
@@ -827,6 +836,15 @@ def losses_handle_perdas_vazio(
                 "Peso do núcleo Calculado(Ton)",
                 "Corrente de excitação percentual (%)",
             ]
+
+            # Adicionar parâmetros de Build Factor apenas se H110-27 estiver disponível
+            if res_h110_27 is not None and "Build Factor perdas" in res_h110_27:
+                params.extend([
+                    "Fator de perdas base (W/kg)",
+                    "Fator de perdas Mag. base (VAR/kg)",
+                    "Build Factor perdas",
+                    "Build Factor potência mag.",
+                ])
 
             # Determine if we should show H110-27 column
             show_h110_27 = res_h110_27 is not None and h110_27_valid

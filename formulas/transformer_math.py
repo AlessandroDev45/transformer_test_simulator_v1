@@ -7,11 +7,11 @@ import logging
 
 import numpy as np
 
+# Importar constantes definidas centralmente
+from utils.constants import DEFAULT_FREQUENCY
+
 # Configuração de logging
 log = logging.getLogger(__name__)
-
-# Constantes
-DEFAULT_FREQUENCY = 60  # Hz
 
 
 def calculate_transformer_inductance(

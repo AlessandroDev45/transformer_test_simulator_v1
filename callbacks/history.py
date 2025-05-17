@@ -7,6 +7,8 @@ from dash.exceptions import PreventUpdate
 from app import app # Importar instância do app
 from utils.db_manager import get_all_test_sessions # get_all_test_sessions ainda é útil para a lista
 from layouts import COLORS # Para estilos de botões na tabela, se necessário
+# Importar STORE_IDS do módulo app_core.transformer_mcp
+from app_core.transformer_mcp import STORE_IDS
 
 log = logging.getLogger(__name__)
 
@@ -303,8 +305,7 @@ def register_history_callbacks(app_instance):
             log.error(f"[HISTORY UI LOAD] Erro ao ler sessão ID {session_id_to_load} do DB: {e}", exc_info=True)
             return no_update, dbc.Alert(f"Erro ao carregar sessão do banco: {str(e)}", color="danger", duration=5000)
 
-    # Importar STORE_IDS diretamente do módulo app_core.transformer_mcp
-    from app_core.transformer_mcp import STORE_IDS
+    # STORE_IDS já importado no início do arquivo
 
     @app_instance.callback(
         [Output(store_id, "data", allow_duplicate=True) for store_id in STORE_IDS] +
