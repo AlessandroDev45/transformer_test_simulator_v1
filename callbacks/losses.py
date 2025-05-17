@@ -39,6 +39,8 @@ from utils.constants import (
     SUT_BT_VOLTAGE,
     perdas_nucleo_data,
     potencia_magnet_data,
+    perdas_nucleo_data_H110_27,
+    potencia_magnet_data_H110_27,
 )
 
 # Importar funções de utilidade para stores
@@ -55,12 +57,15 @@ log = logging.getLogger(__name__)
 # Data Definitions (No-Load Losses)
 potencia_magnet = potencia_magnet_data
 perdas_nucleo = perdas_nucleo_data
+potencia_magnet_H110_27 = potencia_magnet_data_H110_27
+perdas_nucleo_H110_27 = perdas_nucleo_data_H110_27
 
 # Tolerance for floating point comparisons
 epsilon = 1e-6
 
 # DataFrame Creation (No-Load Losses)
 try:
+    # Aço M4 (padrão)
     df_potencia_magnet = pd.DataFrame(
         list(potencia_magnet.items()), columns=["key", "potencia_magnet"]
     )
@@ -76,9 +81,27 @@ try:
     )
     df_perdas_nucleo.drop("key", axis=1, inplace=True)
     df_perdas_nucleo.set_index(["inducao_nominal", "frequencia_nominal"], inplace=True)
+
+    # Aço H110-27
+    df_potencia_magnet_H110_27 = pd.DataFrame(
+        list(potencia_magnet_H110_27.items()), columns=["key", "potencia_magnet"]
+    )
+    df_potencia_magnet_H110_27[["inducao_nominal", "frequencia_nominal"]] = pd.DataFrame(
+        df_potencia_magnet_H110_27["key"].tolist(), index=df_potencia_magnet_H110_27.index
+    )
+    df_potencia_magnet_H110_27.drop("key", axis=1, inplace=True)
+    df_potencia_magnet_H110_27.set_index(["inducao_nominal", "frequencia_nominal"], inplace=True)
+
+    df_perdas_nucleo_H110_27 = pd.DataFrame(list(perdas_nucleo_H110_27.items()), columns=["key", "perdas_nucleo"])
+    df_perdas_nucleo_H110_27[["inducao_nominal", "frequencia_nominal"]] = pd.DataFrame(
+        df_perdas_nucleo_H110_27["key"].tolist(), index=df_perdas_nucleo_H110_27.index
+    )
+    df_perdas_nucleo_H110_27.drop("key", axis=1, inplace=True)
+    df_perdas_nucleo_H110_27.set_index(["inducao_nominal", "frequencia_nominal"], inplace=True)
 except Exception as e:
     log.error(f"Erro criando DataFrames: {e}")
     df_potencia_magnet, df_perdas_nucleo = pd.DataFrame(), pd.DataFrame()
+    df_potencia_magnet_H110_27, df_perdas_nucleo_H110_27 = pd.DataFrame(), pd.DataFrame()
 
 
 # Helpers
@@ -499,7 +522,7 @@ def losses_handle_perdas_vazio(
         # --- Factor Lookup ---
         lookup_key = (inducao_arredondada, frequencia_arredondada)
         try:
-            # Use .get with a default to handle potential missing keys more gracefully
+            # M4 Steel - Use .get with a default to handle potential missing keys more gracefully
             fator_perdas = (
                 df_perdas_nucleo.loc[lookup_key, "perdas_nucleo"]
                 if lookup_key in df_perdas_nucleo.index
@@ -510,12 +533,35 @@ def losses_handle_perdas_vazio(
                 if lookup_key in df_potencia_magnet.index
                 else None
             )
-            # More specific error if lookup worked but value is missing/None
+
+            # H110-27 Steel
+            fator_perdas_H110_27 = (
+                df_perdas_nucleo_H110_27.loc[lookup_key, "perdas_nucleo"]
+                if lookup_key in df_perdas_nucleo_H110_27.index
+                else None
+            )
+            fator_potencia_mag_H110_27 = (
+                df_potencia_magnet_H110_27.loc[lookup_key, "potencia_magnet"]
+                if lookup_key in df_potencia_magnet_H110_27.index
+                else None
+            )
+
+            # More specific error if lookup worked but value is missing/None for M4 steel
             if fator_perdas is None or fator_potencia_mag is None:
-                raise KeyError(f"Valor não encontrado para {lookup_key} em um dos DataFrames.")
+                log.warning(f"Valor não encontrado para Aço M4 com {lookup_key} em um dos DataFrames.")
+
+            # Check if H110-27 data is available
+            if fator_perdas_H110_27 is None or fator_potencia_mag_H110_27 is None:
+                log.warning(f"Valor não encontrado para Aço H110-27 com {lookup_key} em um dos DataFrames.")
+
+            # If neither steel has data, raise error
+            if ((fator_perdas is None or fator_potencia_mag is None) and
+                (fator_perdas_H110_27 is None or fator_potencia_mag_H110_27 is None)):
+                raise KeyError(f"Valor não encontrado para {lookup_key} em nenhum dos aços.")
+
         except KeyError:
             error_div = html.Div(
-                f"Fatores de perdas/potência não encontrados para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz.",
+                f"Fatores de perdas/potência não encontrados para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz em nenhum dos aços.",
                 style=ERROR_STYLE,
             )
             return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
@@ -524,36 +570,72 @@ def losses_handle_perdas_vazio(
             error_div = html.Div(f"Erro ao buscar fatores: {e}", style=ERROR_STYLE)
             return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
 
-        if (
-            fator_perdas is None
-            or fator_perdas <= epsilon
-            or fator_potencia_mag is None
-            or fator_potencia_mag <= epsilon
-        ):
+        # Check if at least one steel has valid data
+        m4_valid = (fator_perdas is not None and fator_perdas > epsilon and
+                   fator_potencia_mag is not None and fator_potencia_mag > epsilon)
+
+        h110_27_valid = (fator_perdas_H110_27 is not None and fator_perdas_H110_27 > epsilon and
+                         fator_potencia_mag_H110_27 is not None and fator_potencia_mag_H110_27 > epsilon)
+
+        if not m4_valid and not h110_27_valid:
             error_div = html.Div(
-                f"Fatores de perdas/potência inválidos ({fator_perdas=}, {fator_potencia_mag=}) para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz.",
+                f"Fatores de perdas/potência inválidos para Indução {inducao_arredondada}T @ {frequencia_arredondada}Hz em ambos os aços.",
                 style=ERROR_STYLE,
             )
             return error_div, initial_dut_volt, initial_sut, initial_legend_obs, no_update
 
         # --- Core & Excitation Calculations ---
-        peso_nucleo_calc = perdas_vazio / fator_perdas if fator_perdas > epsilon else 0
-        potencia_mag = fator_potencia_mag * peso_nucleo_calc  # kVAR
-        corrente_excitacao_calc = (
-            potencia_mag / (tensao_bt_kv * sqrt_3) if (tensao_bt_kv * sqrt_3) > epsilon else 0
+        # M4 Steel
+        peso_nucleo_calc_m4 = perdas_vazio / fator_perdas if m4_valid and fator_perdas > epsilon else 0
+        potencia_mag_m4 = fator_potencia_mag * peso_nucleo_calc_m4 if m4_valid else 0  # kVAR
+        corrente_excitacao_calc_m4 = (
+            potencia_mag_m4 / (tensao_bt_kv * sqrt_3) if m4_valid and (tensao_bt_kv * sqrt_3) > epsilon else 0
         )  # A
-        corrente_excitacao_percentual_calc = (
-            (corrente_excitacao_calc / corrente_nominal_bt) * 100
-            if corrente_nominal_bt > epsilon
+        corrente_excitacao_percentual_calc_m4 = (
+            (corrente_excitacao_calc_m4 / corrente_nominal_bt) * 100
+            if m4_valid and corrente_nominal_bt > epsilon
             else 0
         )
+
+        # H110-27 Steel
+        peso_nucleo_calc_h110_27 = perdas_vazio / fator_perdas_H110_27 if h110_27_valid and fator_perdas_H110_27 > epsilon else 0
+        # Convert VA/kg to kVAR for the entire core
+        # The comment in constants.py says "Usando Ss (VA/kg) como VAR/kg", but the values are ~1000x higher
+        # than M4 steel data, suggesting they might actually be in mVA/kg (milliVA/kg), so we need to:
+        # 1. Multiply by peso_nucleo_calc_h110_27 in tons
+        # 2. Multiply by 1000 to convert tons to kg
+        # 3. Divide by 1000 to convert mVA to VA
+        # 4. Divide by 1000 to convert VA to kVA (or VAR to kVAR)
+        potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 1000) / 1000000 if h110_27_valid else 0  # kVAR
+        corrente_excitacao_calc_h110_27 = (
+            potencia_mag_h110_27 / (tensao_bt_kv * sqrt_3) if h110_27_valid and (tensao_bt_kv * sqrt_3) > epsilon else 0
+        )  # A
+        corrente_excitacao_percentual_calc_h110_27 = (
+            (corrente_excitacao_calc_h110_27 / corrente_nominal_bt) * 100
+            if h110_27_valid and corrente_nominal_bt > epsilon
+            else 0
+        )
+
+        # For backward compatibility, use M4 values as default
+        peso_nucleo_calc = peso_nucleo_calc_m4
+        potencia_mag = potencia_mag_m4
+        corrente_excitacao_calc = corrente_excitacao_calc_m4
+        corrente_excitacao_percentual_calc = corrente_excitacao_percentual_calc_m4
 
         tensao_teste_1_1_kv = tensao_bt_kv * 1.1
         tensao_teste_1_2_kv = tensao_bt_kv * 1.2
 
         # Calculated 1.1pu / 1.2pu currents (based on M4 assumption)
-        corrente_excitacao_1_1_calc = 2 * corrente_excitacao_calc
-        corrente_excitacao_1_2_calc = 4 * corrente_excitacao_calc
+        corrente_excitacao_1_1_calc_m4 = 2 * corrente_excitacao_calc_m4 if m4_valid else 0
+        corrente_excitacao_1_2_calc_m4 = 4 * corrente_excitacao_calc_m4 if m4_valid else 0
+
+        # Calculated 1.1pu / 1.2pu currents (based on H110-27 assumption)
+        corrente_excitacao_1_1_calc_h110_27 = 2 * corrente_excitacao_calc_h110_27 if h110_27_valid else 0
+        corrente_excitacao_1_2_calc_h110_27 = 4 * corrente_excitacao_calc_h110_27 if h110_27_valid else 0
+
+        # For backward compatibility, use M4 values as default
+        corrente_excitacao_1_1_calc = corrente_excitacao_1_1_calc_m4
+        corrente_excitacao_1_2_calc = corrente_excitacao_1_2_calc_m4
 
         # Project currents (from % input)
         corrente_excitacao_projeto = corrente_nominal_bt * (corrente_excitacao_percentual / 100.0)
@@ -600,23 +682,44 @@ def losses_handle_perdas_vazio(
         )  # VAR/kg
 
         # --- Result Dictionaries ---
+        # M4 Steel Results
         resultados_aco_m4 = {
             "Perdas em Vazio (kW)": perdas_vazio,
             "Tensão nominal teste 1.0 pu (kV)": tensao_bt_kv,
-            "Corrente de excitação calculada (A)": corrente_excitacao_calc,
-            "Corrente de excitação percentual (%)": corrente_excitacao_percentual_calc,
+            "Corrente de excitação calculada (A)": corrente_excitacao_calc_m4,
+            "Corrente de excitação percentual (%)": corrente_excitacao_percentual_calc_m4,
             "Tensão de teste 1.1 pu (kV)": tensao_teste_1_1_kv,
             "Tensão de teste 1.2 pu (kV)": tensao_teste_1_2_kv,
-            "Corrente de excitação 1.1 pu (A)": corrente_excitacao_1_1_calc,
-            "Corrente de excitação 1.2 pu (A)": corrente_excitacao_1_2_calc,
+            "Corrente de excitação 1.1 pu (A)": corrente_excitacao_1_1_calc_m4,
+            "Corrente de excitação 1.2 pu (A)": corrente_excitacao_1_2_calc_m4,
             "Frequência (Hz)": frequencia,
-            "Potência Mag. (kVAR)": potencia_mag,
+            "Potência Mag. (kVAR)": potencia_mag_m4,
             "Fator de perdas Mag. (VAR/kg)": fator_potencia_mag,
             "Fator de perdas (W/kg)": fator_perdas,  # Assuming input fator_perdas is W/kg
-            "Peso do núcleo Calculado(Ton)": peso_nucleo_calc,
-            "Potência de Ensaio (1 pu) (kVA)": potencia_ensaio_1pu_calc_kva,
-            "Potência de Ensaio (1.1 pu) (kVA)": potencia_ensaio_1_1pu_calc_kva,
-            "Potência de Ensaio (1.2 pu) (kVA)": potencia_ensaio_1_2pu_calc_kva,
+            "Peso do núcleo Calculado(Ton)": peso_nucleo_calc_m4,
+            "Potência de Ensaio (1 pu) (kVA)": tensao_bt_kv * corrente_excitacao_calc_m4 * sqrt_3 if m4_valid else 0,
+            "Potência de Ensaio (1.1 pu) (kVA)": tensao_teste_1_1_kv * corrente_excitacao_1_1_calc_m4 * sqrt_3 if m4_valid else 0,
+            "Potência de Ensaio (1.2 pu) (kVA)": tensao_teste_1_2_kv * corrente_excitacao_1_2_calc_m4 * sqrt_3 if m4_valid else 0,
+        }
+
+        # H110-27 Steel Results
+        resultados_aco_h110_27 = {
+            "Perdas em Vazio (kW)": perdas_vazio,
+            "Tensão nominal teste 1.0 pu (kV)": tensao_bt_kv,
+            "Corrente de excitação calculada (A)": corrente_excitacao_calc_h110_27,
+            "Corrente de excitação percentual (%)": corrente_excitacao_percentual_calc_h110_27,
+            "Tensão de teste 1.1 pu (kV)": tensao_teste_1_1_kv,
+            "Tensão de teste 1.2 pu (kV)": tensao_teste_1_2_kv,
+            "Corrente de excitação 1.1 pu (A)": corrente_excitacao_1_1_calc_h110_27,
+            "Corrente de excitação 1.2 pu (A)": corrente_excitacao_1_2_calc_h110_27,
+            "Frequência (Hz)": frequencia,
+            "Potência Mag. (kVAR)": potencia_mag_h110_27,
+            "Fator de perdas Mag. (VAR/kg)": fator_potencia_mag_H110_27,
+            "Fator de perdas (W/kg)": fator_perdas_H110_27,
+            "Peso do núcleo Calculado(Ton)": peso_nucleo_calc_h110_27,
+            "Potência de Ensaio (1 pu) (kVA)": tensao_bt_kv * corrente_excitacao_calc_h110_27 * sqrt_3 if h110_27_valid else 0,
+            "Potência de Ensaio (1.1 pu) (kVA)": tensao_teste_1_1_kv * corrente_excitacao_1_1_calc_h110_27 * sqrt_3 if h110_27_valid else 0,
+            "Potência de Ensaio (1.2 pu) (kVA)": tensao_teste_1_2_kv * corrente_excitacao_1_2_calc_h110_27 * sqrt_3 if h110_27_valid else 0,
         }
         resultados_projeto = {
             "Perdas em Vazio (kW)": perdas_vazio,
@@ -712,7 +815,7 @@ def losses_handle_perdas_vazio(
             sut_analysis_data[pu_level] = {"status": "OK", "taps_info": taps_info_list}
 
         # --- Layout Helper Functions (Vazio - Unchanged) ---
-        def create_general_parameters_table(res_proj, res_m4):
+        def create_general_parameters_table(res_proj, res_m4, res_h110_27=None):
             """Creates the general parameters comparison table."""
             params = [
                 "Tensão nominal teste 1.0 pu (kV)",
@@ -723,35 +826,36 @@ def losses_handle_perdas_vazio(
                 "Fator de perdas (W/kg)",
                 "Peso do núcleo Calculado(Ton)",
                 "Corrente de excitação percentual (%)",
-            ]  # M4 Only
-            header = html.Thead(
-                html.Tr(
-                    [
-                        html.Th(
-                            "Parâmetro",
-                            style={**TABLE_HEADER_STYLE_SM, "width": "50%", "textAlign": "left"},
-                        ),
-                        html.Th("Valor (Projeto)", style={**TABLE_HEADER_STYLE_SM, "width": "25%"}),
-                        html.Th("Valor (Aço M4)", style={**TABLE_HEADER_STYLE_SM, "width": "25%"}),
-                    ]
-                )
-            )
+            ]
+
+            # Determine if we should show H110-27 column
+            show_h110_27 = res_h110_27 is not None and h110_27_valid
+
+            header_cells = [
+                html.Th(
+                    "Parâmetro",
+                    style={**TABLE_HEADER_STYLE_SM, "width": "40%" if show_h110_27 else "50%", "textAlign": "left"},
+                ),
+                html.Th("Valor (Projeto)", style={**TABLE_HEADER_STYLE_SM, "width": "20%" if show_h110_27 else "25%"}),
+                html.Th("Valor (Aço M4)", style={**TABLE_HEADER_STYLE_SM, "width": "20%" if show_h110_27 else "25%"}),
+            ]
+
+            if show_h110_27:
+                header_cells.append(html.Th("Valor (Aço H110-27)", style={**TABLE_HEADER_STYLE_SM, "width": "20%"}))
+
+            header = html.Thead(html.Tr(header_cells))
+
             rows = []
             for param in params:
                 proj_val = res_proj.get(param)
                 m4_val = res_m4.get(param)
-                # Use specific formatting for better readability
+                h110_27_val = res_h110_27.get(param) if show_h110_27 else None
+
+                # Use two decimal places for all results in "Perdas em Vazio"
                 prec = 2
-                if "Tensão" in param:
-                    prec = 1
-                if "Corrente" in param:
-                    prec = 1
+                # Only keep special formatting for frequency
                 if "Frequência" in param:
                     prec = 0
-                if "Peso" in param:
-                    prec = 3
-                if "Fator" in param:
-                    prec = 2
 
                 disp_proj = (
                     f"{proj_val:.{prec}f}"
@@ -767,33 +871,39 @@ def losses_handle_perdas_vazio(
                     if m4_val is not None
                     else "-"
                 )
+                disp_h110_27 = (
+                    f"{h110_27_val:.{prec}f}"
+                    if isinstance(h110_27_val, (int, float))
+                    else str(h110_27_val)
+                    if h110_27_val is not None
+                    else "-"
+                )
 
                 # Adjust display for specific params
                 if param in ["Corrente Nominal BT (A)"]:
                     disp_m4 = "-"
+                    disp_h110_27 = "-"
                 if param == "Peso do núcleo Calculado(Ton)":
                     disp_proj = "-"
                 if param == "Corrente de excitação percentual (%)":
                     proj_input_perc = corrente_excitacao_percentual  # Use the original input value
                     disp_proj = f"{proj_input_perc:.2f}" if proj_input_perc is not None else "-"
 
-                rows.append(
-                    html.Tr(
-                        [
-                            html.Td(param, style=TABLE_PARAM_STYLE_SM),
-                            html.Td(
-                                disp_proj, style=TABLE_VALUE_STYLE_SM, className="table-value-cell"
-                            ),
-                            html.Td(
-                                disp_m4, style=TABLE_VALUE_STYLE_SM, className="table-value-cell"
-                            ),
-                        ]
-                    )
-                )
+                row_cells = [
+                    html.Td(param, style=TABLE_PARAM_STYLE_SM),
+                    html.Td(disp_proj, style=TABLE_VALUE_STYLE_SM, className="table-value-cell"),
+                    html.Td(disp_m4, style=TABLE_VALUE_STYLE_SM, className="table-value-cell"),
+                ]
+
+                if show_h110_27:
+                    row_cells.append(html.Td(disp_h110_27, style=TABLE_VALUE_STYLE_SM, className="table-value-cell"))
+
+                rows.append(html.Tr(row_cells))
+
             body = html.Tbody(rows)
             return dbc.Table([header, body], bordered=True, hover=True, striped=True, size="sm")
 
-        def create_voltage_level_table(res_proj, res_m4):
+        def create_voltage_level_table(res_proj, res_m4, res_h110_27=None):
             """Creates the voltage level comparison table."""
             color_red_style = {
                 "backgroundColor": CONFIG_COLORS["danger_bg"],
@@ -804,6 +914,9 @@ def losses_handle_perdas_vazio(
                 **TABLE_HEADER_STYLE_MD,
                 "borderBottom": f"2px solid {COLORS['border']}",
             }
+
+            # Determine if we should show H110-27 row
+            show_h110_27 = res_h110_27 is not None and h110_27_valid
 
             header = html.Thead(
                 html.Tr(
@@ -883,10 +996,32 @@ def losses_handle_perdas_vazio(
                     "1.2 pu": "Potência de Ensaio (1.2 pu) (kVA)",
                 },
             }
+            # Define keys for H110-27 steel
+            keys_h110_27 = {
+                "Tensão de teste (kV)": {
+                    "1.0 pu": "Tensão nominal teste 1.0 pu (kV)",
+                    "1.1 pu": "Tensão de teste 1.1 pu (kV)",
+                    "1.2 pu": "Tensão de teste 1.2 pu (kV)",
+                },
+                "Corrente de excitação (A)": {
+                    "1.0 pu": "Corrente de excitação calculada (A)",
+                    "1.1 pu": "Corrente de excitação 1.1 pu (A)",
+                    "1.2 pu": "Corrente de excitação 1.2 pu (A)",
+                },
+                "Potência de Ensaio (kVA)": {
+                    "1.0 pu": "Potência de Ensaio (1 pu) (kVA)",
+                    "1.1 pu": "Potência de Ensaio (1.1 pu) (kVA)",
+                    "1.2 pu": "Potência de Ensaio (1.2 pu) (kVA)",
+                },
+            }
             exceeded_values = {
                 "projeto": {"1.0 pu": False, "1.1 pu": False, "1.2 pu": False},
                 "aco_m4": {"1.0 pu": False, "1.1 pu": False, "1.2 pu": False},
             }
+
+            # Add H110-27 to exceeded_values if it's being shown
+            if show_h110_27:
+                exceeded_values["aco_h110_27"] = {"1.0 pu": False, "1.1 pu": False, "1.2 pu": False}
 
             param_style = {
                 **TABLE_PARAM_STYLE_MD,
@@ -920,17 +1055,18 @@ def losses_handle_perdas_vazio(
 
             rows = []
             for param_idx, param in enumerate(params):
+                # Determine row span based on whether H110-27 is shown
+                row_span = 3 if show_h110_27 else 2
+
                 # Project Row
                 proj_cells = [
-                    html.Td(param, rowSpan=2, style=param_style),
+                    html.Td(param, rowSpan=row_span, style=param_style),
                     html.Td("Projeto", style=origin_style),
                 ]
                 for i, pu in enumerate(["1.0 pu", "1.1 pu", "1.2 pu"]):
                     key = keys_proj.get(param, {}).get(pu)
                     value = res_proj.get(key)
-                    prec = (
-                        1 if "Tensão" in param else 1 if "Corrente" in param else 0
-                    )  # kVA integer
+                    prec = 2  # Use two decimal places for all results in "Perdas em Vazio"
                     display = f"{value:.{prec}f}" if isinstance(value, (int, float)) else "-"
 
                     # Calcular percentual em relação à corrente nominal de BT para "Corrente de excitação (A)"
@@ -958,9 +1094,7 @@ def losses_handle_perdas_vazio(
                 for i, pu in enumerate(["1.0 pu", "1.1 pu", "1.2 pu"]):
                     key = keys_m4.get(param, {}).get(pu)
                     value = res_m4.get(key)
-                    prec = (
-                        1 if "Tensão" in param else 1 if "Corrente" in param else 0
-                    )  # kVA integer
+                    prec = 2  # Use two decimal places for all results in "Perdas em Vazio"
                     display = f"{value:.{prec}f}" if isinstance(value, (int, float)) else "-"
 
                     # Calcular percentual em relação à corrente nominal de BT para "Corrente de excitação (A)"
@@ -982,6 +1116,35 @@ def losses_handle_perdas_vazio(
                         exceeded_values["aco_m4"][pu] = True
                     m4_cells.append(html.Td(display, style=style, className="table-value-cell"))
                 rows.append(html.Tr(m4_cells))
+
+                # H110-27 Row (if applicable)
+                if show_h110_27:
+                    h110_27_cells = [html.Td("Aço H110-27", style=origin_style)]
+                    for i, pu in enumerate(["1.0 pu", "1.1 pu", "1.2 pu"]):
+                        key = keys_h110_27.get(param, {}).get(pu)
+                        value = res_h110_27.get(key)
+                        prec = 2  # Use two decimal places for all results in "Perdas em Vazio"
+                        display = f"{value:.{prec}f}" if isinstance(value, (int, float)) else "-"
+
+                        # Calcular percentual em relação à corrente nominal de BT para "Corrente de excitação (A)"
+                        if (
+                            param == "Corrente de excitação (A)"
+                            and isinstance(value, (int, float))
+                            and corrente_nominal_bt > epsilon
+                        ):
+                            percentual = (value / corrente_nominal_bt) * 100
+                            display = f"{value:.{prec}f} ({percentual:.1f}%)"
+
+                        style = {**value_styles[i]}
+                        if (
+                            param == "Potência de Ensaio (kVA)"
+                            and isinstance(value, (int, float))
+                            and value > limite_potencia_dut
+                        ):
+                            style.update(color_red_style)
+                            exceeded_values["aco_h110_27"][pu] = True
+                        h110_27_cells.append(html.Td(display, style=style, className="table-value-cell"))
+                    rows.append(html.Tr(h110_27_cells))
 
                 # Divider
                 if param_idx < len(params) - 1:
@@ -1079,10 +1242,10 @@ def losses_handle_perdas_vazio(
                 for info in taps_info:  # Already sorted by voltage and limited to 5
                     current_style = get_style(info.get("percent_limite"))
                     tap_disp = (
-                        f"{info['tap_sut_kv']:.1f}" if info.get("tap_sut_kv") is not None else "-"
+                        f"{info['tap_sut_kv']:.2f}" if info.get("tap_sut_kv") is not None else "-"
                     )
                     curr_disp = (
-                        f"{info['corrente_eps_a']:.1f}"
+                        f"{info['corrente_eps_a']:.2f}"
                         if info.get("corrente_eps_a") is not None
                         else "-"
                     )
@@ -1170,9 +1333,14 @@ def losses_handle_perdas_vazio(
             if power_warn:
                 for pu in ["1.0 pu", "1.1 pu", "1.2 pu"]:
                     # Correct key access for exceeded_values dict
+                    origins_list = ["projeto", "aco_m4"]
+                    # Add H110-27 to the list if it's available
+                    if "aco_h110_27" in exceeded:
+                        origins_list.append("aco_h110_27")
+
                     origins = [
                         o.replace("_", " ").title()
-                        for o in ["projeto", "aco_m4"]
+                        for o in origins_list
                         if exceeded[o][pu]
                     ]
                     if origins:
@@ -1312,12 +1480,22 @@ def losses_handle_perdas_vazio(
         # --- End of Layout Helpers (Vazio) ---
 
         # --- Generate Final Content (Vazio) ---
-        parametros_gerais_content = create_general_parameters_table(
-            resultados_projeto, resultados_aco_m4
-        )
-        tabela_resultados_dut_content, valores_excedidos = create_voltage_level_table(
-            resultados_projeto, resultados_aco_m4
-        )
+        # Check if H110-27 data is valid and should be shown
+        if h110_27_valid:
+            parametros_gerais_content = create_general_parameters_table(
+                resultados_projeto, resultados_aco_m4, resultados_aco_h110_27
+            )
+            tabela_resultados_dut_content, valores_excedidos = create_voltage_level_table(
+                resultados_projeto, resultados_aco_m4, resultados_aco_h110_27
+            )
+        else:
+            parametros_gerais_content = create_general_parameters_table(
+                resultados_projeto, resultados_aco_m4
+            )
+            tabela_resultados_dut_content, valores_excedidos = create_voltage_level_table(
+                resultados_projeto, resultados_aco_m4
+            )
+
         layout_analise_sut_content = create_sut_analysis_layout(sut_analysis_data)
         legenda_observacoes_content = create_legend_section(valores_excedidos, sut_analysis_data)
         dut_voltage_results_content = html.Div(
@@ -1337,6 +1515,10 @@ def losses_handle_perdas_vazio(
             "corrente_exc_1_2": corrente_exc_1_2_input,
             "sut_analysis_data": sut_analysis_data,
         }
+
+        # Add H110-27 data if valid
+        if h110_27_valid:
+            new_data["resultados_aco_h110_27"] = resultados_aco_h110_27
 
         # Adicionar os inputs específicos para perdas em vazio conforme solicitado
         inputs_perdas_vazio = {
@@ -1727,13 +1909,7 @@ def calculate_sut_eps_current_compensated(
     if sf_compensation_valid:
         try:
             # Calculate Corrected Reactive Power for S/F
-            Cap_Correct_factor_sf = (
-                0.25
-                if cap_bank_voltage_scenario_sf_kv in [13.8, 23.9]
-                else 0.75
-                if cap_bank_voltage_scenario_sf_kv in [41.4, 71.7]
-                else 1.0
-            )
+            Cap_Correct_factor_sf = 1.0
             q_denominator_sf = (
                 tensao_ref_dut_kv / cap_bank_voltage_scenario_sf_kv
             ) ** 2 * Cap_Correct_factor_sf

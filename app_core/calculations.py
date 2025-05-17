@@ -1699,16 +1699,9 @@ def calculate_cap_bank_parameters(
             constants.EPS_CAP_BANK_VOLTAGES_KV[-1],
         )
 
-        if cap_bank_voltage_kv <= 23.9:
-            factor = 0.25
-        elif cap_bank_voltage_kv <= 71.7:
-            factor = 0.75
-        else:
-            factor = 1.0
-
         if cap_bank_voltage_kv > 1e-6:
             voltage_ratio_sq = (v_kv / cap_bank_voltage_kv) ** 2
-            denominator = voltage_ratio_sq * factor
+            denominator = voltage_ratio_sq
             if denominator > 1e-9:
                 pot_cap_bank_mvar = p_mvar / denominator
             else:
