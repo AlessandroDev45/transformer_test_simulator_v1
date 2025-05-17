@@ -109,11 +109,11 @@
 | corrente_nominal_bt   | Corrente nominal BT do DUT                          | A                 | corrente_nominal_bt                              | Dados Transf.    |
 | tipo_transformador    | Monofásico ou Trifásico                           | -                 | tipo_transformador                               | Dados Transf.    |
 
-### 3.2. Tabelas de Referência para Aço M4
+### 3.2. Tabelas de Referência para Aços
 
-    
+#### 3.2.1. Aço M4 (Referência)
 
-#### 3.2.1. Tabela de Perdas Específicas do Núcleo (W/kg)
+##### 3.2.1.1. Tabela de Perdas Específicas do Núcleo (W/kg)
 
 **Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **perdas_nucleo_data**.
 
@@ -133,7 +133,7 @@
 | **1.6**           | **1.00**  | **1.30**  | **2.80**   | **3.80**   | **5.30**   | **8.00**   | **12.00**  | **12.60**  | **15.00**  | **18.00**  | **23.00**  | **35.00**  |
 | **1.7**           | **1.20**  | **1.55**  | **3.50**   | **4.40**   | **6.00**   | **9.00**   | **15.00**  | **15.60**  | **18.00**  | **22.00**  | **28.00**  | **42.00**  |
 
-#### 3.2.2. Tabela de Potência Magnetizante Específica (VAR/kg)
+##### 3.2.1.2. Tabela de Potência Magnetizante Específica (VAR/kg)
 
 **Valores de potência magnetizante específica (VAR/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **potencia_magnet_data**.
 
@@ -153,11 +153,96 @@
 | **1.6**           | **1.30**  | **1.60**  | **3.50**   | **4.80**   | **6.50**   | **12.00**  | **14.00**  | **15.00**  | **18.00**  | **22.00**  | **30.00**  | **45.00**  |
 | **1.7**           | **1.60**  | **2.00**  | **4.00**   | **5.50**   | **7.00**   | **15.00**  | **17.00**  | **18.00**  | **22.00**  | **28.00**  | **38.00**  | **55.00**  |
 
+#### 3.2.2. Aço H110-27
+
+##### 3.2.2.1. Tabela de Perdas Específicas do Núcleo (W/kg)
+
+**Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **perdas_nucleo_data_H110_27**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** |
+| --------------- | --------- | --------- |
+| **0.2**         | **0.018** | **0.023** |
+| **0.3**         | **0.038** | **0.050** |
+| **0.4**         | **0.065** | **0.086** |
+| **0.5**         | **0.097** | **0.128** |
+| **0.6**         | **0.135** | **0.178** |
+| **0.7**         | **0.178** | **0.236** |
+| **0.8**         | **0.228** | **0.301** |
+| **0.9**         | **0.284** | **0.377** |
+| **1.0**         | **0.346** | **0.459** |
+| **1.1**         | **0.414** | **0.549** |
+| **1.2**         | **0.488** | **0.648** |
+| **1.3**         | **0.569** | **0.755** |
+| **1.4**         | **0.658** | **0.873** |
+| **1.5**         | **0.760** | **1.006** |
+| **1.6**         | **0.882** | **1.165** |
+| **1.7**         | **1.052** | **1.383** |
+| **1.8**         | **1.398** | **1.816** |
+| **1.9**         | **2.010** | **2.595** |
+
+**Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
+
+##### 3.2.2.2. Tabela de Potência Magnetizante Específica (VA/kg)
+
+**Valores de potência magnetizante específica (VA/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **potencia_magnet_data_H110_27**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** |
+| --------------- | --------- | --------- |
+| **0.2**         | **0.032** | **0.040** |
+| **0.3**         | **0.064** | **0.081** |
+| **0.4**         | **0.103** | **0.130** |
+| **0.5**         | **0.147** | **0.186** |
+| **0.6**         | **0.196** | **0.249** |
+| **0.7**         | **0.250** | **0.319** |
+| **0.8**         | **0.308** | **0.395** |
+| **0.9**         | **0.372** | **0.477** |
+| **1.0**         | **0.441** | **0.568** |
+| **1.1**         | **0.517** | **0.667** |
+| **1.2**         | **0.602** | **0.777** |
+| **1.3**         | **0.698** | **0.900** |
+| **1.4**         | **0.812** | **1.045** |
+| **1.5**         | **0.962** | **1.230** |
+| **1.6**         | **1.188** | **1.507** |
+| **1.7**         | **1.661** | **2.070** |
+| **1.8**         | **3.438** | **4.178** |
+| **1.9**         | **14.434**| **17.589**|
+
+**Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
+
 ### 3.3. Variáveis Calculadas para Perdas em Vazio
 
 **Constante:** **sqrt_3 = math.sqrt(3)** **(para trifásicos, 1.0 para monofásicos, usado como** **sqrt_3_factor** **no código).**
 
-#### 3.3.1. Cálculos Baseados em Aço M4 (Estimativa)
+#### 3.3.1. Fatores de Correção para Aço H110-27
+
+Ao utilizar os dados do aço H110-27, os seguintes fatores de correção devem ser aplicados:
+
+* **Fator de Construção (Build Factor - BF):** Este fator compensa as perdas adicionais devido ao corte das chapas e à distribuição do fluxo nos cantos.
+  * **Fator para perdas (W/kg):** **1.15** - Multiplicar os valores de perdas específicas por 1.15
+  * **Fator para potência magnetizante (VA/kg):** **1.2** - Multiplicar os valores de VA/kg por 1.2
+
+* **Divisor para Potência Magnetizante:** Na implementação em callbacks/losses.py, o fator de potência magnetizante (VAR/kg) para o aço H110-27 deve ser dividido por **1000** (não por 1.000.000 como em algumas implementações anteriores).
+
+* **Implementação no Código:** No arquivo callbacks/losses.py, os fatores são aplicados da seguinte forma:
+
+```python
+# Aplicar fatores construtivos
+fator_perdas_H110_27 = fator_perdas_H110_27_base * 1.15 if fator_perdas_H110_27_base is not None else None
+fator_potencia_mag_H110_27 = fator_potencia_mag_H110_27_base * 1.2 if fator_potencia_mag_H110_27_base is not None else None
+
+# Cálculo da potência magnética
+# 1. Multiplicar por peso_nucleo_calc_h110_27 em toneladas
+# 2. Multiplicar por 1000 para converter toneladas para kg
+# 3. Dividir por 1000 para converter VA para kVA (ou VAR para kVAR)
+potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 1000) / 1000 if h110_27_valid else 0  # kVAR
+```
+
+* **Observações Importantes:**
+  * Os fatores de construção (1.15 para perdas e 1.2 para potência magnetizante) devem ser sempre aplicados aos valores base do aço H110-27.
+  * Estes fatores compensam as perdas nas bordas por perda de propriedade em função do corte e distribuição de fluxo nas quinas.
+  * Ao comparar resultados entre diferentes tipos de aço, certifique-se de que os fatores de correção foram aplicados corretamente.
+
+#### 3.3.2. Cálculos Baseados em Aço M4 (Estimativa)
 
 * **perdas_vazio** **(kW):** **safe_float(perdas_vazio_ui, 0.0)**
 * **inducao** **(T):** **safe_float(inducao_ui, 0.0)**

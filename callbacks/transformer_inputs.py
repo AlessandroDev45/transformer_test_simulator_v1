@@ -142,15 +142,18 @@ def register_transformer_inputs_callbacks(app_instance):
 
                 for key, form_value in dynamic_fields_from_form_map.items():
                     # Para campos dinâmicos (dropdowns de níveis de isolamento),
-                    # se o valor do formulário for None ou uma string vazia, guarda None.
-                    # Caso contrário, guarda o valor como string.
-                    if form_value is None or (isinstance(form_value, str) and form_value.strip() == ""):
+                    # Tratar da mesma forma que os campos diretos para garantir consistência
+                    if isinstance(form_value, str) and form_value.strip() == "":
                         data_to_save_to_mcp[key] = None
-                    else:
-                        data_to_save_to_mcp[key] = str(form_value)
-                        # Log para verificar os valores de isolamento sendo salvos
-                        if key in ["nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at"]:
-                            log.info(f"[UpdateTransformerCalc] Salvando valor de isolamento: {key}={form_value}")
+                    elif form_value is not None:
+                        data_to_save_to_mcp[key] = form_value  # Armazenar o valor diretamente, sem converter para string
+                    elif key not in data_to_save_to_mcp:  # Se era None e não estava no store
+                        data_to_save_to_mcp[key] = None
+                    elif form_value is None and key in data_to_save_to_mcp:
+                        data_to_save_to_mcp[key] = None
+
+                    # Log para todos os campos de dropdown para melhor diagnóstico
+                    log.info(f"[UpdateTransformerCalc] Salvando valor de dropdown: {key}={data_to_save_to_mcp.get(key)}")
 
                 # Garantir que teste_tensao_induzida também seja mantido para compatibilidade
                 if data_to_save_to_mcp.get("teste_tensao_induzida_at") is not None:
@@ -186,6 +189,17 @@ def register_transformer_inputs_callbacks(app_instance):
                 app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
                 app_instance.mcp.save_to_disk(force=True)
                 log.debug("[UpdateTransformerCalc] MCP atualizado e salvo no disco.")
+
+                # Log para verificar os valores de todos os dropdowns após salvar no MCP
+                saved_data = app_instance.mcp.get_data("transformer-inputs-store")
+                dropdown_keys = [
+                    "nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at",
+                    "nbi_neutro_at", "sil_neutro_at", "nbi_bt", "sil_bt", "teste_tensao_aplicada_bt",
+                    "nbi_neutro_bt", "sil_neutro_bt", "nbi_terciario", "sil_terciario",
+                    "teste_tensao_aplicada_terciario", "nbi_neutro_terciario", "sil_neutro_terciario"
+                ]
+                for key in dropdown_keys:
+                    log.info(f"[UpdateTransformerCalc] Valor de dropdown após salvar no MCP: {key}={saved_data.get(key)}")
 
                 try:
                     latest_data_for_propagation = app_instance.mcp.get_data("transformer-inputs-store")
@@ -263,20 +277,26 @@ def register_transformer_inputs_callbacks(app_instance):
         for key in isolation_keys:
             log.info(f"[PopulateDynamicValues] Valor de isolamento no store: {key}={store_data.get(key)}")
 
-        def get_str_val(key, default=""):
-            val = store_data.get(key, default)
-            return str(val) if val is not None else default
+        def get_dropdown_val(key, default=""):
+            """
+            Obtém o valor do dropdown do store de forma consistente.
+            Retorna o valor original sem conversão para garantir compatibilidade.
+            """
+            val = store_data.get(key)
+            log.info(f"[PopulateDynamicValues] Obtendo valor para dropdown {key}: {val}")
+            # Retornar o valor original sem conversão para string
+            return val if val is not None else default
 
         values_tuple = (
-            get_str_val("nbi_at"), get_str_val("sil_at"),
-            get_str_val("teste_tensao_aplicada_at"), get_str_val("teste_tensao_induzida_at"),
-            get_str_val("nbi_neutro_at"), get_str_val("sil_neutro_at"),
-            get_str_val("nbi_bt"), get_str_val("sil_bt"),
-            get_str_val("teste_tensao_aplicada_bt"),
-            get_str_val("nbi_neutro_bt"), get_str_val("sil_neutro_bt"),
-            get_str_val("nbi_terciario"), get_str_val("sil_terciario"),
-            get_str_val("teste_tensao_aplicada_terciario"),
-            get_str_val("nbi_neutro_terciario"), get_str_val("sil_neutro_terciario")
+            get_dropdown_val("nbi_at"), get_dropdown_val("sil_at"),
+            get_dropdown_val("teste_tensao_aplicada_at"), get_dropdown_val("teste_tensao_induzida_at"),
+            get_dropdown_val("nbi_neutro_at"), get_dropdown_val("sil_neutro_at"),
+            get_dropdown_val("nbi_bt"), get_dropdown_val("sil_bt"),
+            get_dropdown_val("teste_tensao_aplicada_bt"),
+            get_dropdown_val("nbi_neutro_bt"), get_dropdown_val("sil_neutro_bt"),
+            get_dropdown_val("nbi_terciario"), get_dropdown_val("sil_terciario"),
+            get_dropdown_val("teste_tensao_aplicada_terciario"),
+            get_dropdown_val("nbi_neutro_terciario"), get_dropdown_val("sil_neutro_terciario")
         )
         log.debug(f"[PopulateDynamicValues] Valores a serem definidos: {values_tuple}")
         return values_tuple
@@ -320,12 +340,13 @@ def register_transformer_inputs_callbacks(app_instance):
     def autosave_with_debounce(dirty_flag):
         """
         Salva automaticamente os dados no MCP após um período de inatividade.
+        Segue o padrão de "fonte única da verdade", onde transformer-inputs-store
+        é a fonte autoritativa para todos os dados básicos do transformador.
         """
         if not dirty_flag:
             return ""
 
         from datetime import datetime
-
         now = datetime.now().strftime("%H:%M:%S")
 
         try:
@@ -335,14 +356,12 @@ def register_transformer_inputs_callbacks(app_instance):
 
             # Serializar dados para salvar no MCP
             from utils.store_diagnostics import convert_numpy_types
-
             serializable_data = convert_numpy_types(
                 current_data, debug_path="autosave_with_debounce"
             )
 
             # Verificar se os dados essenciais estão presentes
             from utils.mcp_persistence import ESSENTIAL, _dados_ok
-
             if not _dados_ok(serializable_data):
                 missing_fields = [k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)]
                 log.warning(f"[autosave_with_debounce] Dados essenciais ausentes: {missing_fields}")
@@ -377,12 +396,18 @@ def register_transformer_inputs_callbacks(app_instance):
                 f"[autosave_with_debounce] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
             )
 
-            # Log para verificar os valores de isolamento após salvar no MCP
-            isolation_keys = ["nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at"]
-            for key in isolation_keys:
-                log.info(f"[autosave_with_debounce] Valor de isolamento após salvar no MCP: {key}={saved_data.get(key)}")
+            # Log para verificar os valores de todos os dropdowns após salvar no MCP
+            dropdown_keys = [
+                "nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at",
+                "nbi_neutro_at", "sil_neutro_at", "nbi_bt", "sil_bt", "teste_tensao_aplicada_bt",
+                "nbi_neutro_bt", "sil_neutro_bt", "nbi_terciario", "sil_terciario",
+                "teste_tensao_aplicada_terciario", "nbi_neutro_terciario", "sil_neutro_terciario"
+            ]
+            for key in dropdown_keys:
+                log.info(f"[autosave_with_debounce] Valor de dropdown após salvar no MCP: {key}={saved_data.get(key)}")
 
-            # Propagar dados para outros stores
+            # Propagar dados para outros stores usando o padrão de "fonte única da verdade"
+            # transformer-inputs-store é a fonte autoritativa para todos os dados básicos
             from utils.mcp_persistence import ensure_mcp_data_propagation
 
             target_stores = [
@@ -411,6 +436,8 @@ def register_transformer_inputs_callbacks(app_instance):
     def flush_on_page_change(pathname):
         """
         Salva os dados no MCP quando o usuário navega para outra página.
+        Segue o padrão de "fonte única da verdade", onde transformer-inputs-store
+        é a fonte autoritativa para todos os dados básicos do transformador.
         """
         if pathname and not pathname.startswith("/transformer-inputs"):
             log.info(f"[flush_on_page_change] Navegando para {pathname}, salvando dados no MCP")
@@ -420,14 +447,12 @@ def register_transformer_inputs_callbacks(app_instance):
 
                 # Serializar dados para salvar no MCP
                 from utils.store_diagnostics import convert_numpy_types
-
                 serializable_data = convert_numpy_types(
                     current_data, debug_path="flush_on_page_change"
                 )
 
                 # Verificar se os dados essenciais estão presentes
                 from utils.mcp_persistence import ESSENTIAL, _dados_ok
-
                 if not _dados_ok(serializable_data):
                     missing_fields = [
                         k for k in ESSENTIAL if serializable_data.get(k) in (None, "", 0)
@@ -438,10 +463,6 @@ def register_transformer_inputs_callbacks(app_instance):
 
                     # Obter os dados atuais do MCP para mesclar
                     mcp_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
-
-                    # Função keep para evitar sobrescrever valores válidos com None
-                    def keep(new_value, key):
-                        return new_value if new_value is not None else mcp_data.get(key)
 
                     # Mesclar dados essenciais
                     for key in ESSENTIAL:
@@ -468,12 +489,18 @@ def register_transformer_inputs_callbacks(app_instance):
                     f"[flush_on_page_change] Verificação após salvar: potencia_mva={saved_data.get('potencia_mva')}, tensao_at={saved_data.get('tensao_at')}"
                 )
 
-                # Log para verificar os valores de isolamento após salvar no MCP
-                isolation_keys = ["nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at"]
-                for key in isolation_keys:
-                    log.info(f"[flush_on_page_change] Valor de isolamento após salvar no MCP: {key}={saved_data.get(key)}")
+                # Log para verificar os valores de todos os dropdowns após salvar no MCP
+                dropdown_keys = [
+                    "nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at",
+                    "nbi_neutro_at", "sil_neutro_at", "nbi_bt", "sil_bt", "teste_tensao_aplicada_bt",
+                    "nbi_neutro_bt", "sil_neutro_bt", "nbi_terciario", "sil_terciario",
+                    "teste_tensao_aplicada_terciario", "nbi_neutro_terciario", "sil_neutro_terciario"
+                ]
+                for key in dropdown_keys:
+                    log.info(f"[flush_on_page_change] Valor de dropdown após salvar no MCP: {key}={saved_data.get(key)}")
 
-                # Propagar dados para outros stores
+                # Propagar dados para outros stores usando o padrão de "fonte única da verdade"
+                # transformer-inputs-store é a fonte autoritativa para todos os dados básicos
                 from utils.mcp_persistence import ensure_mcp_data_propagation
 
                 target_stores = [
