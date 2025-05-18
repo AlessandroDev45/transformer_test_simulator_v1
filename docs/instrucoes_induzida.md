@@ -34,6 +34,7 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 * **Relação entre tensão de prova e tensão nominal (Up/Un):**
   * Para transformadores monofásicos: `up_un = tensao_prova / tensao_at`
   * Para transformadores trifásicos: `up_un = tensao_prova / (tensao_at / sqrt(3))`
+  * os dados up_un = tensao_prova deverão ser os dados de tenão de ensaio induzida informados em dados básicos
 
 ### 3.2. Indução no Núcleo na Frequência de Teste
 

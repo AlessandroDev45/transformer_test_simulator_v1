@@ -223,6 +223,17 @@ try:
                         else:
                             log.warning(f"Não foi necessário propagar dados para {store}")
 
+                    # Sincronizar valores de isolamento entre todos os stores
+                    try:
+                        from utils.mcp_persistence import sync_isolation_values
+                        sync_result = sync_isolation_values(app)
+                        if sync_result:
+                            log.info("Valores de isolamento sincronizados com sucesso entre todos os stores")
+                        else:
+                            log.warning("Não foi possível sincronizar valores de isolamento entre os stores")
+                    except Exception as e:
+                        log.error(f"Erro ao sincronizar valores de isolamento: {e}", exc_info=True)
+
                 except Exception as e:
                     log.error(f"Erro ao propagar dados para outros stores: {e}", exc_info=True)
             except Exception as e:

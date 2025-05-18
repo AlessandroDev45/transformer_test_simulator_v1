@@ -24,48 +24,24 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 
 ### 2.1. Determinação da Tensão de Teste
 
-A tensão de teste para o ensaio de tensão aplicada é determinada com base na classe de tensão e no tipo de conexão:
+A tensão de teste para o ensaio de tensão aplicada é determinada com base na classe de tensão e no tipo de conexão definida em dados básicos:
 
 #### 2.1.1. Para o Lado de Alta Tensão (AT)
 
 * **Se a conexão for Yn (estrela com neutro acessível):**
-  * `tensao_teste_at = classe_tensao_bucha_neutro * fator_multiplicacao`
+  * `tensao_teste_at = classe_tensao_bucha_neutro`
 * **Para outras conexões (Y, D):**
-  * `tensao_teste_at = classe_tensao_at * fator_multiplicacao`
+  * `tensao_teste_at = classe_tensao_at`
 
 #### 2.1.2. Para o Lado de Baixa Tensão (BT)
 
-* `tensao_teste_bt = classe_tensao_bt * fator_multiplicacao`
+* `tensao_teste_bt = classe_tensao_bt`
 
 #### 2.1.3. Para o Terciário (se existir)
 
-* `tensao_teste_terciario = classe_tensao_terciario * fator_multiplicacao`
+* `tensao_teste_terciario = classe_tensao_terciario`
 
-### 2.2. Fatores de Multiplicação
-
-Os fatores de multiplicação são determinados pelas normas técnicas (IEC, IEEE, ABNT) e variam conforme a classe de tensão:
-
-| Classe de Tensão (kV) | Fator de Multiplicação |
-| :-------------------- | :--------------------- |
-| ≤ 1.1                 | 2.0                    |
-| > 1.1 e ≤ 3.6         | 10.0                   |
-| > 3.6 e ≤ 7.2         | 20.0                   |
-| > 7.2 e ≤ 12          | 28.0                   |
-| > 12 e ≤ 24           | 38.0                   |
-| > 24 e ≤ 36           | 50.0                   |
-| > 36 e ≤ 52           | 70.0                   |
-| > 52 e ≤ 100          | 95.0                   |
-| > 100 e ≤ 123         | 185.0                  |
-| > 123 e ≤ 145         | 230.0                  |
-| > 145 e ≤ 170         | 275.0                  |
-| > 170 e ≤ 245         | 325.0                  |
-| > 245 e ≤ 300         | 380.0                  |
-| > 300 e ≤ 362         | 450.0                  |
-| > 362 e ≤ 420         | 520.0                  |
-| > 420 e ≤ 550         | 620.0                  |
-| > 550 e ≤ 800         | 800.0                  |
-
-### 2.3. Ajustes para Capacitância
+# 2.2. Ajustes para Capacitância
 
 Para tensões acima de 450 kV, é adicionado um valor de capacitância:
 * Se tensão > 450 kV: Adicionar 330 pF

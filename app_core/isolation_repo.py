@@ -248,8 +248,8 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
     # Mapear a norma para o formato usado no JSON
     standard_filter = "IEC/NBR" if norma in ["IEC", "NBR"] else "IEEE"
 
-    log.info(f"[ISOLATION] ============ INÍCIO DA BUSCA ============")
-    log.info(f"[ISOLATION] Buscando níveis de isolamento para Um={um}kV, conexão={conexao}, norma={norma} (standard_filter={standard_filter})")
+    log.debug(f"[ISOLATION] ============ INÍCIO DA BUSCA ============")
+    log.debug(f"[ISOLATION] Buscando níveis de isolamento para Um={um}kV, conexão={conexao}, norma={norma} (standard_filter={standard_filter})")
 
     # Buscar registro diretamente na tabela.json
     target_record = None
@@ -261,15 +261,17 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
             tabela_data = json.load(f)
             insulation_levels = tabela_data.get("insulation_levels", [])
 
-            log.info(f"[ISOLATION] Tabela carregada com {len(insulation_levels)} registros")
+            log.debug(f"[ISOLATION] Tabela carregada com {len(insulation_levels)} registros")
 
-            # Listar todos os registros disponíveis para debug
-            for record in insulation_levels:
-                record_id = record.get("id", "")
-                record_standard = record.get("standard", "")
-                record_um_kv = record.get("um_kv", "")
-                log.info(f"[ISOLATION] Registro disponível: ID={record_id}, Standard={record_standard}, Um={record_um_kv}")
-                all_records.append(record)
+            # Listar todos os registros disponíveis para debug (nível TRACE, que não existe em Python)
+            # Comentado para reduzir verbosidade
+            # for record in insulation_levels:
+            #     record_id = record.get("id", "")
+            #     record_standard = record.get("standard", "")
+            #     record_um_kv = record.get("um_kv", "")
+            #     log.debug(f"[ISOLATION] Registro disponível: ID={record_id}, Standard={record_standard}, Um={record_um_kv}")
+            #     all_records.append(record)
+            all_records = insulation_levels
 
             # Buscar registro exato para a classe de tensão e norma
             for record in insulation_levels:
@@ -278,10 +280,11 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
                     if record_um_kv is not None:
                         try:
                             record_um_float = float(record_um_kv)
-                            log.info(f"[ISOLATION] Comparando: record_um={record_um_float}, target_um={um}, diff={abs(record_um_float - um)}")
+                            # Comentado para reduzir verbosidade
+                            # log.debug(f"[ISOLATION] Comparando: record_um={record_um_float}, target_um={um}, diff={abs(record_um_float - um)}")
                             if abs(record_um_float - um) < 0.001:  # Comparação com tolerância
                                 target_record = record
-                                log.info(f"[ISOLATION] MATCH ENCONTRADO: ID={record.get('id')}")
+                                log.debug(f"[ISOLATION] MATCH ENCONTRADO: ID={record.get('id')}")
                                 break
                         except (ValueError, TypeError) as e:
                             log.warning(f"[ISOLATION] Erro ao converter um_kv={record_um_kv}: {e}")
@@ -291,16 +294,18 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
 
     # Log detalhado do registro encontrado
     if target_record:
-        log.info(f"[ISOLATION] Registro encontrado: ID={target_record.get('id')}")
-        log.info(f"[ISOLATION] Registro completo: {json.dumps(target_record, indent=2)}")
-        log.info(f"[ISOLATION] BIL={target_record.get('bil_kvp')}, SIL={target_record.get('sil_kvp')}")
-        log.info(f"[ISOLATION] TA={target_record.get('acsd_kv_rms')}, TI={target_record.get('acld_kv_rms')}")
+        log.debug(f"[ISOLATION] Registro encontrado: ID={target_record.get('id')}")
+        # Comentado para reduzir verbosidade
+        # log.debug(f"[ISOLATION] Registro completo: {json.dumps(target_record, indent=2)}")
+        log.debug(f"[ISOLATION] BIL={target_record.get('bil_kvp')}, SIL={target_record.get('sil_kvp')}")
+        log.debug(f"[ISOLATION] TA={target_record.get('acsd_kv_rms')}, TI={target_record.get('acld_kv_rms')}")
     else:
         log.warning(f"[ISOLATION] Nenhum registro encontrado para Um={um}kV e norma={standard_filter}. Usando valores padrão.")
-        log.info(f"[ISOLATION] Registros disponíveis para esta norma:")
-        for record in all_records:
-            if record.get("standard") == standard_filter:
-                log.info(f"[ISOLATION]   - ID={record.get('id')}, Um={record.get('um_kv')}")
+        # Comentado para reduzir verbosidade
+        # log.debug(f"[ISOLATION] Registros disponíveis para esta norma:")
+        # for record in all_records:
+        #     if record.get("standard") == standard_filter:
+        #         log.debug(f"[ISOLATION]   - ID={record.get('id')}, Um={record.get('um_kv')}")
 
         # Valores padrão aproximados baseados na classe de tensão
         if um <= 24:
@@ -334,7 +339,7 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
         # Calcular NBI do neutro (60% do NBI principal para conexões YN ou ZN)
         nbi_neutro = round(nbi * 0.60) if conexao.upper().startswith(("YN", "ZN")) else None
 
-        log.info(f"[ISOLATION] Valores padrão calculados: NBI={nbi}, SIL/IM={sil}, TA={ta}, TI={ti}, NBI_NEUTRO={nbi_neutro}")
+        log.debug(f"[ISOLATION] Valores padrão calculados: NBI={nbi}, SIL/IM={sil}, TA={ta}, TI={ti}, NBI_NEUTRO={nbi_neutro}")
 
         # Retornar valores únicos e listas com um único elemento para compatibilidade
         result = {
@@ -351,13 +356,13 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
             "tensao_aplicada_list": [ta],
             "tensao_induzida_list": [ti] if ti is not None else []
         }
-        log.info(f"[ISOLATION] ============ FIM DA BUSCA (VALORES PADRÃO) ============")
+        log.debug(f"[ISOLATION] ============ FIM DA BUSCA (VALORES PADRÃO) ============")
         return result, []
 
     # Extrair valores do registro encontrado
     # NBI (BIL)
     nbi_list = target_record.get("bil_kvp", [])
-    log.info(f"[ISOLATION] NBI original do registro: {nbi_list}")
+    log.debug(f"[ISOLATION] NBI original do registro: {nbi_list}")
     if isinstance(nbi_list, list):
         nbi = nbi_list[0] if nbi_list else None
     else:
@@ -366,7 +371,7 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
 
     # SIL/IM
     sil_list = target_record.get("sil_kvp", [])
-    log.info(f"[ISOLATION] SIL original do registro: {sil_list}")
+    log.debug(f"[ISOLATION] SIL original do registro: {sil_list}")
     if isinstance(sil_list, list):
         sil = sil_list[0] if sil_list else None
     else:
@@ -375,7 +380,7 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
 
     # TA (ACSD)
     ta_list = target_record.get("acsd_kv_rms", [])
-    log.info(f"[ISOLATION] TA original do registro: {ta_list}")
+    log.debug(f"[ISOLATION] TA original do registro: {ta_list}")
     if isinstance(ta_list, list):
         ta = ta_list[0] if ta_list else None
     else:
@@ -384,7 +389,7 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
 
     # TI (ACLD)
     ti_list = target_record.get("acld_kv_rms", [])
-    log.info(f"[ISOLATION] TI original do registro: {ti_list}")
+    log.debug(f"[ISOLATION] TI original do registro: {ti_list}")
     if isinstance(ti_list, list):
         ti = ti_list[0] if ti_list else None
     else:
@@ -404,10 +409,10 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
         for nbi_val, sil_val in zip(nbi_list, sil_list + [None] * (len(nbi_list) - len(sil_list)))
         if nbi_val is not None
     ]
-    log.info(f"[ISOLATION] Opções de dropdown criadas: {lista}")
+    log.debug(f"[ISOLATION] Opções de dropdown criadas: {lista}")
 
-    log.info(f"[ISOLATION] Valores finais: NBI={nbi}, SIL/IM={sil}, TA={ta}, TI={ti}, NBI_NEUTRO={nbi_neutro}")
-    log.info(f"[ISOLATION] Listas de opções: NBI={nbi_list}, SIL/IM={sil_list}, TA={ta_list}, TI={ti_list}, NBI_NEUTRO={nbi_neutro_list}")
+    log.debug(f"[ISOLATION] Valores finais: NBI={nbi}, SIL/IM={sil}, TA={ta}, TI={ti}, NBI_NEUTRO={nbi_neutro}")
+    log.debug(f"[ISOLATION] Listas de opções: NBI={nbi_list}, SIL/IM={sil_list}, TA={ta_list}, TI={ti_list}, NBI_NEUTRO={nbi_neutro_list}")
 
     result = {
         # Valores padrão (compatibilidade com código existente)
@@ -423,5 +428,5 @@ def get_isolation_levels(um: float, conexao: str = "", norma: str = "IEC"):
         "tensao_aplicada_list": ta_list,
         "tensao_induzida_list": ti_list
     }
-    log.info(f"[ISOLATION] ============ FIM DA BUSCA (VALORES DA TABELA) ============")
+    log.debug(f"[ISOLATION] ============ FIM DA BUSCA (VALORES DA TABELA) ============")
     return result, lista

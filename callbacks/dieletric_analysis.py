@@ -878,35 +878,17 @@ def populate_dielectric_fields_auto(pathname, dieletric_store_data, transformer_
         # --- Lógica de Recálculo (igual à versão anterior) ---
         tipo_isolamento = transformer_data.get("tipo_isolamento", "uniforme")
         tipo_transformador = transformer_data.get("tipo_transformador", "-")
+        # Obter valores de tensão aplicada diretamente dos dados básicos
         tensao_aplicada_at = transformer_data.get("teste_tensao_aplicada_at", "-")
         tensao_aplicada_bt = transformer_data.get("teste_tensao_aplicada_bt", "-")
         tensao_aplicada_terciario = transformer_data.get("teste_tensao_aplicada_terciario", "-")
-        tensao_induzida_at = transformer_data.get("tensao_induzida_at", None)
-        tensao_induzida_bt = transformer_data.get("tensao_induzida_bt", None)
-        tensao_induzida_terciario = transformer_data.get("tensao_induzida_terciario", None)
 
-        # Formatar valores de tensão induzida para exibição
-        try:
-            if tensao_induzida_at is not None and tensao_induzida_at != "":
-                tensao_induzida_at_float = safe_float_convert(tensao_induzida_at)
-                if tensao_induzida_at_float is not None:
-                    tensao_induzida_at = f"{tensao_induzida_at_float:.1f}"
-        except Exception as e:
-            log.warning(f"[AUTO FILL] Erro ao formatar tensão induzida AT: {e}")
-        try:
-            if tensao_induzida_bt is not None and tensao_induzida_bt != "":
-                tensao_induzida_bt_float = safe_float_convert(tensao_induzida_bt)
-                if tensao_induzida_bt_float is not None:
-                    tensao_induzida_bt = f"{tensao_induzida_bt_float:.1f}"
-        except Exception as e:
-            log.warning(f"[AUTO FILL] Erro ao formatar tensão induzida BT: {e}")
-        try:
-            if tensao_induzida_terciario is not None and tensao_induzida_terciario != "":
-                tensao_induzida_terciario_float = safe_float_convert(tensao_induzida_terciario)
-                if tensao_induzida_terciario_float is not None:
-                    tensao_induzida_terciario = f"{tensao_induzida_terciario_float:.1f}"
-        except Exception as e:
-            log.warning(f"[AUTO FILL] Erro ao formatar tensão induzida Terciário: {e}")
+        # Obter valores de tensão induzida diretamente dos dados básicos
+        tensao_induzida_at = transformer_data.get("teste_tensao_induzida_at", "-")
+        tensao_induzida_bt = transformer_data.get("teste_tensao_induzida_bt", "-")
+        tensao_induzida_terciario = transformer_data.get("teste_tensao_induzida_terciario", "-")
+
+        log.info(f"[AUTO FILL] Valores de tensão induzida obtidos dos dados básicos: AT={tensao_induzida_at}, BT={tensao_induzida_bt}, Terciário={tensao_induzida_terciario}")
 
         def safe_str_output(value):
             if value is None or value == "": return None
@@ -1226,6 +1208,18 @@ def store_dielectric_analysis_data(
                 ):
                     nbi_neutro_value = safe_str_output(transformer_data.get("nbi_neutro_terciario"))
 
+                # Obter valores de tensão induzida diretamente dos dados básicos
+                tensao_induzida_valor = None
+                if i == 0:
+                    tensao_induzida_valor = transformer_data.get("teste_tensao_induzida_at")
+                elif i == 1:
+                    tensao_induzida_valor = transformer_data.get("teste_tensao_induzida_bt")
+                elif i == 2:
+                    tensao_induzida_valor = transformer_data.get("teste_tensao_induzida_terciario")
+
+                # Usar o valor dos dados básicos se disponível, caso contrário usar o valor do formulário
+                tensao_induzida_final = tensao_induzida_valor if tensao_induzida_valor else tensao_induzida
+
                 data_to_store["parametros"]["enrolamentos"].append(
                     {
                         "nome": nomes[i],
@@ -1236,7 +1230,7 @@ def store_dielectric_analysis_data(
                         "ia_neutro": ia_neutro,
                         "im": im,
                         "tensao_curta": tensao_curta,
-                        "tensao_induzida": tensao_induzida,
+                        "tensao_induzida": tensao_induzida_final,
                         "nbi_neutro": nbi_neutro_value,
                     }
                 )
@@ -1355,70 +1349,9 @@ def store_dielectric_analysis_data(
 # Os valores de neutro já são preenchidos pelo callback populate_dielectric_fields_auto
 
 
-# --- Callback para atualizar valores de Tensão Induzida ---
-@app.callback(
-    Output({"type": "tensao-induzida", "index": ALL}, "value"),
-    Input({"type": "um", "index": ALL}, "value"),
-    prevent_initial_call=False,  # Alterado para False para executar na carga inicial
-)
-def dieletric_analysis_update_tensao_induzida_values(um_values):
-    """Atualiza os valores de Tensão Induzida com base nos valores de Um."""
-    log.info(f"[TENSAO INDUZIDA] Callback iniciado com valores Um={um_values}")
-
-    num_outputs = (
-        len(ctx.outputs_list[0])
-        if ctx.outputs_list and ctx.outputs_list[0]
-        else len(um_values)
-        if um_values
-        else 0
-    )
-    if num_outputs == 0:
-        log.warning("[TENSAO INDUZIDA] Nenhum output necessário")
-        return no_update
-
-    verificador = get_verificador_instance()
-    if verificador is None:
-        log.error("[TENSAO INDUZIDA] Verificador não disponível")
-        return ["" for _ in range(num_outputs)]  # Retorna strings vazias em vez de None
-
-    values_list = []
-    for i, um in enumerate(um_values):
-        ti_value = ""  # Valor padrão é string vazia em vez de None
-        if um:
-            try:
-                log.info(f"[TENSAO INDUZIDA] Processando Um={um} para índice {i}")
-                # Obter valores de tensão induzida para o Um atual
-                ti_vals = verificador.nbr.get_tensao_induzida_values(um)
-                log.info(f"[TENSAO INDUZIDA] Valores obtidos para Um={um}: {ti_vals}")
-
-                # Se encontrou valores, usa o primeiro (maior valor)
-                if ti_vals and len(ti_vals) > 0:
-                    # Ordena os valores em ordem decrescente e pega o maior
-                    ti_vals_float = [
-                        safe_float_convert(v) for v in ti_vals if safe_float_convert(v) is not None
-                    ]
-                    if ti_vals_float:
-                        ti_vals_float.sort(reverse=True)
-                        v_float = ti_vals_float[0]
-                        # Formata o valor com uma casa decimal
-                        ti_value = f"{v_float:.1f}"
-                        log.info(f"[TENSAO INDUZIDA] Valor selecionado para Um={um}: {ti_value}")
-
-                # Se não encontrou valores, não calcula mais um valor padrão
-                if not ti_value:
-                    log.warning(f"[TENSAO INDUZIDA] Nenhum valor encontrado para Um={um}")
-            except Exception as e:
-                log.exception(f"[TENSAO INDUZIDA] Erro ao obter valor para Um={um}: {e}")
-
-        values_list.append(ti_value)
-        log.info(f"[TENSAO INDUZIDA] Valor final para índice {i}: {ti_value}")
-
-    # Garante que a lista tenha o tamanho correto
-    while len(values_list) < num_outputs:
-        values_list.append("")  # Adiciona strings vazias em vez de None
-
-    log.info(f"[TENSAO INDUZIDA] Valores finais: {values_list[:num_outputs]}")
-    return values_list[:num_outputs]
+# O callback para atualizar valores de Tensão Induzida foi removido
+# Os valores de tensão induzida agora são obtidos diretamente do transformer-inputs-store
+# através do callback populate_dielectric_fields_auto
 
 
 # --- Callback para Atualizar Display do Tipo de Isolamento ---

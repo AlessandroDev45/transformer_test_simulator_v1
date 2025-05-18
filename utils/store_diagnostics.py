@@ -73,33 +73,27 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
 
     # Função para log detalhado (apenas em casos específicos para evitar poluição)
     def debug_log(msg, level="debug"):
-        if debug_path:  # Só loga se tiver um caminho (evita logar a raiz)
-            if level == "warning":
-                log.warning(f"[CONVERT] {msg} (em {debug_path})")
-                print(f"[CONVERT DEBUG] {msg} (em {debug_path})")
-            else:
-                log.debug(f"[CONVERT] {msg} (em {debug_path})")
+        # Reduzir logs para apenas avisos importantes
+        if level == "warning" and debug_path:
+            log.warning(f"[CONVERT] {msg} (em {debug_path})")
+            print(f"[CONVERT DEBUG] {msg} (em {debug_path})")
 
     # Verificar se o objeto é None
     if obj is None:
-        debug_log("Convertendo None -> None")
         return None
 
     # Estruturas de dados aninhadas
     if isinstance(obj, dict):
-        debug_log(f"Convertendo dict com {len(obj)} chaves")
         return {
             k: convert_numpy_types(v, f"{debug_path}.{k}" if debug_path else k)
             for k, v in obj.items()
         }
     elif isinstance(obj, list):
-        debug_log(f"Convertendo lista com {len(obj)} itens")
         return [
             convert_numpy_types(item, f"{debug_path}[{i}]" if debug_path else f"[{i}]")
             for i, item in enumerate(obj)
         ]
     elif isinstance(obj, tuple):
-        debug_log(f"Convertendo tupla com {len(obj)} itens")
         return tuple(
             convert_numpy_types(item, f"{debug_path}[{i}]" if debug_path else f"[{i}]")
             for i, item in enumerate(obj)
@@ -107,19 +101,15 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
 
     # Tipos numpy básicos
     elif isinstance(obj, np.integer):
-        debug_log(f"Convertendo np.integer {obj} -> int")
         return int(obj)
     elif isinstance(obj, (np.floating, float, int)):
         # Trata NaN e Infinito para np.floating
         if isinstance(obj, np.floating) and (np.isnan(obj) or np.isinf(obj)):
-            debug_log("Convertendo np.nan/np.inf -> None")
             return None  # Converte NaN/Inf para None (serializável)
         # Para float e int normais, retorna diretamente sem conversão
-        debug_log(f"Mantendo/convertendo número {obj} -> {type(obj).__name__}")
         return obj if isinstance(obj, (float, int)) else float(obj)
     elif isinstance(obj, np.ndarray):
         # Converte array para lista, aplicando recursivamente a conversão
-        debug_log(f"Convertendo np.ndarray shape={obj.shape}, dtype={obj.dtype}")
         try:
             return convert_numpy_types(obj.tolist(), debug_path)
         except Exception as e:
@@ -136,32 +126,26 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
                 debug_log(f"ERRO na conversão elemento por elemento: {e2}", "warning")
                 return str(obj)
     elif isinstance(obj, np.bool_):
-        debug_log(f"Convertendo np.bool_ {obj} -> bool")
         return bool(obj)
 
     # Tipos datetime
     elif isinstance(obj, (datetime.date, datetime.datetime)):
         # Converte data/datetime para string ISO 8601
-        debug_log("Convertendo datetime -> string ISO")
         return obj.isoformat()
 
     # Outros tipos comuns
     elif isinstance(obj, set):
-        debug_log(f"Convertendo set com {len(obj)} itens -> lista")
         return list(obj)  # Converte set para lista
     elif isinstance(obj, complex) or (hasattr(obj, "imag") and hasattr(obj, "real")):
         # Para números complexos, retorna apenas a parte real se a parte imaginária for zero
         if hasattr(obj, "imag") and obj.imag == 0:
-            debug_log("Convertendo complex com imag=0 -> float")
             return float(obj.real)
         # Caso contrário, converte para string
-        debug_log("Convertendo complex -> string")
         return f"{obj.real}+{obj.imag}j"
 
     # Objetos com métodos de conversão
     elif hasattr(obj, "to_dict") and callable(obj.to_dict):
         # Para objetos com método to_dict (como pandas DataFrame/Series)
-        debug_log("Convertendo objeto com to_dict() -> dict")
         try:
             return convert_numpy_types(obj.to_dict(), debug_path)
         except Exception as e:
@@ -169,7 +153,6 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
             return str(obj)
     elif hasattr(obj, "to_list") and callable(obj.to_list):
         # Para objetos com método to_list
-        debug_log("Convertendo objeto com to_list() -> lista")
         try:
             return convert_numpy_types(obj.to_list(), debug_path)
         except Exception as e:
@@ -177,7 +160,6 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
             return str(obj)
     elif hasattr(obj, "to_numpy") and callable(obj.to_numpy):
         # Para objetos com método to_numpy (como pandas Series/DataFrame)
-        debug_log("Convertendo objeto com to_numpy() -> array -> lista")
         try:
             return convert_numpy_types(obj.to_numpy().tolist(), debug_path)
         except Exception as e:
@@ -185,7 +167,6 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
             return str(obj)
     elif hasattr(obj, "tolist") and callable(obj.tolist):
         # Para objetos com método tolist (como arrays numpy)
-        debug_log("Convertendo objeto com tolist() -> lista")
         try:
             return convert_numpy_types(obj.tolist(), debug_path)
         except Exception as e:
@@ -195,11 +176,9 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
     # Objetos customizados
     elif hasattr(obj, "__dict__"):
         # Para objetos customizados com __dict__
-        debug_log("Convertendo objeto customizado via __dict__")
         try:
             # Verifica se o __dict__ não está vazio
             if not obj.__dict__:
-                debug_log("__dict__ vazio, usando str(obj)", "warning")
                 return str(obj)
             return convert_numpy_types(obj.__dict__, debug_path)
         except Exception as e:
@@ -209,7 +188,6 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
     # Tipos específicos que podem estar causando problemas
     elif str(type(obj).__module__).startswith("numpy"):
         # Qualquer outro tipo numpy não tratado acima
-        debug_log(f"Convertendo tipo numpy genérico: {type(obj).__name__}")
         try:
             return convert_numpy_types(np.asarray(obj).tolist(), debug_path)
         except Exception as e:
@@ -217,7 +195,6 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
             return str(obj)
     elif str(type(obj).__module__).startswith("pandas"):
         # Qualquer outro tipo pandas não tratado acima
-        debug_log(f"Convertendo tipo pandas genérico: {type(obj).__name__}")
         try:
             return str(obj)
         except Exception as e:
@@ -229,13 +206,9 @@ def convert_numpy_types(obj: Any, debug_path: str = "") -> Any:
         # Tenta verificar se o objeto já é serializável
         try:
             json.dumps(obj)
-            debug_log(f"Objeto já é serializável: {type(obj).__name__}")
             return obj
         except (TypeError, OverflowError):
             # Se não for serializável, converte para string
-            debug_log(
-                f"Objeto não serializável, convertendo para string: {type(obj).__name__}", "warning"
-            )
             try:
                 return str(obj)
             except Exception as e:

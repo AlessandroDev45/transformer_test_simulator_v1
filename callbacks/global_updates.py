@@ -337,35 +337,15 @@ def global_updates_all_transformer_info_panels(
 
         # Verificar se os dados ainda estão ausentes após a recarga
         if fresh_data.get('potencia_mva') is None or fresh_data.get('tensao_at') is None or fresh_data.get('tensao_bt') is None:
-            log.warning(f"[{module_name}] Dados essenciais ainda ausentes após recarga. Usando dados do transformer_inputs_fix...")
-            # Tentar obter dados do transformer_inputs
-            from callbacks.transformer_inputs import get_latest_transformer_data
+            log.warning(f"[{module_name}] Dados essenciais ainda ausentes após recarga.")
+            # Não temos mais a função get_latest_transformer_data, então usamos os dados do MCP
             try:
-                latest_data = get_latest_transformer_data()
-                if latest_data and isinstance(latest_data, dict):
-                    log.debug(f"[{module_name}] Obtidos dados do transformer_inputs_fix")
-                    fresh_data = latest_data
+                # Usar os dados do MCP mesmo que estejam vazios
+                log.debug(f"[{module_name}] Usando dados do MCP mesmo que estejam vazios")
+                # Não fazemos nada aqui, apenas usamos os dados que já temos em fresh_data
 
-                    # IMPORTANTE: Atualizar o MCP com os dados do transformer_inputs_fix
-                    # Isso garante que os dados essenciais estejam disponíveis para outros módulos
-                    if latest_data.get('potencia_mva') is not None and latest_data.get('tensao_at') is not None and latest_data.get('tensao_bt') is not None:
-                        log.debug(f"[{module_name}] Atualizando MCP com dados essenciais do transformer_inputs_fix")
-                        app.mcp.set_data("transformer-inputs-store", latest_data)
-
-                        # Propagar dados para outros stores
-                        from utils.mcp_persistence import ensure_mcp_data_propagation
-                        target_stores = [
-                            "losses-store",
-                            "impulse-store",
-                            "dieletric-analysis-store",
-                            "applied-voltage-store",
-                            "induced-voltage-store",
-                            "short-circuit-store",
-                            "temperature-rise-store",
-                            "comprehensive-analysis-store",
-                        ]
-                        ensure_mcp_data_propagation(app, "transformer-inputs-store", target_stores)
-                        log.debug(f"[{module_name}] Propagação de dados para outros stores concluída")
+                # Não precisamos mais atualizar o MCP com dados do transformer_inputs_fix
+                # porque essa função não existe mais
             except Exception as e:
                 log.error(f"[{module_name}] Erro ao obter dados do transformer_inputs_fix: {e}", exc_info=True)
 

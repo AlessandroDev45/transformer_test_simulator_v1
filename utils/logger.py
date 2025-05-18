@@ -18,7 +18,25 @@ log_filename = f"app_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 # WARNING: Avisos sobre situações inesperadas, mas que não impedem o funcionamento
 # ERROR: Erros que impedem uma operação específica
 # CRITICAL: Erros graves que podem parar a aplicação
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
+
+# Configurar loggers específicos
+# Mostrar apenas logs relacionados aos stores e ao MCP
+logging.getLogger('app_core.transformer_mcp').setLevel(logging.DEBUG)
+logging.getLogger('utils.mcp_persistence').setLevel(logging.DEBUG)
+logging.getLogger('utils.mcp_diagnostics').setLevel(logging.DEBUG)
+logging.getLogger('utils.store_diagnostics').setLevel(logging.DEBUG)
+
+# Callbacks relacionados aos stores
+logging.getLogger('callbacks.transformer_inputs').setLevel(logging.DEBUG)
+logging.getLogger('callbacks.global_updates').setLevel(logging.DEBUG)
+logging.getLogger('callbacks.insulation_level_callbacks').setLevel(logging.INFO)
+logging.getLogger('callbacks.isolation_callbacks').setLevel(logging.INFO)
+
+# Reduzir verbosidade de outros loggers
+logging.getLogger('app_core.isolation_repo').setLevel(logging.WARNING)
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
+logging.getLogger('components.transformer_info_template').setLevel(logging.WARNING)
 
 # Define o formato das mensagens de log
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -30,6 +48,19 @@ root_logger = logging.getLogger()
 if root_logger.hasHandlers():
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
+
+# Criar um filtro personalizado para destacar logs relacionados aos stores e ao MCP
+class StoreAndMCPFilter(logging.Filter):
+    def filter(self, record):
+        # Verificar se o log está relacionado aos stores ou ao MCP
+        if any(name in record.name for name in ['transformer_mcp', 'mcp_persistence', 'store_diagnostics', 'transformer_inputs']):
+            # Adicionar um prefixo ao início da mensagem para destacar
+            if not record.msg.startswith('[STORE/MCP]'):
+                record.msg = f'[STORE/MCP] {record.msg}'
+        return True
+
+# Adicionar o filtro ao logger raiz
+root_logger.addFilter(StoreAndMCPFilter())
 
 # Configura o logging básico
 logging.basicConfig(

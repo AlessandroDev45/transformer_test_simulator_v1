@@ -314,10 +314,10 @@ def force_load_dielectric_data(n_clicks, transformer_data):
                 return str(value)
             return default
 
-    # Extrair dados do transformador com valores padrão
-    um_at = safe_str_output(transformer_data.get("classe_tensao_at"), "500")
-    um_bt = safe_str_output(transformer_data.get("classe_tensao_bt"), "15")
-    um_terciario = safe_str_output(transformer_data.get("classe_tensao_terciario"), "145")
+    # Extrair dados do transformador sem valores padrão
+    um_at = safe_str_output(transformer_data.get("classe_tensao_at"))
+    um_bt = safe_str_output(transformer_data.get("classe_tensao_bt"))
+    um_terciario = safe_str_output(transformer_data.get("classe_tensao_terciario"))
 
     # Determinar conexões - versão simplificada para evitar erros
     def determine_connection(conn_key, neutral_volt_key):
@@ -390,12 +390,10 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         except:
             return "1050"  # Valor padrão seguro
 
-    # Obter valores de NBI/IA com valores padrão
-    nbi_at = safe_str_output(transformer_data.get("nbi_at"), get_default_nbi(um_at))
-    nbi_bt = safe_str_output(transformer_data.get("nbi_bt"), get_default_nbi(um_bt))
-    nbi_terciario = safe_str_output(
-        transformer_data.get("nbi_terciario"), get_default_nbi(um_terciario)
-    )
+    # Obter valores de NBI/IA sem valores padrão
+    nbi_at = safe_str_output(transformer_data.get("nbi_at"))
+    nbi_bt = safe_str_output(transformer_data.get("nbi_bt"))
+    nbi_terciario = safe_str_output(transformer_data.get("nbi_terciario"))
 
     # Obter valores de NBI Neutro (60% do NBI principal para YN)
     def get_neutro_nbi(nbi_value, conexao):
@@ -407,16 +405,9 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         except:
             return None
 
-    nbi_neutro_at = safe_str_output(
-        transformer_data.get("nbi_neutro_at"), get_neutro_nbi(nbi_at, conexao_at)
-    )
-    nbi_neutro_bt = safe_str_output(
-        transformer_data.get("nbi_neutro_bt"), get_neutro_nbi(nbi_bt, conexao_bt)
-    )
-    nbi_neutro_terciario = safe_str_output(
-        transformer_data.get("nbi_neutro_terciario"),
-        get_neutro_nbi(nbi_terciario, conexao_terciario),
-    )
+    nbi_neutro_at = safe_str_output(transformer_data.get("nbi_neutro_at"))
+    nbi_neutro_bt = safe_str_output(transformer_data.get("nbi_neutro_bt"))
+    nbi_neutro_terciario = safe_str_output(transformer_data.get("nbi_neutro_terciario"))
 
     # Obter valores de SIL/IM (para AT geralmente é 75-80% do NBI)
     def get_default_sil(nbi_value, um_value):
@@ -431,13 +422,9 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         except:
             return "0"  # Não aplicável
 
-    sil_at = safe_str_output(transformer_data.get("sil_at"), get_default_sil(nbi_at, um_at))
-    sil_bt = safe_str_output(
-        transformer_data.get("sil_bt"), "0"
-    )  # Geralmente não aplicável para BT
-    sil_terciario = safe_str_output(
-        transformer_data.get("sil_terciario"), "0"
-    )  # Geralmente não aplicável para terciário
+    sil_at = safe_str_output(transformer_data.get("sil_at"))
+    sil_bt = safe_str_output(transformer_data.get("sil_bt"))
+    sil_terciario = safe_str_output(transformer_data.get("sil_terciario"))
 
     # Função para calcular IAC de forma segura
     def calculate_iac(nbi_value):
@@ -501,17 +488,10 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         except:
             return "460"  # Valor padrão seguro
 
-    # Obter valores de Tensão Aplicada com valores padrão
-    tensao_aplicada_at = safe_str_output(
-        transformer_data.get("teste_tensao_aplicada_at"), get_default_tensao_aplicada(um_at)
-    )
-    tensao_aplicada_bt = safe_str_output(
-        transformer_data.get("teste_tensao_aplicada_bt"), get_default_tensao_aplicada(um_bt)
-    )
-    tensao_aplicada_terciario = safe_str_output(
-        transformer_data.get("teste_tensao_aplicada_terciario"),
-        get_default_tensao_aplicada(um_terciario),
-    )
+    # Obter valores de Tensão Aplicada sem valores padrão
+    tensao_aplicada_at = safe_str_output(transformer_data.get("teste_tensao_aplicada_at"))
+    tensao_aplicada_bt = safe_str_output(transformer_data.get("teste_tensao_aplicada_bt"))
+    tensao_aplicada_terciario = safe_str_output(transformer_data.get("teste_tensao_aplicada_terciario"))
 
     # Calcular valores padrão para Tensão Induzida (geralmente 2x a tensão nominal)
     def get_default_tensao_induzida(um_value):
@@ -522,17 +502,10 @@ def force_load_dielectric_data(n_clicks, transformer_data):
         except:
             return "0"  # Valor padrão seguro
 
-    # Obter valores de Tensão Induzida com valores padrão
-    tensao_induzida_at = safe_str_output(
-        transformer_data.get("teste_tensao_induzida_at"), get_default_tensao_induzida(um_at)
-    )
-    tensao_induzida_bt = safe_str_output(
-        transformer_data.get("teste_tensao_induzida_bt"), get_default_tensao_induzida(um_bt)
-    )
-    tensao_induzida_terciario = safe_str_output(
-        transformer_data.get("teste_tensao_induzida_terciario"),
-        get_default_tensao_induzida(um_terciario),
-    )
+    # Obter valores de Tensão Induzida sem valores padrão
+    tensao_induzida_at = safe_str_output(transformer_data.get("teste_tensao_induzida_at"))
+    tensao_induzida_bt = safe_str_output(transformer_data.get("teste_tensao_induzida_bt"))
+    tensao_induzida_terciario = safe_str_output(transformer_data.get("teste_tensao_induzida_terciario"))
 
     tipo_isolamento = transformer_data.get("tipo_isolamento", "uniforme")
     tipo_transformador = transformer_data.get("tipo_transformador")

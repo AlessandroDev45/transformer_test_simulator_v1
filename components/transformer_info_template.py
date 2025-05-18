@@ -148,17 +148,79 @@ def create_transformer_info_panel(transformer_data):
 
         # Extrair valores principais para exibição e log
         potencia_valor = transformer_data.get("potencia_mva")
+        frequencia_valor = transformer_data.get("frequencia")
+        grupo_ligacao_valor = transformer_data.get("grupo_ligacao")
+        tipo_isolamento_valor = transformer_data.get("tipo_isolamento")
+        liquido_isolante_valor = transformer_data.get("liquido_isolante")
 
         # Valores de tensão
         tensao_at_valor = transformer_data.get("tensao_at")
         tensao_at_tap_maior_valor = transformer_data.get("tensao_at_tap_maior")
         tensao_at_tap_menor_valor = transformer_data.get("tensao_at_tap_menor")
         tensao_bt_valor = transformer_data.get("tensao_bt")
+        tensao_terciario_valor = transformer_data.get("tensao_terciario")
+
+        # Valores de classe de tensão
+        classe_tensao_at_valor = transformer_data.get("classe_tensao_at")
+        classe_tensao_bt_valor = transformer_data.get("classe_tensao_bt")
+        classe_tensao_terciario_valor = transformer_data.get("classe_tensao_terciario")
 
         # Valores de corrente
         corrente_at_valor = transformer_data.get("corrente_nominal_at")
         corrente_at_tap_maior_valor = transformer_data.get("corrente_nominal_at_tap_maior")
         corrente_at_tap_menor_valor = transformer_data.get("corrente_nominal_at_tap_menor")
+        corrente_bt_valor = transformer_data.get("corrente_nominal_bt")
+        corrente_terciario_valor = transformer_data.get("corrente_nominal_terciario")
+
+        # Valores de impedância
+        impedancia_valor = transformer_data.get("impedancia")
+        impedancia_tap_maior_valor = transformer_data.get("impedancia_tap_maior")
+        impedancia_tap_menor_valor = transformer_data.get("impedancia_tap_menor")
+
+        # Valores de conexão
+        conexao_at_valor = transformer_data.get("conexao_at")
+        conexao_bt_valor = transformer_data.get("conexao_bt")
+        conexao_terciario_valor = transformer_data.get("conexao_terciario")
+
+        # Valores de neutro
+        tensao_bucha_neutro_at_valor = transformer_data.get("tensao_bucha_neutro_at")
+        tensao_bucha_neutro_bt_valor = transformer_data.get("tensao_bucha_neutro_bt")
+        tensao_bucha_neutro_terciario_valor = transformer_data.get("tensao_bucha_neutro_terciario")
+
+        # Valores de NBI e SIL
+        nbi_at_valor = transformer_data.get("nbi_at")
+        sil_at_valor = transformer_data.get("sil_at")
+        nbi_neutro_at_valor = transformer_data.get("nbi_neutro_at")
+        sil_neutro_at_valor = transformer_data.get("sil_neutro_at")
+
+        nbi_bt_valor = transformer_data.get("nbi_bt")
+        sil_bt_valor = transformer_data.get("sil_bt")
+        nbi_neutro_bt_valor = transformer_data.get("nbi_neutro_bt")
+        sil_neutro_bt_valor = transformer_data.get("sil_neutro_bt")
+
+        nbi_terciario_valor = transformer_data.get("nbi_terciario")
+        sil_terciario_valor = transformer_data.get("sil_terciario")
+        nbi_neutro_terciario_valor = transformer_data.get("nbi_neutro_terciario")
+        sil_neutro_terciario_valor = transformer_data.get("sil_neutro_terciario")
+
+        # Valores de tensão de ensaio
+        teste_tensao_aplicada_at_valor = transformer_data.get("teste_tensao_aplicada_at")
+        teste_tensao_aplicada_bt_valor = transformer_data.get("teste_tensao_aplicada_bt")
+        teste_tensao_aplicada_terciario_valor = transformer_data.get("teste_tensao_aplicada_terciario")
+        teste_tensao_induzida_valor = transformer_data.get("teste_tensao_induzida")
+
+        # Valores de elevação de temperatura
+        elevacao_oleo_topo_valor = transformer_data.get("elevacao_oleo_topo")
+        elevacao_enrol_valor = transformer_data.get("elevacao_enrol")
+        elevacao_enrol_at_valor = transformer_data.get("elevacao_enrol_at")
+        elevacao_enrol_bt_valor = transformer_data.get("elevacao_enrol_bt")
+        elevacao_enrol_terciario_valor = transformer_data.get("elevacao_enrol_terciario")
+
+        # Valores de peso
+        peso_total_valor = transformer_data.get("peso_total")
+        peso_parte_ativa_valor = transformer_data.get("peso_parte_ativa")
+        peso_oleo_valor = transformer_data.get("peso_oleo")
+        peso_tanque_acessorios_valor = transformer_data.get("peso_tanque_acessorios")
 
         # Outros valores
         norma_valor = transformer_data.get("norma_iso")
@@ -168,22 +230,91 @@ def create_transformer_info_panel(transformer_data):
         logger.info("=================== DADOS DO TRANSFORMADOR NO PAINEL ===================")
         logger.info(f"POTÊNCIA: {potencia_valor} MVA")
         logger.info(f"TIPO: {tipo_transformador}")
+        logger.info(f"FREQUÊNCIA: {frequencia_valor} Hz")
+        logger.info(f"GRUPO DE LIGAÇÃO: {grupo_ligacao_valor}")
+        logger.info(f"TIPO DE ISOLAMENTO: {tipo_isolamento_valor}")
+        logger.info(f"LÍQUIDO ISOLANTE: {liquido_isolante_valor}")
+        logger.info(f"NORMA: {norma_valor}")
 
         # Log detalhado das tensões
-        logger.info("TENSÕES AT:")
-        logger.info(f"  - Tap Nominal: {tensao_at_valor} kV")
-        logger.info(f"  - Tap Maior: {tensao_at_tap_maior_valor} kV")
-        logger.info(f"  - Tap Menor: {tensao_at_tap_menor_valor} kV")
-        logger.info(f"TENSÃO BT: {tensao_bt_valor} kV")
+        logger.info("TENSÕES:")
+        logger.info("  AT:")
+        logger.info(f"    - Tap Nominal: {tensao_at_valor} kV")
+        logger.info(f"    - Tap Maior: {tensao_at_tap_maior_valor} kV")
+        logger.info(f"    - Tap Menor: {tensao_at_tap_menor_valor} kV")
+        logger.info(f"    - Classe de Tensão: {classe_tensao_at_valor} kV")
+        logger.info(f"  BT: {tensao_bt_valor} kV (Classe: {classe_tensao_bt_valor} kV)")
+        logger.info(f"  TERCIÁRIO: {tensao_terciario_valor} kV (Classe: {classe_tensao_terciario_valor} kV)")
 
         # Log detalhado das correntes
-        logger.info("CORRENTES AT:")
-        logger.info(f"  - Tap Nominal: {corrente_at_valor} A")
-        logger.info(f"  - Tap Maior: {corrente_at_tap_maior_valor} A")
-        logger.info(f"  - Tap Menor: {corrente_at_tap_menor_valor} A")
+        logger.info("CORRENTES:")
+        logger.info("  AT:")
+        logger.info(f"    - Tap Nominal: {corrente_at_valor} A")
+        logger.info(f"    - Tap Maior: {corrente_at_tap_maior_valor} A")
+        logger.info(f"    - Tap Menor: {corrente_at_tap_menor_valor} A")
+        logger.info(f"  BT: {corrente_bt_valor} A")
+        logger.info(f"  TERCIÁRIO: {corrente_terciario_valor} A")
 
-        # Log da norma
-        logger.info(f"NORMA: {norma_valor}")
+        # Log detalhado das impedâncias
+        logger.info("IMPEDÂNCIAS:")
+        logger.info(f"  - Nominal: {impedancia_valor} %")
+        logger.info(f"  - Tap Maior: {impedancia_tap_maior_valor} %")
+        logger.info(f"  - Tap Menor: {impedancia_tap_menor_valor} %")
+
+        # Log detalhado das conexões
+        logger.info("CONEXÕES:")
+        logger.info(f"  - AT: {conexao_at_valor}")
+        logger.info(f"  - BT: {conexao_bt_valor}")
+        logger.info(f"  - TERCIÁRIO: {conexao_terciario_valor}")
+
+        # Log detalhado dos neutros
+        logger.info("NEUTROS:")
+        logger.info(f"  - AT: Classe {tensao_bucha_neutro_at_valor} kV")
+        logger.info(f"  - BT: Classe {tensao_bucha_neutro_bt_valor} kV")
+        logger.info(f"  - TERCIÁRIO: Classe {tensao_bucha_neutro_terciario_valor} kV")
+
+        # Log detalhado dos níveis de isolamento
+        logger.info("NÍVEIS DE ISOLAMENTO:")
+        logger.info("  AT:")
+        logger.info(f"    - NBI: {nbi_at_valor} kVp")
+        logger.info(f"    - SIL/IM: {sil_at_valor} kVp")
+        logger.info(f"    - NBI Neutro: {nbi_neutro_at_valor} kVp")
+        logger.info(f"    - SIL/IM Neutro: {sil_neutro_at_valor} kVp")
+        logger.info("  BT:")
+        logger.info(f"    - NBI: {nbi_bt_valor} kVp")
+        logger.info(f"    - SIL/IM: {sil_bt_valor} kVp")
+        logger.info(f"    - NBI Neutro: {nbi_neutro_bt_valor} kVp")
+        logger.info(f"    - SIL/IM Neutro: {sil_neutro_bt_valor} kVp")
+        logger.info("  TERCIÁRIO:")
+        logger.info(f"    - NBI: {nbi_terciario_valor} kVp")
+        logger.info(f"    - SIL/IM: {sil_terciario_valor} kVp")
+        logger.info(f"    - NBI Neutro: {nbi_neutro_terciario_valor} kVp")
+        logger.info(f"    - SIL/IM Neutro: {sil_neutro_terciario_valor} kVp")
+
+        # Log detalhado das tensões de ensaio
+        logger.info("TENSÕES DE ENSAIO:")
+        logger.info("  APLICADA:")
+        logger.info(f"    - AT: {teste_tensao_aplicada_at_valor} kV")
+        logger.info(f"    - BT: {teste_tensao_aplicada_bt_valor} kV")
+        logger.info(f"    - TERCIÁRIO: {teste_tensao_aplicada_terciario_valor} kV")
+        logger.info("  INDUZIDA:")
+        logger.info(f"    - AT: {teste_tensao_induzida_valor} kV")
+
+        # Log detalhado das elevações de temperatura
+        logger.info("ELEVAÇÕES DE TEMPERATURA:")
+        logger.info(f"  - Óleo Topo: {elevacao_oleo_topo_valor} °C")
+        logger.info(f"  - Enrolamento (Geral): {elevacao_enrol_valor} °C")
+        logger.info(f"  - AT: {elevacao_enrol_at_valor} °C")
+        logger.info(f"  - BT: {elevacao_enrol_bt_valor} °C")
+        logger.info(f"  - TERCIÁRIO: {elevacao_enrol_terciario_valor} °C")
+
+        # Log detalhado dos pesos
+        logger.info("PESOS:")
+        logger.info(f"  - Total: {peso_total_valor} ton")
+        logger.info(f"  - Parte Ativa: {peso_parte_ativa_valor} ton")
+        logger.info(f"  - Óleo: {peso_oleo_valor} ton")
+        logger.info(f"  - Tanque e Acessórios: {peso_tanque_acessorios_valor} ton")
+
         logger.info("======================================================================")
 
         top_items = [
