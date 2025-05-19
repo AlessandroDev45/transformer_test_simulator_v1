@@ -196,7 +196,9 @@ Este documento detalha as fórmulas e parâmetros usados nos cálculos de impuls
 
 Os níveis básicos de isolamento são determinados com base nas tensões nominais dos enrolamentos e nas normas aplicáveis. O sistema utiliza tabelas de referência para determinar os níveis de isolamento adequados para cada classe de tensão.
 
-### 1.1.1. Tabela para Impulso Atmosférico (LI)
+### 1.1.1. Tabela para Impulso Atmosférico (LI/NBI)
+
+#### Padrão NBR/IEC
 
 | **Tensão Máxima do Sistema (kV)** | **Nível Básico de Impulso - BIL (kV)** |
 | ---------------------------------- | -------------------------------------- |
@@ -209,17 +211,35 @@ Os níveis básicos de isolamento são determinados com base nas tensões nomina
 | 36                                 | 145 / 170 / 200                        |
 | 52                                 | 250                                    |
 | 72.5                               | 325 / 350                              |
-| 123                                | 450 / 550                              |
 | 145                                | 450 / 550 / 650                        |
 | 170                                | 550 / 650 / 750                        |
 | 245                                | 750 / 850 / 950 / 1050                 |
-| 300                                | 950 / 1050                             |
 | 362                                | 950 / 1050 / 1175                      |
 | 420                                | 1050 / 1175 / 1300 / 1425              |
 | 525                                | 1300 / 1425 / 1550                     |
 | 800                                | 1800 / 1950 / 2100                     |
 
-### 1.1.2. Tabela para Impulso de Manobra (SI)
+#### Padrão IEEE
+
+| **Tensão Máxima do Sistema (kV)** | **Nível Básico de Impulso - BIL (kV)** |
+| ---------------------------------- | -------------------------------------- |
+| 1.2                                | 30                                     |
+| 5.0                                | 60                                     |
+| 8.7                                | 75                                     |
+| 15                                 | 95 / 110                               |
+| 25.8                               | 125 / 150                              |
+| 34.5                               | 150 / 200                              |
+| 46                                 | 200 / 250                              |
+| 69                                 | 250 / 350                              |
+| 161                                | 550 / 650 / 750                        |
+| 230                                | 650 / 750 / 825 / 900                  |
+| 345                                | 900 / 1050 / 1175                      |
+| 500                                | 1300 / 1425 / 1550 / 1675 / 1800       |
+| 765                                | 1800 / 1925 / 2050                     |
+
+### 1.1.2. Tabela para Impulso de Manobra (SI/IM)
+
+#### Padrão NBR/IEC
 
 | **Tensão Máxima do Sistema (kV)** | **Nível de Impulso de Manobra - SIL (kV)** |
 | ---------------------------------- | ------------------------------------------ |
@@ -228,6 +248,16 @@ Os níveis básicos de isolamento são determinados com base nas tensões nomina
 | 420                                | 850 / 950 / 1050 / 1175                    |
 | 525                                | 1050 / 1175                                |
 | 800                                | 1425 / 1550                                |
+
+#### Padrão IEEE
+
+| **Tensão Máxima do Sistema (kV)** | **Nível de Impulso de Manobra - BSL (kV)** |
+| ---------------------------------- | ------------------------------------------ |
+| 161                                | 460 / 540 / 620                            |
+| 230                                | 540 / 620 / 685 / 745                      |
+| 345                                | 745 / 870 / 975                            |
+| 500                                | 1080 / 1180 / 1290 / 1390 / 1500           |
+| 765                                | 1500 / 1600 / 1700                         |
 
 ### 1.1.3. Lógica de Seleção do BIL
 
