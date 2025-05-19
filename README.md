@@ -4,6 +4,10 @@
 
 Um aplicativo web interativo para simulação e análise de testes em transformadores de potência, baseado nas normas IEC, IEEE e ABNT.
 
+## Versão Atual: 1.2.0
+
+**Última atualização:** Setembro 2024
+
 ## Descrição
 
 O Simulador de Testes de Transformadores é uma ferramenta desenvolvida para engenheiros e técnicos que trabalham com transformadores de potência. Ele permite simular diversos tipos de testes e ensaios, calcular parâmetros importantes e verificar a conformidade com as normas técnicas internacionais e brasileiras.
@@ -48,7 +52,9 @@ transformer_test_simulator_v1/
 │   ├── startup.py          # Inicialização do MCP com dados padrão
 │   └── transformer_mcp.py  # Model-Controller-Presenter para transformadores
 ├── assets/                 # Arquivos estáticos (CSS, imagens)
-│   ├── help_docs/          # Documentação de ajuda
+│   ├── css/                # Arquivos de estilo
+│   ├── images/             # Imagens e ícones
+│   ├── tabela.json         # Dados de referência para níveis de isolamento
 │   └── standards_data/     # Dados das normas técnicas
 ├── callbacks/              # Callbacks Dash para interatividade
 │   ├── transformer_inputs.py
@@ -90,7 +96,9 @@ transformer_test_simulator_v1/
 │   ├── test_sessions.db    # Banco de dados de sessões de teste
 │   └── mcp_state/          # Estado do MCP persistido em disco
 ├── docs/                   # Documentação adicional
-│   └── formulas_*.md       # Documentação de fórmulas
+│   ├── formulas_*.md       # Documentação de fórmulas em Markdown
+│   ├── modulos_dependencias.md # Documentação técnica de dependências entre módulos
+│   └── help_docs/          # Documentação de ajuda em HTML
 ├── .github/workflows/      # Configuração de CI/CD
 │   └── ci.yml              # Workflow de CI/CD
 ├── Dockerfile              # Configuração para build Docker
@@ -195,6 +203,8 @@ transformer_test_simulator_v1/
 - **Exportação de Relatórios**: Geração de relatórios em formato PDF
 - **Validação de Entrada**: Verificação de dados de entrada para evitar erros de cálculo
 - **Conformidade com Normas**: Verificação automática de conformidade com normas técnicas
+- **Documentação Integrada**: Sistema de ajuda com documentação técnica acessível diretamente na interface
+- **Gerenciamento de Estado**: Utilização de componentes dcc.Store para gerenciamento eficiente do estado da aplicação
 
 ## Normas Técnicas Implementadas
 
@@ -238,6 +248,47 @@ Certifique-se de que seus testes passam e que a cobertura de testes é mantida o
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+
+## Documentação
+
+O sistema possui documentação técnica integrada acessível de duas formas:
+
+1. **Documentação na Interface**: Cada módulo possui um botão de ajuda que abre a documentação específica daquele módulo.
+2. **Arquivos de Documentação**:
+   - Arquivos HTML na pasta `docs/help_docs/` com documentação detalhada de cada módulo
+   - Arquivo `docs/modulos_dependencias.md` com a documentação técnica das dependências entre módulos
+   - Arquivos Markdown na pasta `docs/` com detalhes sobre as fórmulas utilizadas
+
+### Sistema de Ajuda
+
+O sistema de ajuda integrado oferece:
+
+- Explicações detalhadas sobre as fórmulas utilizadas
+- Referências às normas técnicas aplicáveis
+- Descrição das variáveis e parâmetros
+- Exemplos de cálculos
+- Tabelas de referência para níveis de isolamento (BIL/NBI e SIL/IM)
+
+## Histórico de Versões
+
+### Versão 1.2.0 (Setembro 2024)
+
+- Implementação do sistema de documentação HTML integrado
+- Melhoria na navegação do sumário inteligente
+- Correção das tabelas de impulso (BIL/NBI e SIL/IM) separadas por padrão (NBR/IEC e IEEE)
+- Ajustes de cores para melhor legibilidade da documentação
+
+### Versão 1.1.0 (Agosto 2024)
+
+- Implementação do gerenciamento de estado com dcc.Store
+- Melhoria na persistência de dados entre sessões
+- Adição de novos módulos de análise
+
+### Versão 1.0.0 (Julho 2024)
+
+- Lançamento inicial do simulador
+- Implementação dos módulos básicos de análise
+- Integração com normas técnicas
 
 ## Contato
 
