@@ -13,12 +13,15 @@
     <style>
         :root {
             --primary-color: #0078D7;
-            --secondary-color: #B9D1EA;
+            --secondary-color: #E1F0FF; /* Mais claro para melhor contraste */
             --text-color: #f8f9fa;
-            --bg-color: #343a40;
-            --card-bg-color: #495057;
-            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
+            --bg-color: #1E1E1E; /* Fundo mais escuro */
+            --card-bg-color: #2D2D2D; /* Fundo do card mais escuro */
+            --sidebar-bg-color: #252525; /* Fundo da barra lateral mais escuro */
             --border-color: #6c757d;
+            --link-color: #4DA3FF; /* Cor de link mais clara para melhor contraste */
+            --link-hover-color: #80BDFF; /* Cor de hover mais clara */
+            --heading-color: #FFFFFF; /* Cor de cabeçalho branca para melhor contraste */
         }
         body {
             background-color: var(--bg-color);
@@ -47,7 +50,7 @@
             margin-bottom: 20px;
         }
         h1, h2, h3, h4, h5, h6 {
-            color: var(--secondary-color);
+            color: var(--heading-color);
             margin-top: 1.5rem;
             margin-bottom: 1rem;
         }
@@ -57,11 +60,11 @@
             margin-bottom: 20px;
         }
         a {
-            color: var(--primary-color);
+            color: var(--link-color);
             text-decoration: none;
         }
         a:hover {
-            color: var(--secondary-color);
+            color: var(--link-hover-color);
             text-decoration: underline;
         }
         pre {
@@ -108,6 +111,11 @@
         .toc a:hover {
             background-color: rgba(255, 255, 255, 0.1);
             text-decoration: none;
+        }
+        .toc a.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
         }
         .toc .toc-h2 {
             padding-left: 20px;
@@ -488,10 +496,10 @@ Valores fornecidos ou obtidos para os cálculos de perdas em carga:
 
 #### 3.2.1. Implementação no Código
 
-O código em `formulas/losses_math.py` implementa uma aproximação para as perdas em carga:
-* `perdas_carga = 0.01 * potencia_nominal * 1000` (aproximadamente 1% da potência nominal)
+O código em formulas/losses_math.py implementa uma aproximação para as perdas em carga:
+* perdas_carga = 0.01 * potencia_nominal * 1000 (aproximadamente 1% da potência nominal)
 
-Esta é uma estimativa simplificada quando os valores exatos não estão disponíveis. Na implementação completa em `callbacks/losses.py`, são utilizados os valores reais de perdas totais e perdas em vazio para calcular as perdas em carga com maior precisão.
+Esta é uma estimativa simplificada quando os valores exatos não estão disponíveis. Na implementação completa em callbacks/losses.py, são utilizados os valores reais de perdas totais e perdas em vazio para calcular as perdas em carga com maior precisão.
 
 ### 3.3. Cálculos para Condição a Frio (Referência 25°C)
 
@@ -708,10 +716,8 @@ Função calculate_sut_eps_current_compensated:
                     .replace(/\s+/g, '-')     // Replace spaces with hyphens
                     .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
 
-                heading.id = slug || `heading-${index}`;
-                /*
-                console.log(`Heading text: ${heading.textContent}, Slug: ${slug}, ID: ${heading.id}`);
-                */
+                // Ensure unique ID by adding index if slug is empty or duplicated
+                heading.id = slug ? `${slug}-${index}` : `heading-${index}`;
             });
 
             // Now find the actual headings in the document and assign the same IDs
@@ -733,19 +739,30 @@ Função calculate_sut_eps_current_compensated:
                 const link = document.createElement('a');
                 link.href = `#${heading.id}`;
                 link.textContent = heading.textContent;
+                link.setAttribute('data-heading-id', heading.id);
 
                 // Add click handler to ensure smooth scrolling and proper focus
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const targetId = this.getAttribute('href').substring(1);
+                    const targetId = this.getAttribute('data-heading-id');
                     const targetElement = document.getElementById(targetId);
+
                     if (targetElement) {
+                        // Scroll to the element smoothly
                         targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
                         // Set focus to the heading for accessibility
                         targetElement.setAttribute('tabindex', '-1');
                         targetElement.focus();
+
                         // Update URL hash without jumping
                         history.pushState(null, null, `#${targetId}`);
+
+                        // Add active class to the current TOC item
+                        document.querySelectorAll('.toc a').forEach(a => {
+                            a.classList.remove('active');
+                        });
+                        this.classList.add('active');
                     }
                 });
 
@@ -774,9 +791,7 @@ Função calculate_sut_eps_current_compensated:
             });
 
             // Render markdown to HTML
-            console.log("Iniciando a renderização do Markdown...");
             const renderedHTML = marked.parse(content);
-            console.log("Renderização do Markdown concluída.");
 
             // Apply search highlighting if there's a search term
             const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
@@ -823,6 +838,27 @@ Função calculate_sut_eps_current_compensated:
                     firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            setTimeout(() => {
+                if (window.location.hash) {
+                    const hash = window.location.hash.substring(1);
+                    const targetElement = document.getElementById(hash);
+
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Highlight the corresponding TOC item
+                        const tocLink = document.querySelector(`.toc a[data-heading-id="${hash}"]`);
+                        if (tocLink) {
+                            document.querySelectorAll('.toc a').forEach(a => {
+                                a.classList.remove('active');
+                            });
+                            tocLink.classList.add('active');
+                        }
+                    }
+                }
+            }, 500); // Small delay to ensure rendering is complete
         });
     </script>
 </body>

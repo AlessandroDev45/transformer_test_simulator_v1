@@ -11,28 +11,43 @@
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
+        :root {
+            --primary-color: #0078D7;
+            --secondary-color: #E1F0FF; /* Mais claro para melhor contraste */
+            --text-color: #f8f9fa;
+            --bg-color: #1E1E1E; /* Fundo mais escuro */
+            --card-bg-color: #2D2D2D; /* Fundo do card mais escuro */
+            --sidebar-bg-color: #252525; /* Fundo da barra lateral mais escuro */
+            --border-color: #6c757d;
+            --link-color: #4DA3FF; /* Cor de link mais clara para melhor contraste */
+            --link-hover-color: #80BDFF; /* Cor de hover mais clara */
+            --heading-color: #FFFFFF; /* Cor de cabeçalho branca para melhor contraste */
+        }
         body {
-            background-color: #2d2d2d;
-            color: #e0e0e0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
         }
         .container {
-            max-width: 1400px;
-            margin-top: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .sidebar {
-            background-color: #333;
-            padding: 20px;
+            background-color: var(--sidebar-bg-color);
             border-radius: 5px;
+            padding: 20px;
             position: sticky;
             top: 20px;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
         }
         .content {
-            background-color: #3a3a3a;
-            padding: 30px;
+            background-color: var(--card-bg-color);
             border-radius: 5px;
+            padding: 30px;
+            margin-bottom: 20px;
         }
         .toc {
             list-style-type: none;
@@ -54,23 +69,33 @@
             font-size: 0.85em;
         }
         .toc a {
-            color: #b9d1ea;
+            color: var(--link-color);
             text-decoration: none;
+            display: block;
+            padding: 5px 10px;
+            border-radius: 3px;
         }
         .toc a:hover {
-            text-decoration: underline;
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        .toc a.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
         }
         h1, h2, h3, h4, h5, h6 {
-            color: #0078d7;
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
+            color: var(--heading-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
         }
         h1 {
-            border-bottom: 1px solid #555;
+            border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
+            margin-bottom: 20px;
         }
         h2 {
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid var(--primary-color);
             padding-bottom: 5px;
         }
         code {
@@ -276,9 +301,9 @@ Onde:
 ### 3.3. Grupo de Ligação
 
 O grupo de ligação (ex: Dyn11, YNd5) indica:
-* Conexão do lado AT (maiúscula: D, Y, YN, Z)
-* Conexão do lado BT (minúscula: d, y, yn, z)
-* Defasamento angular (número: 0, 5, 6, 11)
+* Conexão do lado AT (maiúscula: D, Y, YN, Z, ZN)
+* Conexão do lado BT (minúscula: d, y, yn, z, zn)
+* Defasamento angular (número: 0, 5, 6, 11, 15)
 
 ## 4. Níveis de Isolamento
 
@@ -664,12 +689,32 @@ Níveis de tensão para medição de descargas parciais:
             const toc = document.getElementById('toc');
             toc.innerHTML = ''; // Clear existing TOC
 
+            // First pass: assign IDs to headings in our temporary container
             headings.forEach((heading, index) => {
-                // Create an ID for the heading if it doesn't have one
-                if (!heading.id) {
-                    heading.id = `heading-${index}`;
-                }
+                const headingText = heading.textContent.trim();
+                // Create a slug from the heading text
+                const slug = headingText
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special chars
+                    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+                    .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
 
+                // Ensure unique ID by adding index if slug is empty or duplicated
+                heading.id = slug ? `${slug}-${index}` : `heading-${index}`;
+            });
+
+            // Now find the actual headings in the document and assign the same IDs
+            const contentDiv = document.getElementById('markdown-content');
+            const actualHeadings = contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+            actualHeadings.forEach((heading, index) => {
+                if (index < headings.length) {
+                    heading.id = headings[index].id;
+                }
+            });
+
+            // Now build the TOC with links to the actual headings
+            headings.forEach((heading, index) => {
                 const level = parseInt(heading.tagName.substring(1));
                 const tocItem = document.createElement('li');
                 tocItem.className = `toc-h${level}`;
@@ -677,6 +722,32 @@ Níveis de tensão para medição de descargas parciais:
                 const link = document.createElement('a');
                 link.href = `#${heading.id}`;
                 link.textContent = heading.textContent;
+                link.setAttribute('data-heading-id', heading.id);
+
+                // Add click handler to ensure smooth scrolling and proper focus
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-heading-id');
+                    const targetElement = document.getElementById(targetId);
+
+                    if (targetElement) {
+                        // Scroll to the element smoothly
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Set focus to the heading for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+
+                        // Update URL hash without jumping
+                        history.pushState(null, null, `#${targetId}`);
+
+                        // Add active class to the current TOC item
+                        document.querySelectorAll('.toc a').forEach(a => {
+                            a.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                });
 
                 tocItem.appendChild(link);
                 toc.appendChild(tocItem);
@@ -725,11 +796,42 @@ Níveis de tensão para medição de descargas parciais:
             }
         }
 
-        // Initial render
-        document.addEventListener('DOMContentLoaded', renderMarkdown);
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarkdown();
 
-        // Search functionality
-        document.getElementById('search-input').addEventListener('input', renderMarkdown);
+            // Set up search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderMarkdown();
+
+                // Scroll to first highlight if there is one
+                const firstHighlight = document.querySelector('.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            // Check if there's a hash in the URL and scroll to it after rendering
+            setTimeout(() => {
+                if (window.location.hash) {
+                    const hash = window.location.hash.substring(1);
+                    const targetElement = document.getElementById(hash);
+
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Highlight the corresponding TOC item
+                        const tocLink = document.querySelector(`.toc a[data-heading-id="${hash}"]`);
+                        if (tocLink) {
+                            document.querySelectorAll('.toc a').forEach(a => {
+                                a.classList.remove('active');
+                            });
+                            tocLink.classList.add('active');
+                        }
+                    }
+                }
+            }, 500); // Small delay to ensure rendering is complete
+        });
     </script>
 </body>
 </html>
