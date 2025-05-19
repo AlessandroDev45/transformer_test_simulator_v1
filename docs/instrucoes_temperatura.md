@@ -10,17 +10,17 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 
 | Parâmetro                     | Descrição                              | Unidade | Variável no Código                   |
 | :---------------------------- | :------------------------------------- | :------ | :--------------------------------- |
-| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | `tipo_transformador`               |
-| Potência Nominal              | Potência nominal do transformador      | MVA     | `potencia_nominal`                 |
-| Perdas em Vazio               | Perdas no núcleo                       | kW      | `perdas_vazio`                     |
-| Perdas em Carga               | Perdas nos enrolamentos a 75°C         | kW      | `perdas_carga`                     |
-| Temperatura Ambiente          | Temperatura ambiente de referência     | °C      | `temp_ambiente`                    |
-| Elevação de Temperatura       | Elevação de temperatura garantida      | K       | `elevacao_temp`                    |
-| Tipo de Resfriamento          | Sistema de resfriamento (ONAN, ONAF, etc.) | -   | `tipo_resfriamento`               |
-| Constantes Térmicas           | Constantes de tempo térmico            | min     | `constantes_termicas`              |
-| Peso do Óleo                  | Peso total do óleo isolante            | kg      | `peso_oleo`                        |
-| Peso do Núcleo                | Peso do núcleo                         | kg      | `peso_nucleo`                      |
-| Peso dos Enrolamentos         | Peso total dos enrolamentos            | kg      | `peso_enrolamentos`                |
+| Tipo de Transformador         | Configuração (Monofásico/Trifásico)    | -       | `tipo_transformador`                 |
+| Potência Nominal              | Potência nominal do transformador      | MVA     | `potencia_nominal`                   |
+| Perdas em Vazio               | Perdas no núcleo                       | kW      | `perdas_vazio`                       |
+| Perdas em Carga               | Perdas nos enrolamentos a 75°C         | kW      | `perdas_carga`                       |
+| Temperatura Ambiente          | Temperatura ambiente de referência     | °C      | `temp_ambiente`                      |
+| Elevação de Temperatura       | Elevação de temperatura garantida      | K       | `elevacao_temp`                      |
+| Tipo de Resfriamento          | Sistema de resfriamento (ONAN, ONAF, etc.) | -   | `tipo_resfriamento`                  |
+| Constantes Térmicas           | Constantes de tempo térmico            | min     | `constantes_termicas`                |
+| Peso do Óleo                  | Peso total do óleo isolante            | kg      | `peso_oleo`                          |
+| Peso do Núcleo                | Peso do núcleo                         | kg      | `peso_nucleo`                        |
+| Peso dos Enrolamentos         | Peso total dos enrolamentos            | kg      | `peso_enrolamentos`                  |
 
 ## 2. Fundamentos Teóricos
 

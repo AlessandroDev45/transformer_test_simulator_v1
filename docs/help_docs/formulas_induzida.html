@@ -17,6 +17,7 @@
             --text-color: #f8f9fa;
             --bg-color: #343a40;
             --card-bg-color: #495057;
+            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
             --border-color: #6c757d;
         }
         body {
@@ -31,7 +32,7 @@
             margin: 0 auto;
         }
         .sidebar {
-            background-color: var(--card-bg-color);
+            background-color: var(--sidebar-bg-color);
             border-radius: 5px;
             padding: 20px;
             position: sticky;
@@ -205,11 +206,13 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 * **Relação entre tensão de prova e tensão nominal (Up/Un):**
   * Para transformadores monofásicos: \`up_un = tensao_prova / tensao_at\`
   * Para transformadores trifásicos: \`up_un = tensao_prova / (tensao_at / sqrt(3))\`
+  * os dados up_un = tensao_prova deverão ser os dados de tenão de ensaio induzida informados em dados básicos
 
 ### 3.2. Indução no Núcleo na Frequência de Teste
 
 * **Fórmula:** \`inducao_teste = inducao_nominal * (tensao_induzida / tensao_at) * (freq_nominal / freq_teste)\`
 * **Limitação:** Se \`inducao_teste > 1.9 T\`, então \`inducao_teste = 1.9 T\` (limite físico típico)
+* **Validação:** Se o cálculo resultar em valor não positivo, o sistema reporta um erro, pois a indução deve ser sempre positiva
 
 ### 3.3. Tensão Aplicada no Lado BT
 
@@ -235,6 +238,7 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 
 * **Fórmula:** \`pot_induzida = sqrt(pot_magnetica^2 - pot_ativa^2)\` (kVAr ind)
 * **Verificação:** Se \`pot_magnetica^2 < pot_ativa^2\`, então \`pot_induzida = 0\`
+* **Justificativa:** Esta verificação é necessária porque, matematicamente, não é possível calcular a raiz quadrada de um número negativo no domínio dos números reais. Quando a potência ativa é maior que a potência magnética, isso indica uma situação anômala onde o fator de potência seria maior que 1, o que é fisicamente impossível.
 
 ### 4.4. Tensão para Cálculo de Scap (U_calc_scap)
 
@@ -279,7 +283,19 @@ A tabela de frequências calcula os parâmetros acima para diferentes frequênci
 * **Escala Linear:** Apresenta as potências (Ativa, Magnética, Indutiva para monofásicos, Capacitiva) em função da frequência
 * **Escala Logarítmica:** Mesmos dados em escala logarítmica para melhor visualização quando há grandes diferenças de magnitude
 
-### 6.2. Diferenças entre Monofásico e Trifásico
+### 6.2. Frequências Calculadas
+
+O sistema calcula automaticamente os parâmetros para as seguintes frequências:
+* 100 Hz
+* 120 Hz
+* 150 Hz
+* 180 Hz
+* 200 Hz
+* 240 Hz
+
+Para cada frequência, são calculados todos os parâmetros relevantes (indução, potências, correntes) usando as mesmas fórmulas descritas anteriormente, mas com o valor de frequência específico.
+
+### 6.3. Diferenças entre Monofásico e Trifásico
 
 * **Monofásico:** Exibe Frequência, Potência Ativa, Potência Magnética, Componente Indutiva, Potência Capacitiva e razão Scap/Sind
 * **Trifásico:** Exibe Frequência, Potência Ativa, Potência Magnética e Potência Capacitiva
@@ -500,3 +516,4 @@ A tabela de frequências calcula os parâmetros acima para diferentes frequênci
     </script>
 </body>
 </html>
+

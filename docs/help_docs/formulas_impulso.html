@@ -17,6 +17,7 @@
             --text-color: #f8f9fa;
             --bg-color: #343a40;
             --card-bg-color: #495057;
+            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
             --border-color: #6c757d;
         }
         body {
@@ -31,7 +32,7 @@
             margin: 0 auto;
         }
         .sidebar {
-            background-color: var(--card-bg-color);
+            background-color: var(--sidebar-bg-color);
             border-radius: 5px;
             padding: 20px;
             position: sticky;
@@ -175,7 +176,63 @@ Este documento detalha as fórmulas e parâmetros usados nos cálculos de impuls
 
 ---
 
-## 1. Parâmetros de Entrada
+## 1. Características do Impulso Atmosférico
+
+* **Forma de onda padrão:** 1.2/50 μs
+* **Tempo de frente (T1):** 1.2 μs ± 30%
+* **Tempo de cauda (T2):** 50 μs ± 20%
+* **Polaridade:** Geralmente negativa (pode ser positiva em casos específicos)
+* **Aplicação:** Aplicado entre terminais de linha e terra, com outros terminais aterrados
+
+## 1.1. Níveis Básicos de Isolamento (BIL)
+
+Os níveis básicos de isolamento são determinados com base nas tensões nominais dos enrolamentos e nas normas aplicáveis. O sistema utiliza tabelas de referência para determinar os níveis de isolamento adequados para cada classe de tensão.
+
+### 1.1.1. Tabela para Impulso Atmosférico (LI)
+
+| **Tensão Máxima do Sistema (kV)** | **Nível Básico de Impulso - BIL (kV)** |
+| ---------------------------------- | -------------------------------------- |
+| 7.2                                | 60                                     |
+| 12                                 | 75 / 95                                |
+| 17.5                               | 95 / 110                               |
+| 24                                 | 125 / 145                              |
+| 36                                 | 170 / 200                              |
+| 52                                 | 250                                    |
+| 72.5                               | 325 / 350                              |
+| 123                                | 450 / 550                              |
+| 145                                | 550 / 650                              |
+| 170                                | 650 / 750                              |
+| 245                                | 850 / 950 / 1050                       |
+| 300                                | 950 / 1050                             |
+| 362                                | 1050 / 1175                            |
+| 420                                | 1300 / 1425                            |
+| 550                                | 1550 / 1675 / 1800                     |
+| 800                                | 2050                                   |
+
+### 1.1.2. Tabela para Impulso de Manobra (SI)
+
+| **Tensão Máxima do Sistema (kV)** | **Nível de Impulso de Manobra - SIL (kV)** |
+| ---------------------------------- | ------------------------------------------ |
+| 123                                | 450 / 550                                  |
+| 145                                | 550 / 650                                  |
+| 170                                | 650 / 750                                  |
+| 245                                | 850 / 950 / 1050                           |
+| 300                                | 950 / 1050                                 |
+| 362                                | 850 / 950                                  |
+| 420                                | 950 / 1050                                 |
+| 550                                | 1175 / 1300 / 1425                         |
+| 800                                | 1550 / 1675 / 1800                         |
+
+### 1.1.3. Lógica de Seleção do BIL
+
+O sistema seleciona o BIL apropriado com base na tensão máxima do sistema, seguindo estas regras:
+
+1. Para cada enrolamento (AT, BT, Terciário), a tensão nominal é convertida para a tensão máxima do sistema
+2. Com base na tensão máxima, o sistema consulta a tabela de referência para determinar o BIL adequado
+3. Quando há múltiplos valores possíveis para uma tensão máxima, o sistema seleciona o valor mais conservador (maior)
+4. Para tensões que não estão exatamente na tabela, o sistema seleciona o próximo valor superior
+
+## 2. Parâmetros de Entrada
 
 Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para os cálculos de impulso:
 
@@ -205,6 +262,16 @@ Onde:
 * \`V₀\` é a amplitude da tensão
 * \`α\` e \`β\` são constantes que determinam os tempos de frente e cauda
 * \`t\` é o tempo
+
+#### 2.1.1. Abordagem Híbrida RLC + K-Factor + Dupla Exponencial
+
+Na implementação atual, é utilizada uma abordagem híbrida que combina:
+
+1. **Solução RLC**: Simula o circuito RLC completo para obter a resposta inicial
+2. **Transformação K-Factor**: Ajusta a forma de onda para corresponder aos parâmetros padrão
+3. **Função Dupla Exponencial**: Refina a forma de onda final
+
+Esta abordagem proporciona resultados mais precisos, especialmente para circuitos complexos com indutâncias significativas.
 
 ### 2.2. Parâmetros da Forma de Onda
 
@@ -252,6 +319,16 @@ Onde:
 
 O tempo de corte é o tempo após o início da onda em que ocorre o corte da tensão. Normalmente entre 2 e 6 μs.
 
+#### 4.1.1. Cálculo do Tempo de Corte
+
+No sistema atual, o tempo de corte pode ser determinado de duas formas:
+
+1. **Especificado diretamente pelo usuário**: Valor em μs
+2. **Calculado com base na distância do gap**: Quando a distância do gap é fornecida, o tempo de corte é determinado pelo momento em que a tensão atinge o valor de ruptura do gap.
+
+A tensão de ruptura do gap é calculada como:
+* `V_ruptura = 30 * distancia_gap_cm * 1000` (em Volts)
+
 ### 4.2. Tensão de Corte
 
 * \`V_corte = V₀ * (e^(-α*t_corte) - e^(-β*t_corte))\`
@@ -297,6 +374,21 @@ Onde:
 
 * **T₁ (Tempo de Frente)**: Deve estar entre 0.84 μs e 1.56 μs (1.2 μs ± 30%)
 * **T₂ (Tempo de Cauda)**: Deve estar entre 40 μs e 60 μs (50 μs ± 20%)
+
+### 6.1.1. Análise de Conformidade
+
+A análise de conformidade verifica os seguintes parâmetros:
+
+#### Para Impulso Atmosférico (LI):
+* **Tempo de Frente (T₁)**: Deve estar entre 0.84 μs e 1.56 μs (1.2 μs ± 30%)
+* **Tempo de Cauda (T₂)**: Deve estar entre 40 μs e 60 μs (50 μs ± 20%)
+* **Overshoot**: Deve ser menor que 10% (conforme IEC 60060-1)
+* **Tensão de Pico**: Deve estar dentro da tolerância especificada (geralmente ±3%)
+
+#### Para Impulso de Manobra (SI):
+* **Tempo de Pico (Tp)**: Deve estar entre 100 μs e 300 μs (conforme IEC 60060-1)
+* **Tempo de Meia Onda (T₂)**: Deve estar entre 1000 μs e 3000 μs
+* **Tensão de Pico**: Deve estar dentro da tolerância especificada (geralmente ±3%)
 
 ### 6.2. Verificação da Eficiência
 
@@ -528,3 +620,4 @@ Onde:
     </script>
 </body>
 </html>
+

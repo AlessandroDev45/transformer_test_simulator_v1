@@ -1,45 +1,46 @@
+
 # Detalhamento dos Cálculos de Perdas em Transformadores
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#detalhamento-dos-c%C3%A1lculos-de-perdas-em-transformadores)
 
 ## Sumário do Documento
 
-* **Introdução**:
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#sum%C3%A1rio-do-documento)
 
-  * **Definição de Perdas em Vazio (**
+* **Introdução** :
+* **Definição de Perdas em Vazio (**
 
-  ```
+```
   PFe
-  ```
+```
 
   ) e Perdas em Carga (
 
-  ```
+```
   PCu
-  ```
+```
 
   ).
-* **Limites e Parâmetros do Sistema de Teste**:
 
-  * **EPS (Electronic Power Supply)**.
-* **SUT (Step-Up Transformer)**.
-* **Perdas em Vazio (No-Load Losses)**:
-
-  * **Parâmetros de Entrada.**
+* **Limites e Parâmetros do Sistema de Teste** :
+* **EPS (Electronic Power Supply)** .
+* **SUT (Step-Up Transformer)** .
+* **Perdas em Vazio (No-Load Losses)** :
+* **Parâmetros de Entrada.**
 * **Tabelas de Referência para Aço M4.**
 * **Variáveis Calculadas (Base Aço M4 e Base Projeto).**
 * **Análise SUT/EPS para Perdas em Vazio.**
 * **Exemplo Numérico Detalhado de Perdas em Vazio.**
-* **Perdas em Carga (Load Losses)**:
-
-  * **Parâmetros de Entrada.**
+* **Perdas em Carga (Load Losses)** :
+* **Parâmetros de Entrada.**
 * **Cenários de Cálculo.**
 * **Variáveis Calculadas (Por Tap e Cenário).**
-* **Cálculo do Banco de Capacitores** **Requerido** **(**calculate_cap_bank**).**
+* **Cálculo do Banco de Capacitores** **Requerido** **(calculate_cap_bank).**
 * **Configuração do Banco de Capacitores (Disponível/Sugerido) e Lógica de Seleção.**
-* **Análise SUT/EPS para Perdas em Carga (Corrente Compensada com** **calculate_sut_eps_current_compensated**).
+* **Análise SUT/EPS para Perdas em Carga (Corrente Compensada com**  **calculate_sut_eps_current_compensated** ).
 * **Exemplo Numérico Detalhado de Perdas em Carga.**
-* **Configuração Detalhada dos Bancos de Capacitores**:
-
-  * **Capacitores Disponíveis por Nível de Tensão Nominal.**
+* **Configuração Detalhada dos Bancos de Capacitores** :
+* **Capacitores Disponíveis por Nível de Tensão Nominal.**
 * **Potência das Chaves Q.**
 * **Lógica de Seleção Implementada.**
 * **Potências Mínima e Máxima Teóricas por Nível de Tensão.**
@@ -48,74 +49,92 @@
 
 ## 1. Introdução
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#1-introdu%C3%A7%C3%A3o)
+
 **As perdas em transformadores são um fator crucial no projeto e operação desses equipamentos. Elas são tipicamente divididas em duas categorias principais (outros tipos de perdas não são abordados neste documento):**
 
 * **Perdas em Vazio (Perdas no Núcleo ou Perdas em Ferro -**
 
-  <pre _ngcontent-ng-c1554618750=""><strong _ngcontent-ng-c2459883256="" class="ng-star-inserted"><code _ngcontent-ng-c1554618750="" class="rendered"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mrow><mi>F</mi><mi>e</mi></mrow></msub></mrow></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut"></span><span class="mord"><span class="mord mathnormal">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">F</span><span class="mord mathnormal mtight">e</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span></span></span></span></code></strong></pre>
+  <pre><strong><code><span><span>PFe</span><span><span><span></span><span><span>P</span><span><span><span><span><span><span></span><span><span><span>F</span><span>e</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></span></code></strong></pre>
 
   **):** **Ocorrem devido à histerese e correntes parasitas no núcleo magnético quando o transformador está energizado, mesmo sem carga conectada ao secundário. São dependentes da tensão e frequência aplicadas.**
 * **Perdas em Carga (Perdas nos Enrolamentos ou Perdas no Cobre -**
 
-  <pre _ngcontent-ng-c1554618750=""><strong _ngcontent-ng-c2459883256="" class="ng-star-inserted"><code _ngcontent-ng-c1554618750="" class="rendered"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mrow><mi>C</mi><mi>u</mi></mrow></msub></mrow></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut"></span><span class="mord"><span class="mord mathnormal">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">C</span><span class="mord mathnormal mtight">u</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span></span></span></span></code></strong></pre>
+  <pre><strong><code><span><span>PCu</span><span><span><span></span><span><span>P</span><span><span><span><span><span><span></span><span><span><span>C</span><span>u</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></span></code></strong></pre>
 
   **):** **Ocorrem devido à resistência ôhmica dos enrolamentos primário e secundário quando o transformador está sob carga. São proporcionais ao quadrado da corrente de carga.**
 
-**Este documento detalha as fórmulas, parâmetros e lógicas de decisão utilizados nos cálculos de perdas em vazio e em carga, conforme implementado no sistema de análise (**losses.py**).**
+**Este documento detalha as fórmulas, parâmetros e lógicas de decisão utilizados nos cálculos de perdas em vazio e em carga, conforme implementado no sistema de análise (losses.py).**
 
 ---
 
 ## 2. Limites e Parâmetros do Sistema de Teste
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#2-limites-e-par%C3%A2metros-do-sistema-de-teste)
+
 ### 2.1. Limites do EPS (Electronic Power Supply)
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#21-limites-do-eps-electronic-power-supply)
 
 **O EPS é a fonte de alimentação eletrônica que alimenta o SUT (Transformador Elevador de Teste).**
 
-| **Parâmetro**                  | **Valor** | **Unidade** | **Variável no Código (**utils.constants**)** |
-| ------------------------------------- | --------------- | ----------------- | ---------------------------------------------------------- |
-| Tensão Máxima de Saída (BT do SUT) | 480             | V                 | SUT_BT_VOLTAGE                                             |
-| Corrente Máxima de Saída            | 2000            | A                 | EPS_CURRENT_LIMIT                                          |
-| Potência Ativa Máxima (para o DUT)  | 1350            | kW                | DUT_POWER_LIMIT                                            |
+| **Parâmetro**                  | **Valor** | **Unidade** | **Variável no Código (utils.constants)** |
+| ------------------------------------- | --------------- | ----------------- | ------------------------------------------------ |
+| Tensão Máxima de Saída (BT do SUT) | 480             | V                 | SUT_BT_VOLTAGE                                   |
+| Corrente Máxima de Saída            | 2000            | A                 | EPS_CURRENT_LIMIT                                |
+| Potência Ativa Máxima (para o DUT)  | 1350            | kW                | DUT_POWER_LIMIT                                  |
 
 ### 2.2. Parâmetros do SUT (Step-Up Transformer)
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#22-par%C3%A2metros-do-sut-step-up-transformer)
+
 **O SUT é utilizado para elevar a tensão do EPS aos níveis necessários para testar o DUT (Device Under Test).**
 
-| **Parâmetro**    | **Valor** | **Unidade** | **Variável no Código (**utils.constants**)** |
-| ----------------------- | --------------- | ----------------- | ---------------------------------------------------------- |
-| Tensão Nominal Lado BT | 480             | V                 | SUT_BT_VOLTAGE                                             |
-| Tensão Mínima Lado AT | 14000           | V                 | SUT_AT_MIN_VOLTAGE                                         |
-| Tensão Máxima Lado AT | 140000          | V                 | SUT_AT_MAX_VOLTAGE                                         |
-| Passo de Tensão AT     | 3000            | V                 | SUT_AT_STEP_VOLTAGE                                        |
+| **Parâmetro**    | **Valor** | **Unidade** | **Variável no Código (utils.constants)** |
+| ----------------------- | --------------- | ----------------- | ------------------------------------------------ |
+| Tensão Nominal Lado BT | 480             | V                 | SUT_BT_VOLTAGE                                   |
+| Tensão Mínima Lado AT | 14000           | V                 | SUT_AT_MIN_VOLTAGE                               |
+| Tensão Máxima Lado AT | 140000          | V                 | SUT_AT_MAX_VOLTAGE                               |
+| Passo de Tensão AT     | 3000            | V                 | SUT_AT_STEP_VOLTAGE                              |
 
 ---
 
 ## 3. Perdas em Vazio (No-Load Losses)
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#3-perdas-em-vazio-no-load-losses)
+
 **Cálculos referentes às perdas no núcleo do DUT quando energizado em sua tensão nominal (ou variações como 1.1 pu e 1.2 pu) e frequência nominal, sem carga. Testes são realizados aplicando tensão no lado de Baixa Tensão (BT) do DUT.**
 
 ### 3.1. Parâmetros de Entrada (UI e Dados do Transformador)
 
-| **Parâmetro**  | **Descrição**                               | **Unidade** | **Variável Python (**losses.py**)** | **Origem** |
-| --------------------- | --------------------------------------------------- | ----------------- | ------------------------------------------------ | ---------------- |
-| perdas_vazio_ui       | Perdas em vazio (no-load) de projeto                | kW                | perdas_vazio_ui                                  | UI               |
-| peso_nucleo_ui        | Peso do núcleo de projeto                          | Ton               | peso_nucleo_ui                                   | UI               |
-| corrente_excitacao_ui | Corrente de excitação nominal de projeto          | %                 | corrente_excitacao_ui                            | UI               |
-| inducao_ui            | Indução magnética nominal de projeto no núcleo  | T                 | inducao_ui                                       | UI               |
-| corrente_exc_1_1_ui   | Corrente de excitação de projeto a 110% V nominal | %                 | corrente_exc_1_1_ui                              | UI (Opcional)    |
-| corrente_exc_1_2_ui   | Corrente de excitação de projeto a 120% V nominal | %                 | corrente_exc_1_2_ui                              | UI (Opcional)    |
-| frequencia            | Frequência nominal do DUT                          | Hz                | frequencia                                       | Dados Transf.    |
-| tensao_bt_kv          | Tensão nominal BT do DUT                           | kV                | tensao_bt_kv                                     | Dados Transf.    |
-| corrente_nominal_bt   | Corrente nominal BT do DUT                          | A                 | corrente_nominal_bt                              | Dados Transf.    |
-| tipo_transformador    | Monofásico ou Trifásico                           | -                 | tipo_transformador                               | Dados Transf.    |
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#31-par%C3%A2metros-de-entrada-ui-e-dados-do-transformador)
+
+| **Parâmetro**  | **Descrição**                               | **Unidade** | **Variável Python (losses.py)** | **Origem** |
+| --------------------- | --------------------------------------------------- | ----------------- | -------------------------------------- | ---------------- |
+| perdas_vazio_ui       | Perdas em vazio (no-load) de projeto                | kW                | perdas_vazio_ui                        | UI               |
+| peso_nucleo_ui        | Peso do núcleo de projeto                          | Ton               | peso_nucleo_ui                         | UI               |
+| corrente_excitacao_ui | Corrente de excitação nominal de projeto          | %                 | corrente_excitacao_ui                  | UI               |
+| inducao_ui            | Indução magnética nominal de projeto no núcleo  | T                 | inducao_ui                             | UI               |
+| corrente_exc_1_1_ui   | Corrente de excitação de projeto a 110% V nominal | %                 | corrente_exc_1_1_ui                    | UI (Opcional)    |
+| corrente_exc_1_2_ui   | Corrente de excitação de projeto a 120% V nominal | %                 | corrente_exc_1_2_ui                    | UI (Opcional)    |
+| frequencia            | Frequência nominal do DUT                          | Hz                | frequencia                             | Dados Transf.    |
+| tensao_bt_kv          | Tensão nominal BT do DUT                           | kV                | tensao_bt_kv                           | Dados Transf.    |
+| corrente_nominal_bt   | Corrente nominal BT do DUT                          | A                 | corrente_nominal_bt                    | Dados Transf.    |
+| tipo_transformador    | Monofásico ou Trifásico                           | -                 | tipo_transformador                     | Dados Transf.    |
 
 ### 3.2. Tabelas de Referência para Aços
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#32-tabelas-de-refer%C3%AAncia-para-a%C3%A7os)
+
 #### 3.2.1. Aço M4 (Referência)
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#321-a%C3%A7o-m4-refer%C3%AAncia)
 
 ##### 3.2.1.1. Tabela de Perdas Específicas do Núcleo (W/kg)
 
-**Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **perdas_nucleo_data**.
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#3211-tabela-de-perdas-espec%C3%ADficas-do-n%C3%BAcleo-wkg)
+
+**Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em**  **perdas_nucleo_data** .
 
 | **Indução (T)** | **50 Hz** | **60 Hz** | **100 Hz** | **120 Hz** | **150 Hz** | **200 Hz** | **240 Hz** | **250 Hz** | **300 Hz** | **350 Hz** | **400 Hz** | **500 Hz** |
 | ----------------------- | --------------- | --------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
@@ -135,7 +154,9 @@
 
 ##### 3.2.1.2. Tabela de Potência Magnetizante Específica (VAR/kg)
 
-**Valores de potência magnetizante específica (VAR/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **potencia_magnet_data**.
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#3212-tabela-de-pot%C3%AAncia-magnetizante-espec%C3%ADfica-varkg)
+
+**Valores de potência magnetizante específica (VAR/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em**  **potencia_magnet_data** .
 
 | **Indução (T)** | **50 Hz** | **60 Hz** | **100 Hz** | **120 Hz** | **150 Hz** | **200 Hz** | **240 Hz** | **250 Hz** | **300 Hz** | **350 Hz** | **400 Hz** | **500 Hz** |
 | ----------------------- | --------------- | --------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
@@ -155,74 +176,82 @@
 
 #### 3.2.2. Aço H110-27
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#322-a%C3%A7o-h110-27)
+
 ##### 3.2.2.1. Tabela de Perdas Específicas do Núcleo (W/kg)
 
-**Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **perdas_nucleo_data_H110_27**.
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#3221-tabela-de-perdas-espec%C3%ADficas-do-n%C3%BAcleo-wkg)
+
+**Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em**  **perdas_nucleo_data_H110_27** .
 
 | **Indução (T)** | **50 Hz** | **60 Hz** |
-| --------------- | --------- | --------- |
-| **0.2**         | **0.018** | **0.023** |
-| **0.3**         | **0.038** | **0.050** |
-| **0.4**         | **0.065** | **0.086** |
-| **0.5**         | **0.097** | **0.128** |
-| **0.6**         | **0.135** | **0.178** |
-| **0.7**         | **0.178** | **0.236** |
-| **0.8**         | **0.228** | **0.301** |
-| **0.9**         | **0.284** | **0.377** |
-| **1.0**         | **0.346** | **0.459** |
-| **1.1**         | **0.414** | **0.549** |
-| **1.2**         | **0.488** | **0.648** |
-| **1.3**         | **0.569** | **0.755** |
-| **1.4**         | **0.658** | **0.873** |
-| **1.5**         | **0.760** | **1.006** |
-| **1.6**         | **0.882** | **1.165** |
-| **1.7**         | **1.052** | **1.383** |
-| **1.8**         | **1.398** | **1.816** |
-| **1.9**         | **2.010** | **2.595** |
+| ----------------------- | --------------- | --------------- |
+| **0.2**           | **0.018** | **0.023** |
+| **0.3**           | **0.038** | **0.050** |
+| **0.4**           | **0.065** | **0.086** |
+| **0.5**           | **0.097** | **0.128** |
+| **0.6**           | **0.135** | **0.178** |
+| **0.7**           | **0.178** | **0.236** |
+| **0.8**           | **0.228** | **0.301** |
+| **0.9**           | **0.284** | **0.377** |
+| **1.0**           | **0.346** | **0.459** |
+| **1.1**           | **0.414** | **0.549** |
+| **1.2**           | **0.488** | **0.648** |
+| **1.3**           | **0.569** | **0.755** |
+| **1.4**           | **0.658** | **0.873** |
+| **1.5**           | **0.760** | **1.006** |
+| **1.6**           | **0.882** | **1.165** |
+| **1.7**           | **1.052** | **1.383** |
+| **1.8**           | **1.398** | **1.816** |
+| **1.9**           | **2.010** | **2.595** |
 
 **Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
 
 ##### 3.2.2.2. Tabela de Potência Magnetizante Específica (VA/kg)
 
-**Valores de potência magnetizante específica (VA/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em** **potencia_magnet_data_H110_27**.
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#3222-tabela-de-pot%C3%AAncia-magnetizante-espec%C3%ADfica-vakg)
 
-| **Indução (T)** | **50 Hz** | **60 Hz** |
-| --------------- | --------- | --------- |
-| **0.2**         | **0.032** | **0.040** |
-| **0.3**         | **0.064** | **0.081** |
-| **0.4**         | **0.103** | **0.130** |
-| **0.5**         | **0.147** | **0.186** |
-| **0.6**         | **0.196** | **0.249** |
-| **0.7**         | **0.250** | **0.319** |
-| **0.8**         | **0.308** | **0.395** |
-| **0.9**         | **0.372** | **0.477** |
-| **1.0**         | **0.441** | **0.568** |
-| **1.1**         | **0.517** | **0.667** |
-| **1.2**         | **0.602** | **0.777** |
-| **1.3**         | **0.698** | **0.900** |
-| **1.4**         | **0.812** | **1.045** |
-| **1.5**         | **0.962** | **1.230** |
-| **1.6**         | **1.188** | **1.507** |
-| **1.7**         | **1.661** | **2.070** |
-| **1.8**         | **3.438** | **4.178** |
-| **1.9**         | **14.434**| **17.589**|
+**Valores de potência magnetizante específica (VA/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em**  **potencia_magnet_data_H110_27** .
+
+| **Indução (T)** | **50 Hz**  | **60 Hz**  |
+| ----------------------- | ---------------- | ---------------- |
+| **0.2**           | **0.032**  | **0.040**  |
+| **0.3**           | **0.064**  | **0.081**  |
+| **0.4**           | **0.103**  | **0.130**  |
+| **0.5**           | **0.147**  | **0.186**  |
+| **0.6**           | **0.196**  | **0.249**  |
+| **0.7**           | **0.250**  | **0.319**  |
+| **0.8**           | **0.308**  | **0.395**  |
+| **0.9**           | **0.372**  | **0.477**  |
+| **1.0**           | **0.441**  | **0.568**  |
+| **1.1**           | **0.517**  | **0.667**  |
+| **1.2**           | **0.602**  | **0.777**  |
+| **1.3**           | **0.698**  | **0.900**  |
+| **1.4**           | **0.812**  | **1.045**  |
+| **1.5**           | **0.962**  | **1.230**  |
+| **1.6**           | **1.188**  | **1.507**  |
+| **1.7**           | **1.661**  | **2.070**  |
+| **1.8**           | **3.438**  | **4.178**  |
+| **1.9**           | **14.434** | **17.589** |
 
 **Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
 
 ### 3.3. Variáveis Calculadas para Perdas em Vazio
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#33-vari%C3%A1veis-calculadas-para-perdas-em-vazio)
+
 **Constante:** **sqrt_3 = math.sqrt(3)** **(para trifásicos, 1.0 para monofásicos, usado como** **sqrt_3_factor** **no código).**
 
 #### 3.3.1. Fatores de Correção para Aço H110-27
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#331-fatores-de-corre%C3%A7%C3%A3o-para-a%C3%A7o-h110-27)
 
 Ao utilizar os dados do aço H110-27, os seguintes fatores de correção devem ser aplicados:
 
 * **Fator de Construção (Build Factor - BF):** Este fator compensa as perdas adicionais devido ao corte das chapas e à distribuição do fluxo nos cantos.
   * **Fator para perdas (W/kg):** **1.15** - Multiplicar os valores de perdas específicas por 1.15
   * **Fator para potência magnetizante (VA/kg):** **1.2** - Multiplicar os valores de VA/kg por 1.2
-
 * **Divisor para Potência Magnetizante:** Na implementação em callbacks/losses.py, o fator de potência magnetizante (VAR/kg) para o aço H110-27 deve ser dividido por **1000** (não por 1.000.000 como em algumas implementações anteriores).
-
 * **Implementação no Código:** No arquivo callbacks/losses.py, os fatores são aplicados da seguinte forma:
 
 ```python
@@ -244,15 +273,17 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 #### 3.3.2. Cálculos Baseados em Aço M4 (Estimativa)
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#332-c%C3%A1lculos-baseados-em-a%C3%A7o-m4-estimativa)
+
 * **perdas_vazio** **(kW):** **safe_float(perdas_vazio_ui, 0.0)**
 * **inducao** **(T):** **safe_float(inducao_ui, 0.0)**
 * **inducao_arredondada** **(T):** **round(inducao * 10) / 10**
-* **frequencia_arredondada** **(Hz): Frequência da tabela mais próxima de** **frequencia**.
-* **lookup_key**: **(inducao_arredondada, frequencia_arredondada)**
-* **fator_perdas** **(W/kg): Valor de** **df_perdas_nucleo** **para** **lookup_key**.
-* **fator_potencia_mag** **(VAR/kg): Valor de** **df_potencia_magnet** **para** **lookup_key**.
-* **peso_nucleo_calc** **(Ton):** **perdas_vazio / fator_perdas**. (Se **perdas_vazio** **é kW e** **fator_perdas** **W/kg, esta fórmula resulta em kTon. Para Ton, seria** **(perdas_vazio * 1000) / fator_perdas / 1000**). **O código usa esta fórmula, implicando que** **fator_perdas** **é tratado como kW/Ton neste contexto ou as unidades da tabela são interpretadas como tal para este cálculo específico.**
-* **potencia_mag** **(kVAR):** **fator_potencia_mag * peso_nucleo_calc**. (Se **fator_potencia_mag** **é VAR/kg e** **peso_nucleo_calc** **é Ton, então** **potencia_mag** **[kVAR] =** **fator_potencia_mag** ***** **peso_nucleo_calc** *** 1000 [** kg/Ton **] / 1000 [VAR/kVAR] =** **fator_potencia_mag** ***** **peso_nucleo_calc**).
+* **frequencia_arredondada** **(Hz): Frequência da tabela mais próxima de**  **frequencia** .
+* **lookup_key** : **(inducao_arredondada, frequencia_arredondada)**
+* **fator_perdas** **(W/kg): Valor de** **df_perdas_nucleo** **para**  **lookup_key** .
+* **fator_potencia_mag** **(VAR/kg): Valor de** **df_potencia_magnet** **para**  **lookup_key** .
+* **peso_nucleo_calc** **(Ton):**  **perdas_vazio / fator_perdas** . (Se **perdas_vazio** **é kW e** **fator_perdas** **W/kg, esta fórmula resulta em kTon. Para Ton, seria**  **(perdas_vazio * 1000) / fator_perdas / 1000** ). **O código usa esta fórmula, implicando que** **fator_perdas** **é tratado como kW/Ton neste contexto ou as unidades da tabela são interpretadas como tal para este cálculo específico.**
+* **potencia_mag** **(kVAR):**  **fator_potencia_mag * peso_nucleo_calc** . (Se **fator_potencia_mag** **é VAR/kg e** **peso_nucleo_calc** **é Ton, então** **potencia_mag** **[kVAR] =** **fator_potencia_mag** ***** **peso_nucleo_calc** *** 1000 [** kg/Ton **] / 1000 [VAR/kVAR] =** **fator_potencia_mag** *****  **peso_nucleo_calc** ).
 * **corrente_excitacao_calc** **(A):** **potencia_mag / (tensao_bt_kv * sqrt_3)**
 * **corrente_excitacao_percentual_calc** **(%):** **(corrente_excitacao_calc / corrente_nominal_bt) * 100**
 * **tensao_teste_1_1_kv** **(kV):** **tensao_bt_kv * 1.1**
@@ -265,51 +296,56 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 #### 3.3.2. Cálculos Baseados em Dados de Projeto
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#332-c%C3%A1lculos-baseados-em-dados-de-projeto)
+
 * **perdas_vazio** **(kW):** **safe_float(perdas_vazio_ui, 0.0)**
 * **peso_nucleo** **(Ton):** **safe_float(peso_nucleo_ui, 0.0)**
 * **corrente_excitacao_percentual** **(%):** **safe_float(corrente_excitacao_ui, 0.0)**
 * **corrente_exc_1_1_input** **(%):** **safe_float(corrente_exc_1_1_ui)**
 * **corrente_exc_1_2_input** **(%):** **safe_float(corrente_exc_1_2_ui)**
-* **fator_perdas_projeto** **(kW/Ton):** **perdas_vazio / peso_nucleo**. Para W/kg: **(perdas_vazio * 1000) / (peso_nucleo * 1000)**.
+* **fator_perdas_projeto** **(kW/Ton):**  **perdas_vazio / peso_nucleo** . Para W/kg:  **(perdas_vazio * 1000) / (peso_nucleo * 1000)** .
 * **corrente_excitacao_projeto** **(A):** **corrente_nominal_bt * (corrente_excitacao_percentual / 100.0)**
 * **potencia_ensaio_1pu_projeto_kva** **(kVA):** **tensao_bt_kv * corrente_excitacao_projeto * sqrt_3**
 * **potencia_mag_projeto_kvar** **(kVAR):** **potencia_ensaio_1pu_projeto_kva**
 * **fator_potencia_mag_projeto** **(VAR/kg):** **(potencia_mag_projeto_kvar * 1000) / (peso_nucleo * 1000)**
-* **fator_excitacao_default**: 3 (Trifásico) ou 5 (Monofásico).
-* **corrente_excitacao_1_1** **(A): Se** **corrente_exc_1_1_input** **não nulo,** **corrente_nominal_bt * (corrente_exc_1_1_input / 100.0)**. Senão, **fator_excitacao_default * corrente_excitacao_projeto**.
-* **corrente_excitacao_1_2** **(A): Se** **corrente_exc_1_2_input** **não nulo,** **corrente_nominal_bt * (corrente_exc_1_2_input / 100.0)**. Senão, **None**.
+* **fator_excitacao_default** : 3 (Trifásico) ou 5 (Monofásico).
+* **corrente_excitacao_1_1** **(A): Se** **corrente_exc_1_1_input** **não nulo,**  **corrente_nominal_bt * (corrente_exc_1_1_input / 100.0)** . Senão,  **fator_excitacao_default * corrente_excitacao_projeto** .
+* **corrente_excitacao_1_2** **(A): Se** **corrente_exc_1_2_input** **não nulo,**  **corrente_nominal_bt * (corrente_exc_1_2_input / 100.0)** . Senão,  **None** .
 * **potencia_ensaio_1_1pu_projeto_kva** **(kVA):** **tensao_teste_1_1_kv * corrente_excitacao_1_1 * sqrt_3**
-* **potencia_ensaio_1_2pu_projeto_kva** **(kVA): Se** **corrente_excitacao_1_2** **não nulo,** **tensao_teste_1_2_kv * corrente_excitacao_1_2 * sqrt_3**.
+* **potencia_ensaio_1_2pu_projeto_kva** **(kVA): Se** **corrente_excitacao_1_2** **não nulo,**  **tensao_teste_1_2_kv * corrente_excitacao_1_2 * sqrt_3** .
 
 ### 3.4. Análise SUT/EPS para Perdas em Vazio (Valores de Projeto)
 
- **Para níveis pu de 1.0, 1.1, 1.2 do DUT, usando tensões (**V_teste_dut_lv_kv**) e correntes (**I_exc_dut_lv**) de** **projeto**:
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#34-an%C3%A1lise-suteps-para-perdas-em-vazio-valores-de-projeto)
 
-* **V_target_sut_hv** **(V):** **V_teste_dut_lv_kv * 1000**.
-* **taps_sut_hv** **(V): Array de** **SUT_AT_MIN_VOLTAGE** **a** **SUT_AT_MAX_VOLTAGE** **com passo** **SUT_AT_STEP_VOLTAGE**.
-* **Top 5 taps do SUT (**V_sut_hv_tap **em V) mais próximos e adequados a** **V_target_sut_hv**.
-* **Para cada** **V_sut_hv_tap**:
+**Para níveis pu de 1.0, 1.1, 1.2 do DUT, usando tensões (V_teste_dut_lv_kv) e correntes (I_exc_dut_lv) de**  **projeto** :
 
-  * **ratio_sut**: **V_sut_hv_tap / SUT_BT_VOLTAGE**
+* **V_target_sut_hv** **(V):**  **V_teste_dut_lv_kv * 1000** .
+* **taps_sut_hv** **(V): Array de** **SUT_AT_MIN_VOLTAGE** **a** **SUT_AT_MAX_VOLTAGE** **com passo**  **SUT_AT_STEP_VOLTAGE** .
+* **Top 5 taps do SUT (**V_sut_hv_tap **em V) mais próximos e adequados a**  **V_target_sut_hv** .
+* **Para cada**  **V_sut_hv_tap** :
+  * **ratio_sut** : **V_sut_hv_tap / SUT_BT_VOLTAGE**
   * **I_sut_lv** **(A) (Corrente no EPS):** **I_exc_dut_lv * ratio_sut**
   * **percent_limite** **(%):** **(I_sut_lv / EPS_CURRENT_LIMIT) * 100**
 
 ### 3.5. Exemplo Numérico Detalhado de Perdas em Vazio
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#35-exemplo-num%C3%A9rico-detalhado-de-perdas-em-vazio)
+
 **Dados de Entrada (UI e Transformador):**
 
-* **perdas_vazio_ui**: 10 kW
-* **peso_nucleo_ui**: 5 Ton
-* **corrente_excitacao_ui**: 0.5 %
-* **inducao_ui**: 1.6 T
-* **corrente_exc_1_1_ui**: 1.0 %
-* **corrente_exc_1_2_ui**: 2.5 % (Exemplo, se fornecido)
-* **frequencia**: 60 Hz
+* **perdas_vazio_ui** : 10 kW
+* **peso_nucleo_ui** : 5 Ton
+* **corrente_excitacao_ui** : 0.5 %
+* **inducao_ui** : 1.6 T
+* **corrente_exc_1_1_ui** : 1.0 %
+* **corrente_exc_1_2_ui** : 2.5 % (Exemplo, se fornecido)
+* **frequencia** : 60 Hz
 * **tensao_bt_kv** **(DUT): 13.8 kV**
 * **corrente_nominal_bt** **(DUT): 418 A**
-* **tipo_transformador**: Trifásico (**sqrt_3** **= 1.732)**
-* **SUT_BT_VOLTAGE**: 480 V = 0.48 kV
-* **EPS_CURRENT_LIMIT**: 2000 A
+* **tipo_transformador** : Trifásico (**sqrt_3** **= 1.732)**
+* **SUT_BT_VOLTAGE** : 480 V = 0.48 kV
+* **EPS_CURRENT_LIMIT** : 2000 A
 
 **Cálculos Baseados em Aço M4:**
 
@@ -357,12 +393,10 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 * **V_target_sut_hv** **= 13800 V**
 * **taps_sut_hv** **(V): [14000, 17000, 20000, ...]**
 * **Tap SUT mais próximo e adequado: 14000 V (**V_sut_hv_tap **= 14000 V)**
-
   * **ratio_sut** **= 14000 V / 480 V = 29.167**
   * **I_sut_lv** **= 2.09 A * 29.167 = 61.06 A**
   * **percent_limite** **= (61.06 A / 2000 A) * 100 = 3.05 %**
 * **Outro Tap SUT (ex: 20000 V):**
-
   * **ratio_sut** **= 20000 V / 480 V = 41.667**
   * **I_sut_lv** **= 2.09 A * 41.667 = 87.08 A**
   * **percent_limite** **= (87.08 A / 2000 A) * 100 = 4.35 %**
@@ -371,59 +405,67 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 ## 4. Perdas em Carga (Load Losses)
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#4-perdas-em-carga-load-losses)
+
 **Cálculos das perdas nos enrolamentos do DUT sob carga.**
 
 ### 4.1. Parâmetros de Entrada
 
-| **Parâmetro**                                     | **Descrição**                              | **Unidade** | **Variável Python (**losses.py**)** |
-| -------------------------------------------------------- | -------------------------------------------------- | ----------------- | ------------------------------------------------ |
-| **p**erdas_carga_nom_ui                                 | Perdas totais em carga no tap Nominal @ Tref       | kW                | perdas_totais_nom_input                          |
-| perdas_carga_min_ui                                      | Perdas totais em carga no tap Menor @ Tref         | kW                | perdas_totais_min_input                          |
-| perdas_carga_max_ui                                      | Perdas totais em carga no tap Maior @ Tref         | kW                | perdas_totais_max_input                          |
-| temperatura_referencia_ui                                | Temperatura de referência para as perdas em carga | °C               | temperatura_ref                                  |
-| perdas_vazio_nom                                         | Perdas em vazio nominais (do cálculo anterior)    | kW                | perdas_vazio_nom                                 |
-| potencia (DUT)                                           | Potência nominal do DUT                           | MVA               | potencia                                         |
-| tensao_nominal_at (DUT)                                  | Tensão nominal AT do DUT (Tap Nominal)            | kV                | tensao_nominal_at                                |
-| ... (demais tensões e impedâncias dos taps do DUT) ... |                                                    |                   |                                                  |
-| corrente_at_nom/min/max (DUT)                            | Correntes AT nominais para os taps                 | A                 | corrente_at_nom, etc.                            |
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#41-par%C3%A2metros-de-entrada)
+
+| **Parâmetro**                                     | **Descrição**                              | **Unidade** | **Variável Python (losses.py)** |
+| -------------------------------------------------------- | -------------------------------------------------- | ----------------- | -------------------------------------- |
+| **p**erdas_carga_nom_ui                            | Perdas totais em carga no tap Nominal @ Tref       | kW                | perdas_totais_nom_input                |
+| perdas_carga_min_ui                                      | Perdas totais em carga no tap Menor @ Tref         | kW                | perdas_totais_min_input                |
+| perdas_carga_max_ui                                      | Perdas totais em carga no tap Maior @ Tref         | kW                | perdas_totais_max_input                |
+| temperatura_referencia_ui                                | Temperatura de referência para as perdas em carga | °C               | temperatura_ref                        |
+| perdas_vazio_nom                                         | Perdas em vazio nominais (do cálculo anterior)    | kW                | perdas_vazio_nom                       |
+| potencia (DUT)                                           | Potência nominal do DUT                           | MVA               | potencia                               |
+| tensao_nominal_at (DUT)                                  | Tensão nominal AT do DUT (Tap Nominal)            | kV                | tensao_nominal_at                      |
+| ... (demais tensões e impedâncias dos taps do DUT) ... |                                                    |                   |                                        |
+| corrente_at_nom/min/max (DUT)                            | Correntes AT nominais para os taps                 | A                 | corrente_at_nom, etc.                  |
 
 ### 4.2. Cenários de Cálculo
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#42-cen%C3%A1rios-de-c%C3%A1lculo)
 
 **Realizados para taps Nominal, Menor, Maior do DUT:**
 
 * **Energização a Frio (Total)**
 * **Condição a Quente (Perdas Carga @ Tref)**
 * **Condição a 25°C (Perdas Carga @ 25°C)**
-* **Sobrecarga 1.2 pu / 1.4 pu** **(se** **tensao_nominal_at >= 230kV**)
+* **Sobrecarga 1.2 pu / 1.4 pu** **(se**  **tensao_nominal_at >= 230kV** )
 
 ### 4.3. Variáveis Calculadas (Por Tap DUT e Por Cenário de Ensaio)
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#43-vari%C3%A1veis-calculadas-por-tap-dut-e-por-cen%C3%A1rio-de-ensaio)
 
 **Para um tap DUT com** **tensao** **(kV),** **corrente** **(A),** **imp** **(%):**
 
 * **vcc** **(kV) (Tensão de CC do tap):** **tensao * (imp / 100.0)**
-* **perdas_carga_sem_vazio** **(kW @** **temperatura_ref**): **perdas_totais_input_tap - perdas_vazio_nom**
-* **temp_factor**: **(235.0 + 25.0) / (235.0 + temperatura_ref)**
+* **perdas_carga_sem_vazio** **(kW @**  **temperatura_ref** ): **perdas_totais_input_tap - perdas_vazio_nom**
+* **temp_factor** : **(235.0 + 25.0) / (235.0 + temperatura_ref)**
 * **perdas_cc_a_frio** **(kW @ 25°C):** **perdas_carga_sem_vazio * temp_factor**
 
 **Para cada cenário de ensaio (Frio, Quente, 25C, Sobrecarga):**
 
-* **Cálculo de** **tensao_ensaio**, **corrente_ensaio** **(no DUT).**
+* **Cálculo de**  **tensao_ensaio** , **corrente_ensaio** **(no DUT).**
 * **pteste_..._kva** **(kVA):** **tensao_ensaio * corrente_ensaio * sqrt_3_factor**
 * **pteste_..._mva** **(MVA):** **pteste_..._kva / 1000.0**
 * **potencia_ativa_eps_..._kw** **(kW): Potência ativa que o EPS deve fornecer ao DUT.**
-
   * **Energização a Frio:** **perdas_totais_input_tap**
   * **Condição a Quente:** **perdas_carga_sem_vazio**
   * **Condição a 25°C:** **perdas_cc_a_frio**
   * **Sobrecarga (e.g., 1.2pu):** **perdas_carga_sem_vazio * (1.2^2)**
-* **pteste_..._mvar** **(MVAr) (Reativo do DUT):** **sqrt(max(0, pteste_..._kva^2 - potencia_ativa_eps_..._kw^2)) / 1000.0**
+* **pteste_..._mvar** **(MVAr) (Reativo do DUT):** **sqrt(max(0, pteste_... *kva^2 - potencia_ativa_eps* ..._kw^2)) / 1000.0**
 
-### 4.4. Cálculo do Banco de Capacitores **Requerido** **(**calculate_cap_bank**)**
+### 4.4. Cálculo do Banco de Capacitores **Requerido** **(calculate_cap_bank)**
 
-* **Entradas:** **voltage** **(kV, e.g.,** **tensao_frio**), **power** **(MVA, e.g.,** **pteste_frio_mva** **- potência aparente do DUT no ensaio).**
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#44-c%C3%A1lculo-do-banco-de-capacitores-requerido-calculate_cap_bank)
+
+* **Entradas:** **voltage** **(kV, e.g.,**  **tensao_frio** ), **power** **(MVA, e.g.,** **pteste_frio_mva** **- potência aparente do DUT no ensaio).**
 * **Saídas (para C/F e S/F):** **cap_bank_voltage_..._fator** **(kV, tensão nominal do banco selecionado) e** **pot_cap_bank_..._fator** **(MVAr, potência nominal que este banco precisaria ter para compensar a potência reativa do DUT na tensão de ensaio).**
-* **A função** **calculate_cap_bank** **internamente deveria usar a componente reativa** **pteste_..._mvar** **(e não a aparente** **pteste_..._mva**) como base para **power_f** **para dimensionar o banco para compensação reativa.** **O código atual passa** **pteste_..._mva** **(aparente).**
-
+* **A função** **calculate_cap_bank** **internamente deveria usar a componente reativa** **pteste_..._mvar** **(e não a aparente**  **pteste_..._mva** ) como base para **power_f** **para dimensionar o banco para compensação reativa.** **O código atual passa** **pteste_..._mva** **(aparente).**
   * **Fórmula se** **power_f** **fosse**
 
     ```
@@ -435,24 +477,26 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 ### 4.5. Configuração do Banco de Capacitores (Disponível/Sugerido)
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#45-configura%C3%A7%C3%A3o-do-banco-de-capacitores-dispon%C3%ADvelsugerido)
+
 **Detalhado na Seção 5. Para cada cenário, após calcular o** **Q Power Provided ... (MVAr)** **(potência efetiva do banco configurado), este valor é usado na compensação.**
 
 ### 4.6. Análise SUT/EPS para Perdas em Carga (Corrente Compensada)
 
-**Função** **calculate_sut_eps_current_compensated**:
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#46-an%C3%A1lise-suteps-para-perdas-em-carga-corrente-compensada)
+
+**Função**  **calculate_sut_eps_current_compensated** :
 
 * **Entradas:**
-
-  * **tensao_ref_dut_kv**: e.g., **tensao_frio**
-  * **corrente_ref_dut_a**: e.g., **corrente_frio** **(corrente total do DUT no ensaio)**
-  * **q_power_scenario_sf/cf_mvar**: Potência **fornecida** **pelo banco S/F ou C/F (e.g.,** **Q Power Provided Frio S/F (MVAr)**), na sua tensão nominal.
-  * **cap_bank_voltage_scenario_sf/cf_kv**: Tensão **nominal** **do banco S/F ou C/F.**
+  * **tensao_ref_dut_kv** : e.g., **tensao_frio**
+  * **corrente_ref_dut_a** : e.g., **corrente_frio** **(corrente total do DUT no ensaio)**
+  * **q_power_scenario_sf/cf_mvar** : Potência **fornecida** **pelo banco S/F ou C/F (e.g.,**  **Q Power Provided Frio S/F (MVAr)** ), na sua tensão nominal.
+  * **cap_bank_voltage_scenario_sf/cf_kv** : Tensão **nominal** **do banco S/F ou C/F.**
   * **... (outros parâmetros SUT).**
 * **Cálculos (exemplo para S/F):**
-
-  * **ratio_sut** **=** **V_sut_hv_tap_v / tensao_sut_bt_v**.
+  * **ratio_sut** **=**  **V_sut_hv_tap_v / tensao_sut_bt_v** .
   * **I_dut_reflected** **(A) =** **corrente_ref_dut_a * ratio_sut** **(Corrente** **total** **do DUT refletida para BT SUT).**
-  * **Cap_Correct_factor_sf**: 0.25 (banco 13.8/23.9kV), 0.75 (banco 41.4/71.7kV), 1.0 (outros). Para C/F, sempre 1.0.
+  * **Cap_Correct_factor_sf** : 0.25 (banco 13.8/23.9kV), 0.75 (banco 41.4/71.7kV), 1.0 (outros). Para C/F, sempre 1.0.
   * **pteste_mvar_corrected_sf** **(MVAr):**
 
     ```
@@ -464,18 +508,9 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
     (Qbanco_efetiva×1000)/(Vensaio_DUT×3)
     ```
   * **I_cap_adjustment_sf** **(A) (Corrente capacitiva refletida para BT SUT):** **I_cap_base_sf * ratio_sut**
-  * **I_eps_sf_net** **(A) (Corrente no EPS):** **I_dut_reflected - I_cap_adjustment_sf**. **Esta é uma subtração escalar direta, o que implica que** **I_dut_reflected** **é tratada como puramente reativa ou que as fases são tais que a subtração escalar é uma aproximação válida. Uma análise vetorial completa seria**
+  * **I_eps_sf_net** **(A) (Corrente no EPS):**  **I_dut_reflected - I_cap_adjustment_sf** . **Esta é uma subtração escalar direta, o que implica que** **I_dut_reflected** **é tratada como puramente reativa ou que as fases são tais que a subtração escalar é uma aproximação válida. Uma análise vetorial completa seria**
 
-    <pre _ngcontent-ng-c1554618750=""><strong _ngcontent-ng-c2459883256="" class="ng-star-inserted"><code _ngcontent-ng-c1554618750="" class="rendered"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mrow><mi>n</mi><mi>e</mi><mi>t</mi></mrow></msub><mo>=</mo><msqrt><mrow><msubsup><mi>I</mi><mrow><mi>P</mi><mi>a</mi></mrow><mn>2</mn></msubsup><mo>+</mo><mo stretchy="false">(</mo><msub><mi>I</mi><mrow><mi>P</mi><mi>r</mi></mrow></msub><mo>−</mo><msub><mi>I</mi><mrow><mi>c</mi><mi>a</mi><mi>p</mi><mi mathvariant="normal">_</mi><mi>a</mi><mi>d</mi><mi>j</mi></mrow></msub><msup><mo stretchy="false">)</mo><mn>2</mn></msup></mrow></msqrt></mrow></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut"></span><span class="mord"><span class="mord mathnormal">I</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">e</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span><span class="mspace"></span><span class="mrel">=</span><span class="mspace"></span></span><span class="base"><span class="strut"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class="svg-align"><span class="pstrut"></span><span class="mord"><span class="mord"><span class="mord mathnormal">I</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">P</span><span class="mord mathnormal mtight">a</span></span></span></span><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span><span class="mspace"></span><span class="mbin">+</span><span class="mspace"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">I</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">P</span><span class="mord mathnormal mtight">r</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span><span class="mspace"></span><span class="mbin">−</span><span class="mspace"></span><span class="mord"><span class="mord mathnormal">I</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight">p</span><span class="mord mtight">_</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight">d</span><span class="mord mathnormal mtight">j</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span><span class=""><span class="pstrut"></span><span class="hide-tail"><svg width="400em" height="1.88em" viewBox="0 0 400000 1944" preserveAspectRatio="xMinYMin slice"><path d="M983 90
-    l0 -0
-    c4,-6.7,10,-10,18,-10 H400000v40
-    H1013.1s-83.4,268,-264.1,840c-180.7,572,-277,876.3,-289,913c-4.7,4.7,-12.7,7,-24,7
-    s-12,0,-12,0c-1.3,-3.3,-3.7,-11.7,-7,-25c-35.3,-125.3,-106.7,-373.3,-214,-744
-    c-10,12,-21,25,-33,39s-32,39,-32,39c-6,-5.3,-15,-14,-27,-26s25,-30,25,-30
-    c26.7,-32.7,52,-63,76,-91s52,-60,52,-60s208,722,208,722
-    c56,-175.3,126.3,-397.3,211,-666c84.7,-268.7,153.8,-488.2,207.5,-658.5
-    c53.7,-170.3,84.5,-266.8,92.5,-289.5z
-    M1001 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span></span></span></code></strong></pre>
+    <pre><strong><code><span><span>Inet=IPa2+(IPr−Icap_adj)2</span><span><span><span></span><span><span>I</span><span><span><span><span><span><span></span><span><span><span>n</span><span>e</span><span>t</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span><span></span><span>=</span><span></span></span><span><span></span><span><span><span><span><span><span></span><span><span><span>I</span><span><span><span><span><span><span></span><span><span><span>P</span><span>a</span></span></span></span><span><span></span><span><span>2</span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span><span></span><span>+</span><span></span><span>(</span><span><span>I</span><span><span><span><span><span><span></span><span><span><span>P</span><span>r</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span><span></span><span>−</span><span></span><span><span>I</span><span><span><span><span><span><span></span><span><span><span>c</span><span>a</span><span>p</span><span>_</span><span>a</span><span>d</span><span>j</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span><span><span>)</span><span><span><span><span><span><span></span><span><span>2</span></span></span></span></span></span></span></span></span></span><span><span></span><span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></code></strong></pre>
 
     **, onde
 
@@ -489,22 +524,24 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
     IPr
     ```
 
-    **são as componentes da** **I_dut_reflected**.**
-  * **percent_limite_sf** **(%):** **(abs(I_eps_sf_net) / EPS_CURRENT_LIMIT) * 100**.
+    **são as componentes da**  **I_dut_reflected** .**
+  * **percent_limite_sf** **(%):**  **(abs(I_eps_sf_net) / EPS_CURRENT_LIMIT) * 100** .
 
 ### 4.7. Exemplo Numérico Detalhado de Perdas em Carga
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#47-exemplo-num%C3%A9rico-detalhado-de-perdas-em-carga)
 
 **Dados Iniciais:**
 
 * **DUT Trifásico: Potência = 10 MVA, Tensão AT (Nominal) = 69 kV, Taps AT: Menor 65kV, Maior 72kV.**
 * **Impedâncias (%): Nominal 8%, Menor 7.5%, Maior 8.5%.**
-* **Entrada UI:** **perdas_carga_nom_ui**=80kW, **perdas_carga_min_ui**=75kW, **perdas_carga_max_ui**=85kW. **temperatura_referencia_ui**=85°C.
+* **Entrada UI:**  **perdas_carga_nom_ui** =80kW,  **perdas_carga_min_ui** =75kW,  **perdas_carga_max_ui** =85kW.  **temperatura_referencia_ui** =85°C.
 * **Calculado:** **perdas_vazio_nom** **= 12 kW.**
-* **SUT:** **SUT_BT_VOLTAGE**=480V. **EPS_CURRENT_LIMIT**=2000A.
+* **SUT:**  **SUT_BT_VOLTAGE** =480V.  **EPS_CURRENT_LIMIT** =2000A.
 
 **Cálculos para TAP NOMINAL (69 kV):**
 
-* **tensao**=69kV, **imp**=8%, **perdas_totais_input_tap**=80kW.
+* **tensao** =69kV,  **imp** =8%,  **perdas_totais_input_tap** =80kW.
 * **corrente_at_nom** **= (10000 kVA) / (69 kV * 1.732) = 83.67 A.**
 * **vcc** **= 69 kV * (8/100) = 5.52 kV.**
 * **perdas_carga_sem_vazio** **(@85°C) = 80 kW - 12 kW = 68 kW.**
@@ -526,28 +563,27 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 * **voltage** **= 6.642 kV (ensaio DUT).**
 * **Usando**
 
-  <pre _ngcontent-ng-c1554618750=""><strong _ngcontent-ng-c2459883256="" class="ng-star-inserted"><code _ngcontent-ng-c1554618750="" class="rendered"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Q</mi><mrow><mi>D</mi><mi>U</mi><mi>T</mi></mrow></msub></mrow></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist"><span class=""><span class="pstrut"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">D</span><span class="mord mathnormal mtight">U</span><span class="mord mathnormal mtight">T</span></span></span></span></span><span class="vlist-s"></span></span><span class="vlist-r"><span class="vlist"><span class=""></span></span></span></span></span></span></span></span></span></code></strong></pre>
+  <pre><strong><code><span><span>QDUT</span><span><span><span></span><span><span>Q</span><span><span><span><span><span><span></span><span><span><span>D</span><span>U</span><span>T</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></span></code></strong></pre>
 
-  ** **para** **power** **(corrigido):**** **power_reativa_a_compensar** **= 1.1554 MVAr.**
-* **select_target_bank_voltage(6.642)** **->** **target_v_cf_key**="13.8" (Assumindo 6.642 <= 13.8 * 1.1). **cap_bank_voltage_com_fator** **= 13.8 kV.**
+  ** **para** **power**  **(corrigido):** ** **power_reativa_a_compensar** **= 1.1554 MVAr.**
+* **select_target_bank_voltage(6.642)** **->**  **target_v_cf_key** ="13.8" (Assumindo 6.642 <= 13.8 * 1.1). **cap_bank_voltage_com_fator** **= 13.8 kV.**
 * **pot_cap_bank_com_fator** **(MVAr requerido do banco) = 1.1554 / ((6.642 / 13.8)^2 * 1.0) = 1.1554 / 0.2319 = 4.982 MVAr.**
 
-  * **Este é** **res_dict["Cap Bank Power Frio Com Fator (MVAr)"]**.
+  * **Este é**  **res_dict["Cap Bank Power Frio Com Fator (MVAr)"]** .
 
 **Seleção Configuração Banco (Cenário Frio, C/F, Tap Nominal):**
 
 * **target_bank_voltage_key** **= "13.8".** **required_power_mvar** **= 4.982 MVAr.**
 * **Grupo 1 para 13.8kV: 3 unidades, máx 11.7 MVAr.** **use_group1_only** **= True.**
 * **available_caps** **= 3 unidades (CP2A1, CP2B1, CP2C1).**
-* **find_best_q_configuration("13.8", 4.982, True)**:
-
-  * **Necessário ~1.66 MVAr/unidade (4.982 / 3).**
-  * **Q5 (1.6 MVAr) é menor. Q4+Q1 (1.2+0.1=1.3) é menor. Q3+Q4 (0.8+1.2=2.0) é > 1.66.**
-  * **Combinação "Q3, Q4" (2.0 MVAr/unidade).**
-  * **Potência total fornecida pelo banco = 2.0 MVAr/unidade * 3 unidades = 6.0 MVAr.**
-  * **res_dict["Q Config Frio"]** **= "Q3, Q4".**
-  * **res_dict["Q Power Provided Frio (MVAr)"]** **= 6.0 MVAr.**
-  * **res_dict["Cap Bank Voltage Frio Com Fator (kV)"]** **= 13.8 kV.**
+* **find_best_q_configuration("13.8", 4.982, True)** :
+* **Necessário ~1.66 MVAr/unidade (4.982 / 3).**
+* **Q5 (1.6 MVAr) é menor. Q4+Q1 (1.2+0.1=1.3) é menor. Q3+Q4 (0.8+1.2=2.0) é > 1.66.**
+* **Combinação "Q3, Q4" (2.0 MVAr/unidade).**
+* **Potência total fornecida pelo banco = 2.0 MVAr/unidade * 3 unidades = 6.0 MVAr.**
+* **res_dict["Q Config Frio"]** **= "Q3, Q4".**
+* **res_dict["Q Power Provided Frio (MVAr)"]** **= 6.0 MVAr.**
+* **res_dict["Cap Bank Voltage Frio Com Fator (kV)"]** **= 13.8 kV.**
 
 **Análise SUT/EPS (Cenário Frio, C/F, Tap Nominal DUT, Tap SUT AT = 14kV):**
 
@@ -558,7 +594,6 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 * **V_sut_hv_tap_v** **= 14000 V.** **tensao_sut_bt_v** **= 480 V.**
 * **Cap_Correct_factor_cf** **para** **calculate_sut_eps_current_compensated** **= 1.0.**
 * **Cálculos:**
-
   * **ratio_sut** **= 14000 / 480 = 29.167.**
   * **I_dut_reflected** **= 100.68 A * 29.167 = 2936.5 A.**
   * **pteste_mvar_corrected_cf** **= 6.0 MVAr * ((6.642 / 13.8)^2 * 1.0) = 6.0 * 0.2319 = 1.391 MVAr.**
@@ -571,11 +606,15 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 ## 5. Configuração Detalhada dos Bancos de Capacitores
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#5-configura%C3%A7%C3%A3o-detalhada-dos-bancos-de-capacitores)
+
 ### 5.1. Capacitores Disponíveis por Nível de Tensão Nominal do Banco
 
-**Conforme** **utils.constants.CAPACITORS_BY_VOLTAGE**:
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#51-capacitores-dispon%C3%ADveis-por-n%C3%ADvel-de-tens%C3%A3o-nominal-do-banco)
 
-| **Tensão Nominal Banco (kV)** | **Capacitores Físicos Disponíveis (**CAPACITORS_BY_VOLTAGE[chave]**)**                                                                                                                                     |
+**Conforme**  **utils.constants.CAPACITORS_BY_VOLTAGE** :
+
+| **Tensão Nominal Banco (kV)** | **Capacitores Físicos Disponíveis (CAPACITORS_BY_VOLTAGE[chave])**                                                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | "13.8"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2"]                                                                                                                                                                   |
 | "23.9"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2"]                                                                                                                                                                   |
@@ -586,11 +625,13 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 | "71.7"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"]                                                       |
 | "95.6"                               | ["CP1A1", "CP1A2", "CP1B1", "CP1B2", "CP1C1", "CP1C2", "CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
 
-**Nomenclatura** **CPxAy**: **x**=posição (1-4), **A**=Fase (A,B,C), **y**=Grupo (1 ou 2).
+**Nomenclatura**  **CPxAy** :  **x** =posição (1-4),  **A** =Fase (A,B,C),  **y** =Grupo (1 ou 2).
 
 ### 5.2. Potência das Chaves Q por Unidade de Capacitor
 
-**Conforme** **utils.constants.Q_SWITCH_POWERS["generic_cp"]**:
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#52-pot%C3%AAncia-das-chaves-q-por-unidade-de-capacitor)
+
+**Conforme**  **utils.constants.Q_SWITCH_POWERS["generic_cp"]** :
 
 | **Chave** | **Potência (MVAr)** |
 | --------------- | -------------------------- |
@@ -603,96 +644,78 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 ### 5.3. Lógica de Seleção Implementada
 
-**A lógica em** **losses.py** **(**find_best_q_configuration**,** **suggest_capacitor_bank_config**) opera como descrito na Seção 2.5.2 e 2.5.3. A potência fornecida por uma combinação de chaves Q em um conjunto de **available_caps** **(unidades monofásicas) é** **sum(Q_potencias_individuais) * len(available_caps)**.
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#53-l%C3%B3gica-de-sele%C3%A7%C3%A3o-implementada)
 
+**A lógica em** **losses.py** **(find_best_q_configuration,**  **suggest_capacitor_bank_config** ) opera como descrito na Seção 2.5.2 e 2.5.3. A potência fornecida por uma combinação de chaves Q em um conjunto de **available_caps** **(unidades monofásicas) é**  **sum(Q_potencias_individuais) * len(available_caps)** .
 
 ### 5.4. Potências Mínima e Máxima Teóricas por Nível de Tensão (Continuacão)
 
-  **Estas são as potências trifásicas totais que podem ser obtidas, considerando o uso apenas do Grupo 1 de capacitores (CPxy**1**) ou de todos os capacitores disponíveis (Grupo 1 + Grupo 2, i.e., CPxy**1 **+ CPxy**2**), aplicando a mesma configuração de chaves Q (Q1 para mínima, Q1 a Q5 para máxima) em todas as unidades monofásicas selecionadas.**
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#54-pot%C3%AAncias-m%C3%ADnima-e-m%C3%A1xima-te%C3%B3ricas-por-n%C3%ADvel-de-tens%C3%A3o-continuac%C3%A3o)
+
+**Estas são as potências trifásicas totais que podem ser obtidas, considerando o uso apenas do Grupo 1 de capacitores (CPxy**1**) ou de todos os capacitores disponíveis (Grupo 1 + Grupo 2, i.e., CPxy **1 + CPxy2** ), aplicando a mesma configuração de chaves Q (Q1 para mínima, Q1 a Q5 para máxima) em todas as unidades monofásicas selecionadas.**
 
 * **13.8 kV** **(**CAPACITORS_BY_VOLTAGE["13.8"] **= 6 unidades no total, 3 unidades no Grupo 1)**
-* **Grupo 1 Apenas (**len(available_caps)**=3):**
-
+* **Grupo 1 Apenas (len(available_caps)=3):**
   * **Mínima (Q1): 0.1 MVAr/unid * 3 unid =** **0.3 MVAr**
   * **Máxima (Q1-Q5): 3.9 MVAr/unid * 3 unid =** **11.7 MVAr**
-* **Grupo 1 + Grupo 2 (**len(available_caps)**=6):**
-
+* **Grupo 1 + Grupo 2 (len(available_caps)=6):**
   * **Mínima (Q1): 0.1 MVAr/unid * 6 unid =** **0.6 MVAr**
   * **Máxima (Q1-Q5): 3.9 MVAr/unid * 6 unid =** **23.4 MVAr**
 * **23.9 kV** **(**CAPACITORS_BY_VOLTAGE["23.9"] **= 6 unidades no total, 3 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=3):**
-
+  * **Grupo 1 Apenas (len(available_caps)=3):**
     * **Mínima (Q1): 0.1 MVAr/unid * 3 unid =** **0.3 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 3 unid =** **11.7 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=6):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=6):**
     * **Mínima (Q1): 0.1 MVAr/unid * 6 unid =** **0.6 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 6 unid =** **23.4 MVAr**
 * **27.6 kV** **(**CAPACITORS_BY_VOLTAGE["27.6"] **= 24 unidades no total, 12 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=12):**
-
+  * **Grupo 1 Apenas (len(available_caps)=12):**
     * **Mínima (Q1): 0.1 MVAr/unid * 12 unid =** **1.2 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 12 unid =** **46.8 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=24):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=24):**
     * **Mínima (Q1): 0.1 MVAr/unid * 24 unid =** **2.4 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 24 unid =** **93.6 MVAr**
 * **41.4 kV** **(**CAPACITORS_BY_VOLTAGE["41.4"] **= 18 unidades no total, 9 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=9):**
-
+  * **Grupo 1 Apenas (len(available_caps)=9):**
     * **Mínima (Q1): 0.1 MVAr/unid * 9 unid =** **0.9 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 9 unid =** **35.1 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=18):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=18):**
     * **Mínima (Q1): 0.1 MVAr/unid * 18 unid =** **1.8 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 18 unid =** **70.2 MVAr**
 * **47.8 kV** **(**CAPACITORS_BY_VOLTAGE["47.8"] **= 24 unidades no total, 12 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=12):**
-
+  * **Grupo 1 Apenas (len(available_caps)=12):**
     * **Mínima (Q1): 0.1 MVAr/unid * 12 unid =** **1.2 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 12 unid =** **46.8 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=24):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=24):**
     * **Mínima (Q1): 0.1 MVAr/unid * 24 unid =** **2.4 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 24 unid =** **93.6 MVAr**
 * **55.2 kV** **(**CAPACITORS_BY_VOLTAGE["55.2"] **= 24 unidades no total, 12 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=12):**
-
+  * **Grupo 1 Apenas (len(available_caps)=12):**
     * **Mínima (Q1): 0.1 MVAr/unid * 12 unid =** **1.2 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 12 unid =** **46.8 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=24):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=24):**
     * **Mínima (Q1): 0.1 MVAr/unid * 24 unid =** **2.4 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 24 unid =** **93.6 MVAr**
 * **71.7 kV** **(**CAPACITORS_BY_VOLTAGE["71.7"] **= 18 unidades no total, 9 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=9):**
-
+  * **Grupo 1 Apenas (len(available_caps)=9):**
     * **Mínima (Q1): 0.1 MVAr/unid * 9 unid =** **0.9 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 9 unid =** **35.1 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=18):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=18):**
     * **Mínima (Q1): 0.1 MVAr/unid * 18 unid =** **1.8 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 18 unid =** **70.2 MVAr**
 * **95.6 kV** **(**CAPACITORS_BY_VOLTAGE["95.6"] **= 24 unidades no total, 12 unidades no Grupo 1)**
-
-  * **Grupo 1 Apenas (**len(available_caps)**=12):**
-
+  * **Grupo 1 Apenas (len(available_caps)=12):**
     * **Mínima (Q1): 0.1 MVAr/unid * 12 unid =** **1.2 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 12 unid =** **46.8 MVAr**
-  * **Grupo 1 + Grupo 2 (**len(available_caps)**=24):**
-
+  * **Grupo 1 + Grupo 2 (len(available_caps)=24):**
     * **Mínima (Q1): 0.1 MVAr/unid * 24 unid =** **2.4 MVAr**
     * **Máxima (Q1-Q5): 3.9 MVAr/unid * 24 unid =** **93.6 MVAr**
 
-**(Nota: "Unidade" refere-se a uma unidade monofásica de capacitor. Para um sistema trifásico,** **len(available_caps)** **será um múltiplo de 3 se os capacitores estiverem distribuídos igualmente entre as fases, como é o caso na constante** **CAPACITORS_BY_VOLTAGE**.)
+**(Nota: "Unidade" refere-se a uma unidade monofásica de capacitor. Para um sistema trifásico,** **len(available_caps)** **será um múltiplo de 3 se os capacitores estiverem distribuídos igualmente entre as fases, como é o caso na constante**  **CAPACITORS_BY_VOLTAGE** .)
 
 ### 5.5. Considerações para Seleção Avançada de Capacitores (Lógica Desejada vs. Implementada)
+
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#55-considera%C3%A7%C3%B5es-para-sele%C3%A7%C3%A3o-avan%C3%A7ada-de-capacitores-l%C3%B3gica-desejada-vs-implementada)
 
 **A solicitação original incluía uma lógica mais complexa para seleção de capacitores, com apresentação de múltiplas opções (exata, acima, abaixo) e a possibilidade de configurações desequilibradas se aceito pelo usuário.**
 
@@ -704,7 +727,6 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 * **Priorizar Grupo 1:** **Se a potência desejada puder ser alcançada apenas com o Grupo 1, usar este grupo.**
 * **Senão, usar Grupo 1+2.**
 * **Método Equilibrado:**
-
   * **Gerar todas as 31 combinações de chaves Q.**
   * **Para cada combinação, calcular a potência total por unidade e multiplicar pelo número de unidades** **por fase** **(assumindo equilíbrio).**
   * **Ordenar as potências trifásicas resultantes.**
@@ -712,10 +734,10 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 * **Método Desequilibrado (Opcional):** **Se o método equilibrado não fornecer uma solução exata ou satisfatória, e o usuário permitir, considerar configurações onde diferentes unidades de capacitor (mesmo dentro da mesma fase, ou entre fases se o número de unidades por fase for diferente) podem ter diferentes combinações de Q. Isso é significativamente mais complexo.**
 * **Apresentar opções ao usuário.**
 
-**Comparação com a Lógica Implementada em** **losses.py**:
+**Comparação com a Lógica Implementada em**  **losses.py** :
 
 * **Verificação de Intervalo:** **Não é feita explicitamente no início;** **find_best_q_configuration** **retorna "N/A" se não encontrar solução.**
-* **Priorização Grupo 1:** **Implementada através do parâmetro** **use_group1_only** **passado para** **find_best_q_configuration**.
+* **Priorização Grupo 1:** **Implementada através do parâmetro** **use_group1_only** **passado para**  **find_best_q_configuration** .
 * **Método Equilibrado:** **A função** **find_best_q_configuration** **aplica a** **mesma** **combinação de chaves Q a** **todas** **as** **available_caps** **selecionadas. Se** **available_caps** **representa um conjunto equilibrado de unidades por fase, o resultado é equilibrado.**
 * **Seleção de Opções:** **Apenas a "melhor acima ou igual" é retornada. Não há opções "exata" ou "melhor abaixo" distintas.**
 * **Método Desequilibrado:** **Não implementado.**
@@ -726,19 +748,21 @@ potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 
 
 ## 6. Considerações Finais sobre Fórmulas e Implementação
 
+[](https://github.com/AlessandroDev45/transformer_test_simulator_v1/blob/master/docs/instrucoes_perdas.md#6-considera%C3%A7%C3%B5es-finais-sobre-f%C3%B3rmulas-e-implementa%C3%A7%C3%A3o)
+
 * **Unidades:** **É crucial a consistência nas unidades (kW vs W, Ton vs kg, kV vs V) ao longo dos cálculos. O** **formulas_perdas.md** **tenta esclarecer as unidades usadas em cada etapa conforme interpretado do código.**
-* **Compensação de Corrente (**calculate_sut_eps_current_compensated**):** **A subtração escalar direta da corrente do capacitor da corrente refletida do DUT é uma aproximação. Uma análise vetorial completa, considerando as componentes ativa e reativa da corrente do DUT, seria mais precisa, especialmente se o fator de potência do ensaio não for muito baixo.**
-* **Dimensionamento do Banco (**calculate_cap_bank**):** **A função** **calculate_cap_bank** **recebe a potência** **aparente** **(**
+* **Compensação de Corrente (calculate_sut_eps_current_compensated):** **A subtração escalar direta da corrente do capacitor da corrente refletida do DUT é uma aproximação. Uma análise vetorial completa, considerando as componentes ativa e reativa da corrente do DUT, seria mais precisa, especialmente se o fator de potência do ensaio não for muito baixo.**
+* **Dimensionamento do Banco (calculate_cap_bank):** **A função** **calculate_cap_bank** **recebe a potência** **aparente** **(**
 
   ```
   SDUT
   ```
-  ) do ensaio no DUT como entrada **power**. Para dimensionar um banco para compensação **reativa**, a entrada **power** **para esta função deveria ser a potência** **reativa** **(**
+  ) do ensaio no DUT como entrada  **power** . Para dimensionar um banco para compensação  **reativa** , a entrada **power** **para esta função deveria ser a potência** **reativa** **(**
 
   ```
   QDUT
   ```
-  ) do ensaio (e.g., **pteste_frio_mvar**). O resultado (**pot_cap_bank_..._fator**) seria então a potência nominal reativa que o banco selecionado precisaria ter. O código atual, ao passar
+  ) do ensaio (e.g.,  **pteste_frio_mvar** ). O resultado ( **pot_cap_bank_..._fator** ) seria então a potência nominal reativa que o banco selecionado precisaria ter. O código atual, ao passar
 
   ```
   SDUT

@@ -17,6 +17,8 @@
             --text-color: #f8f9fa;
             --bg-color: #343a40;
             --card-bg-color: #495057;
+            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
+            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
             --border-color: #6c757d;
         }
         body {
@@ -31,7 +33,7 @@
             margin: 0 auto;
         }
         .sidebar {
-            background-color: var(--card-bg-color);
+            background-color: var(--sidebar-bg-color);
             border-radius: 5px;
             padding: 20px;
             position: sticky;
@@ -195,52 +197,30 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 
 ### 2.1. Determinação da Tensão de Teste
 
-A tensão de teste para o ensaio de tensão aplicada é determinada com base na classe de tensão e no tipo de conexão:
+A tensão de teste para o ensaio de tensão aplicada é determinada com base na classe de tensão e no tipo de conexão definida em dados básicos:
 
 #### 2.1.1. Para o Lado de Alta Tensão (AT)
 
 * **Se a conexão for Yn (estrela com neutro acessível):**
-  * \`tensao_teste_at = classe_tensao_bucha_neutro * fator_multiplicacao\`
+  * \`tensao_teste_at = classe_tensao_bucha_neutro\`
 * **Para outras conexões (Y, D):**
-  * \`tensao_teste_at = classe_tensao_at * fator_multiplicacao\`
+  * \`tensao_teste_at = classe_tensao_at\`
 
 #### 2.1.2. Para o Lado de Baixa Tensão (BT)
 
-* \`tensao_teste_bt = classe_tensao_bt * fator_multiplicacao\`
+* \`tensao_teste_bt = classe_tensao_bt\`
 
 #### 2.1.3. Para o Terciário (se existir)
 
-* \`tensao_teste_terciario = classe_tensao_terciario * fator_multiplicacao\`
+* \`tensao_teste_terciario = classe_tensao_terciario\`
 
-### 2.2. Fatores de Multiplicação
-
-Os fatores de multiplicação são determinados pelas normas técnicas (IEC, IEEE, ABNT) e variam conforme a classe de tensão:
-
-| Classe de Tensão (kV) | Fator de Multiplicação |
-| :-------------------- | :--------------------- |
-| ≤ 1.1                 | 2.0                    |
-| > 1.1 e ≤ 3.6         | 10.0                   |
-| > 3.6 e ≤ 7.2         | 20.0                   |
-| > 7.2 e ≤ 12          | 28.0                   |
-| > 12 e ≤ 24           | 38.0                   |
-| > 24 e ≤ 36           | 50.0                   |
-| > 36 e ≤ 52           | 70.0                   |
-| > 52 e ≤ 100          | 95.0                   |
-| > 100 e ≤ 123         | 185.0                  |
-| > 123 e ≤ 145         | 230.0                  |
-| > 145 e ≤ 170         | 275.0                  |
-| > 170 e ≤ 245         | 325.0                  |
-| > 245 e ≤ 300         | 380.0                  |
-| > 300 e ≤ 362         | 450.0                  |
-| > 362 e ≤ 420         | 520.0                  |
-| > 420 e ≤ 550         | 620.0                  |
-| > 550 e ≤ 800         | 800.0                  |
-
-### 2.3. Ajustes para Capacitância
+### 2.2. Ajustes para Capacitância
 
 Para tensões acima de 450 kV, é adicionado um valor de capacitância:
 * Se tensão > 450 kV: Adicionar 330 pF
 * Se tensão ≤ 450 kV: Adicionar 660 pF
+
+Estes valores representam a capacitância do divisor de tensão utilizado durante o ensaio e são automaticamente adicionados à capacitância do transformador para o cálculo da corrente de teste.
 
 ## 3. Cálculo da Corrente de Teste
 
@@ -268,22 +248,39 @@ Onde:
 * \`V\` é a tensão de teste em Volts (V)
 * \`I\` é a corrente de teste em Amperes (A)
 
-## 4. Recomendações para o Teste
+## 4. Análise de Viabilidade do Sistema Ressonante
 
-### 4.1. Equipamento de Teste
+### 4.1. Critérios de Viabilidade
+
+O sistema analisa a viabilidade de utilizar um sistema ressonante para o teste, com base na capacitância e tensão de teste:
+
+#### 4.1.1. Módulos 1||2||3 (3 Par.) 270kV
+* **Tensão máxima:** 270 kV
+* **Capacitância mínima:** 2.0 nF
+* **Capacitância máxima:** 39.0 nF
+
+#### 4.1.2. Módulos 1||2||3 (3 Par.) 450kV
+* **Tensão máxima:** 450 kV
+* **Capacitância mínima:** 2.0 nF
+* **Capacitância máxima:** 23.4 nF
+
+#### 4.1.3. Outras Configurações
+Para capacitâncias ou tensões fora destes limites, o sistema recomenda outras configurações ou indica que o teste não é viável com o sistema ressonante disponível.
+
+### 4.2. Equipamento de Teste
 
 * **Fonte de Tensão:** Capaz de fornecer a tensão de teste calculada
 * **Capacidade de Corrente:** Suficiente para fornecer a corrente de teste calculada
 * **Frequência:** Geralmente 60 Hz (ou conforme especificado)
 
-### 4.2. Procedimento de Teste
+### 4.3. Procedimento de Teste
 
 1. Aplicar a tensão de teste gradualmente até atingir o valor calculado
 2. Manter a tensão pelo tempo especificado na norma (geralmente 60 segundos)
 3. Reduzir a tensão gradualmente até zero
 4. Verificar se não houve descargas ou falhas durante o teste
 
-### 4.3. Medidas de Segurança
+### 4.4. Medidas de Segurança
 
 * Garantir que todas as partes não testadas estejam devidamente aterradas
 * Verificar a ausência de pessoas na área de teste
@@ -433,3 +430,4 @@ Onde:
     </script>
 </body>
 </html>
+

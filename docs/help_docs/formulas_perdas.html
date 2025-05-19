@@ -17,6 +17,7 @@
             --text-color: #f8f9fa;
             --bg-color: #343a40;
             --card-bg-color: #495057;
+            --sidebar-bg-color: #2c2c2c; /* Darker background for sidebar */
             --border-color: #6c757d;
         }
         body {
@@ -31,7 +32,7 @@
             margin: 0 auto;
         }
         .sidebar {
-            background-color: var(--card-bg-color);
+            background-color: var(--sidebar-bg-color);
             border-radius: 5px;
             padding: 20px;
             position: sticky;
@@ -169,15 +170,59 @@
 
     <script>
         // Markdown content
-        const markdownContent = `# Detalhamento dos Cálculos de Perdas
+        const markdownContent = `# Detalhamento dos Cálculos de Perdas em Transformadores
 
-Este documento detalha as fórmulas e parâmetros usados nos cálculos de perdas em vazio e em carga.
+## Sumário do Documento
+
+* **Introdução**:
+* **Definição de Perdas em Vazio (PFe) e Perdas em Carga (PCu)**.
+* **Limites e Parâmetros do Sistema de Teste**:
+* **EPS (Electronic Power Supply)**.
+* **SUT (Step-Up Transformer)**.
+* **Perdas em Vazio (No-Load Losses)**:
+* **Parâmetros de Entrada.**
+* **Tabelas de Referência para Aço M4.**
+* **Variáveis Calculadas (Base Aço M4 e Base Projeto).**
+* **Análise SUT/EPS para Perdas em Vazio.**
+* **Exemplo Numérico Detalhado de Perdas em Vazio.**
+* **Perdas em Carga (Load Losses)**:
+* **Parâmetros de Entrada.**
+* **Cenários de Cálculo.**
+* **Variáveis Calculadas (Por Tap e Cenário).**
+* **Cálculo do Banco de Capacitores Requerido (calculate_cap_bank).**
+* **Configuração do Banco de Capacitores (Disponível/Sugerido) e Lógica de Seleção.**
+* **Análise SUT/EPS para Perdas em Carga (Corrente Compensada com calculate_sut_eps_current_compensated).**
+* **Exemplo Numérico Detalhado de Perdas em Carga.**
+* **Configuração Detalhada dos Bancos de Capacitores**:
+* **Capacitores Disponíveis por Nível de Tensão Nominal.**
+* **Potência das Chaves Q.**
+* **Lógica de Seleção Implementada.**
+* **Potências Mínima e Máxima Teóricas por Nível de Tensão.**
+
+---
+
+## 1. Introdução
+
+**As perdas em transformadores são um fator crucial no projeto e operação desses equipamentos. Elas são tipicamente divididas em duas categorias principais (outros tipos de perdas não são abordados neste documento):**
+
+* **Perdas em Vazio (Perdas no Núcleo ou Perdas em Ferro -**
+
+  <pre><strong><code><span><span>PFe</span><span><span><span></span><span><span>P</span><span><span><span><span><span><span></span><span><span><span>F</span><span>e</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></span></code></strong></pre>
+
+  **):** **Ocorrem devido à histerese e correntes parasitas no núcleo magnético quando o transformador está energizado, mesmo sem carga conectada ao secundário. São dependentes da tensão e frequência aplicadas.**
+* **Perdas em Carga (Perdas nos Enrolamentos ou Perdas no Cobre -**
+
+  <pre><strong><code><span><span>PCu</span><span><span><span></span><span><span>P</span><span><span><span><span><span><span></span><span><span><span>C</span><span>u</span></span></span></span></span><span></span></span><span><span><span></span></span></span></span></span></span></span></span></span></code></strong></pre>
+
+  **):** **Ocorrem devido à resistência ôhmica dos enrolamentos primário e secundário quando o transformador está sob carga. São proporcionais ao quadrado da corrente de carga.**
+
+**Este documento detalha as fórmulas, parâmetros e lógicas de decisão utilizados nos cálculos de perdas em vazio e em carga, conforme implementado no sistema de análise (losses.py).**
 
 ---
 
 ## 1. Perdas em Vazio (No-Load Losses)
 
-Cálculos relacionados às perdas que ocorrem no núcleo do transformador quando energizado sem carga.
+Cálculos referentes às perdas no núcleo do DUT quando energizado em sua tensão nominal (ou variações como 1.1 pu e 1.2 pu) e frequência nominal, sem carga. Testes são realizados aplicando tensão no lado de Baixa Tensão (BT) do DUT.
 
 ### 1.1. Parâmetros de Entrada
 
@@ -196,12 +241,136 @@ Estes são os valores fornecidos pelo usuário ou obtidos de dados básicos para
 | Corrente Excitação 1.1pu (%)  | Corrente medida/esperada a 110% Vnom   | %       | \`corrente_exc_1_1_input\`         | OK     |
 | Corrente Excitação 1.2pu (%)  | Corrente medida/esperada a 120% Vnom   | %       | \`corrente_exc_1_2_input\`         | OK     |
 
-### 1.2. Tabelas de Referência Usadas
+### 1.2. Tabelas de Referência para Aços
 
-* **\`perdas_nucleo\`**: Tabela com dados de perdas específicas (W/kg) vs. Indução (T) para diferentes tipos de aço (ex: M4). Status: OK
-* **\`potencia_magnet\`**: Tabela com dados de potência magnetizante específica (VAR/kg) vs. Indução (T). Status: OK
+#### 1.2.1. Aço M4 (Referência)
 
-### 1.3. Comparações: Aço M4 (Referência) vs. Projeto (Dados Entrada)
+##### 1.2.1.1. Tabela de Perdas Específicas do Núcleo (W/kg)
+
+Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em **perdas_nucleo_data**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** | **100 Hz** | **120 Hz** | **150 Hz** | **200 Hz** | **240 Hz** | **250 Hz** | **300 Hz** | **350 Hz** | **400 Hz** | **500 Hz** |
+| --------------- | --------- | --------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |
+| **0.5**         | **0.10**  | **0.13**  | **0.25**   | **0.35**   | **0.50**   | **0.80**   | **1.10**   | **1.15**   | **1.30**   | **1.50**   | **1.70**   | **2.10**   |
+| **0.6**         | **0.12**  | **0.18**  | **0.38**   | **0.48**   | **0.70**   | **1.10**   | **1.50**   | **1.60**   | **2.00**   | **2.40**   | **2.80**   | **3.50**   |
+| **0.7**         | **0.15**  | **0.23**  | **0.50**   | **0.62**   | **0.95**   | **1.55**   | **2.10**   | **2.30**   | **3.00**   | **3.60**   | **4.20**   | **5.50**   |
+| **0.8**         | **0.20**  | **0.30**  | **0.65**   | **0.80**   | **1.20**   | **2.00**   | **2.80**   | **3.00**   | **3.90**   | **4.70**   | **5.50**   | **7.50**   |
+| **0.9**         | **0.25**  | **0.37**  | **0.82**   | **1.00**   | **1.50**   | **2.50**   | **3.50**   | **3.80**   | **4.80**   | **5.80**   | **6.80**   | **9.00**   |
+| **1.0**         | **0.32**  | **0.46**  | **1.00**   | **1.25**   | **1.85**   | **3.10**   | **4.20**   | **4.50**   | **5.90**   | **7.00**   | **8.50**   | **11.00**  |
+| **1.1**         | **0.41**  | **0.55**  | **1.21**   | **1.55**   | **2.20**   | **3.70**   | **5.00**   | **5.40**   | **6.90**   | **8.50**   | **10.00**  | **14.00**  |
+| **1.2**         | **0.50**  | **0.65**  | **1.41**   | **1.90**   | **2.70**   | **4.50**   | **6.00**   | **6.40**   | **8.10**   | **10.00**  | **12.00**  | **17.00**  |
+| **1.3**         | **0.60**  | **0.80**  | **1.65**   | **2.30**   | **3.20**   | **5.20**   | **7.00**   | **7.50**   | **9.50**   | **11.50**  | **14.00**  | **20.00**  |
+| **1.4**         | **0.71**  | **0.95**  | **1.95**   | **2.80**   | **3.80**   | **6.00**   | **8.50**   | **9.00**   | **11.00**  | **13.50**  | **16.00**  | **24.00**  |
+| **1.5**         | **0.85**  | **1.10**  | **2.30**   | **3.30**   | **4.50**   | **7.00**   | **10.00**  | **10.60**  | **13.00**  | **15.50**  | **19.00**  | **29.00**  |
+| **1.6**         | **1.00**  | **1.30**  | **2.80**   | **3.80**   | **5.30**   | **8.00**   | **12.00**  | **12.60**  | **15.00**  | **18.00**  | **23.00**  | **35.00**  |
+| **1.7**         | **1.20**  | **1.55**  | **3.50**   | **4.40**   | **6.00**   | **9.00**   | **15.00**  | **15.60**  | **18.00**  | **22.00**  | **28.00**  | **42.00**  |
+
+##### 1.2.1.2. Tabela de Potência Magnetizante Específica (VAR/kg)
+
+Valores de potência magnetizante específica (VAR/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em **potencia_magnet_data**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** | **100 Hz** | **120 Hz** | **150 Hz** | **200 Hz** | **240 Hz** | **250 Hz** | **300 Hz** | **350 Hz** | **400 Hz** | **500 Hz** |
+| --------------- | --------- | --------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |
+| **0.5**         | **0.10**  | **0.15**  | **0.35**   | **0.45**   | **0.70**   | **1.00**   | **1.30**   | **1.40**   | **1.70**   | **2.10**   | **3.00**   | **4.00**   |
+| **0.6**         | **0.15**  | **0.20**  | **0.45**   | **0.60**   | **0.90**   | **1.40**   | **1.80**   | **1.90**   | **2.50**   | **3.30**   | **4.00**   | **5.50**   |
+| **0.7**         | **0.23**  | **0.28**  | **0.60**   | **0.80**   | **1.10**   | **1.70**   | **2.30**   | **2.50**   | **3.40**   | **4.20**   | **5.20**   | **7.50**   |
+| **0.8**         | **0.30**  | **0.35**  | **0.80**   | **1.00**   | **1.40**   | **2.20**   | **3.00**   | **3.30**   | **4.50**   | **5.50**   | **7.00**   | **9.50**   |
+| **0.9**         | **0.38**  | **0.45**  | **0.95**   | **1.30**   | **1.70**   | **2.80**   | **3.80**   | **4.00**   | **5.60**   | **7.00**   | **8.80**   | **12.00**  |
+| **1.0**         | **0.45**  | **0.55**  | **1.10**   | **1.60**   | **2.20**   | **3.50**   | **4.50**   | **4.80**   | **6.90**   | **8.50**   | **11.00**  | **15.00**  |
+| **1.1**         | **0.55**  | **0.70**  | **1.50**   | **2.00**   | **2.80**   | **4.10**   | **5.50**   | **5.80**   | **8.10**   | **10.00**  | **13.00**  | **18.00**  |
+| **1.2**         | **0.65**  | **0.85**  | **2.00**   | **2.40**   | **3.30**   | **5.00**   | **6.50**   | **7.00**   | **9.50**   | **12.00**  | **15.00**  | **22.00**  |
+| **1.3**         | **0.80**  | **1.00**  | **2.20**   | **2.85**   | **3.80**   | **6.00**   | **7.50**   | **8.00**   | **11.20**  | **13.50**  | **17.00**  | **26.00**  |
+| **1.4**         | **0.95**  | **1.20**  | **2.50**   | **3.30**   | **4.50**   | **7.00**   | **9.00**   | **9.90**   | **13.50**  | **16.00**  | **20.00**  | **30.00**  |
+| **1.5**         | **1.10**  | **1.40**  | **3.00**   | **4.00**   | **5.50**   | **9.00**   | **11.00**  | **12.00**  | **15.50**  | **18.00**  | **24.00**  | **37.00**  |
+| **1.6**         | **1.30**  | **1.60**  | **3.50**   | **4.80**   | **6.50**   | **12.00**  | **14.00**  | **15.00**  | **18.00**  | **22.00**  | **30.00**  | **45.00**  |
+| **1.7**         | **1.60**  | **2.00**  | **4.00**   | **5.50**   | **7.00**   | **15.00**  | **17.00**  | **18.00**  | **22.00**  | **28.00**  | **38.00**  | **55.00**  |
+
+#### 1.2.2. Aço H110-27
+
+##### 1.2.2.1. Tabela de Perdas Específicas do Núcleo (W/kg)
+
+Valores de perdas específicas (W/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em **perdas_nucleo_data_H110_27**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** |
+| --------------- | --------- | --------- |
+| **0.2**         | **0.018** | **0.023** |
+| **0.3**         | **0.038** | **0.050** |
+| **0.4**         | **0.065** | **0.086** |
+| **0.5**         | **0.097** | **0.128** |
+| **0.6**         | **0.135** | **0.178** |
+| **0.7**         | **0.178** | **0.236** |
+| **0.8**         | **0.228** | **0.301** |
+| **0.9**         | **0.284** | **0.377** |
+| **1.0**         | **0.346** | **0.459** |
+| **1.1**         | **0.414** | **0.549** |
+| **1.2**         | **0.488** | **0.648** |
+| **1.3**         | **0.569** | **0.755** |
+| **1.4**         | **0.658** | **0.873** |
+| **1.5**         | **0.760** | **1.006** |
+| **1.6**         | **0.882** | **1.165** |
+| **1.7**         | **1.052** | **1.383** |
+| **1.8**         | **1.398** | **1.816** |
+| **1.9**         | **2.010** | **2.595** |
+
+**Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
+
+##### 1.2.2.2. Tabela de Potência Magnetizante Específica (VA/kg)
+
+Valores de potência magnetizante específica (VA/kg) em função da indução magnética (T) e frequência (Hz). Estes dados são armazenados em **potencia_magnet_data_H110_27**.
+
+| **Indução (T)** | **50 Hz** | **60 Hz** |
+| --------------- | --------- | --------- |
+| **0.2**         | **0.032** | **0.040** |
+| **0.3**         | **0.064** | **0.081** |
+| **0.4**         | **0.103** | **0.130** |
+| **0.5**         | **0.147** | **0.186** |
+| **0.6**         | **0.196** | **0.249** |
+| **0.7**         | **0.250** | **0.319** |
+| **0.8**         | **0.308** | **0.395** |
+| **0.9**         | **0.372** | **0.477** |
+| **1.0**         | **0.441** | **0.568** |
+| **1.1**         | **0.517** | **0.667** |
+| **1.2**         | **0.602** | **0.777** |
+| **1.3**         | **0.698** | **0.900** |
+| **1.4**         | **0.812** | **1.045** |
+| **1.5**         | **0.962** | **1.230** |
+| **1.6**         | **1.188** | **1.507** |
+| **1.7**         | **1.661** | **2.070** |
+| **1.8**         | **3.438** | **4.178** |
+| **1.9**         | **14.434**| **17.589**|
+
+**Nota: Para o aço H110-27, os dados estão disponíveis apenas para as frequências de 50 Hz e 60 Hz.**
+
+### 1.3. Fatores de Correção para Aço H110-27
+
+Ao utilizar os dados do aço H110-27, os seguintes fatores de correção devem ser aplicados:
+
+* **Fator de Construção (Build Factor - BF):** Este fator compensa as perdas adicionais devido ao corte das chapas e à distribuição do fluxo nos cantos.
+  * **Fator para perdas (W/kg):** **1.15** - Multiplicar os valores de perdas específicas por 1.15
+  * **Fator para potência magnetizante (VA/kg):** **1.2** - Multiplicar os valores de VA/kg por 1.2
+
+* **Divisor para Potência Magnetizante:** Na implementação em callbacks/losses.py, o fator de potência magnetizante (VAR/kg) para o aço H110-27 deve ser dividido por **1000** (não por 1.000.000 como em algumas implementações anteriores).
+
+* **Implementação no Código:** No arquivo callbacks/losses.py, os fatores são aplicados da seguinte forma:
+
+***
+# Aplicar fatores construtivos
+fator_perdas_H110_27 = fator_perdas_H110_27_base * 1.15 if fator_perdas_H110_27_base is not None else None
+fator_potencia_mag_H110_27 = fator_potencia_mag_H110_27_base * 1.2 if fator_potencia_mag_H110_27_base is not None else None
+
+# Cálculo da potência magnética
+# 1. Multiplicar por peso_nucleo_calc_h110_27 em toneladas
+# 2. Multiplicar por 1000 para converter toneladas para kg
+# 3. Dividir por 1000 para converter VA para kVA (ou VAR para kVAR)
+potencia_mag_h110_27 = (fator_potencia_mag_H110_27 * peso_nucleo_calc_h110_27 * 1000) / 1000 if h110_27_valid else 0  # kVAR
+
+
+***Observações Importantes:***
+  * Os fatores de construção (1.15 para perdas e 1.2 para potência magnetizante) devem ser sempre aplicados aos valores base do aço H110-27.
+  * Estes fatores compensam as perdas nas bordas por perda de propriedade em função do corte e distribuição de fluxo nas quinas.
+  * Ao comparar resultados entre diferentes tipos de aço, certifique-se de que os fatores de correção foram aplicados corretamente.
+
+### 1.4. Comparações: Aço M4 (Referência) vs. Projeto (Dados Entrada)
 
 Comparações entre os valores calculados com base nas tabelas de referência (Aço M4) e os valores derivados dos dados de entrada (Projeto).
 
@@ -223,6 +392,15 @@ Comparações entre os valores calculados com base nas tabelas de referência (A
 * **Constante:** \`sqrt_3\` (√3, usado para trifásicos). Status: OK
 * **Aço M4 (Estimada):** \`corrente_excitacao_calc\` = \`potencia_mag\` / (\`tensao_bt\` * \`sqrt_3\`). Status: OK
 * **Projeto (Baseado na Entrada):** \`corrente_excitacao_projeto\` = \`corrente_nominal_bt\` * (\`corrente_excitacao_percentual\` / 100). Status: OK
+
+#### 1.4.1. Validação de Valores
+
+O código implementa as seguintes validações para garantir cálculos corretos:
+
+* Se a tensão BT for zero ou nula, a corrente de excitação não pode ser calculada
+* Se o peso do núcleo for zero ou nulo, as perdas específicas não podem ser calculadas
+* Se a indução for zero ou nula, os fatores de perdas e potência magnética não podem ser determinados
+* Se a corrente nominal BT for zero ou nula, a corrente de excitação percentual não pode ser convertida para amperes
 
 ### 1.5. Cálculo da Potência Aparente de Ensaio (kVA)
 
@@ -255,11 +433,34 @@ Comparações entre os valores calculados com base nas tabelas de referência (A
 
 ---
 
-## 2. Perdas em Carga (Load Losses)
+## 2. Limites e Parâmetros do Sistema de Teste
+
+### 2.1. Limites do EPS (Electronic Power Supply)
+
+O EPS é a fonte de alimentação eletrônica que alimenta o SUT (Transformador Elevador de Teste).
+
+| **Parâmetro**                  | **Valor** | **Unidade** | **Variável no Código (utils.constants)** |
+| ------------------------------------- | --------------- | ----------------- | ---------------------------------------------------------- |
+| Tensão Máxima de Saída (BT do SUT) | 480             | V                 | SUT_BT_VOLTAGE                                             |
+| Corrente Máxima de Saída            | 2000            | A                 | EPS_CURRENT_LIMIT                                          |
+| Potência Ativa Máxima (para o DUT)  | 1350            | kW                | DUT_POWER_LIMIT                                            |
+
+### 2.2. Parâmetros do SUT (Step-Up Transformer)
+
+O SUT é utilizado para elevar a tensão do EPS aos níveis necessários para testar o DUT (Device Under Test).
+
+| **Parâmetro**    | **Valor** | **Unidade** | **Variável no Código (utils.constants)** |
+| ----------------------- | --------------- | ----------------- | ---------------------------------------------------------- |
+| Tensão Nominal Lado BT | 480             | V                 | SUT_BT_VOLTAGE                                             |
+| Tensão Mínima Lado AT | 14000           | V                 | SUT_AT_MIN_VOLTAGE                                         |
+| Tensão Máxima Lado AT | 140000          | V                 | SUT_AT_MAX_VOLTAGE                                         |
+| Passo de Tensão AT     | 3000            | V                 | SUT_AT_STEP_VOLTAGE                                        |
+
+## 3. Perdas em Carga (Load Losses)
 
 Cálculos relacionados às perdas que ocorrem nos enrolamentos devido à corrente de carga.
 
-### 2.1. Parâmetros de Entrada
+### 3.1. Parâmetros de Entrada
 
 Valores fornecidos ou obtidos para os cálculos de perdas em carga:
 
@@ -278,30 +479,37 @@ Valores fornecidos ou obtidos para os cálculos de perdas em carga:
 | Tipo de Transformador     | Configuração (Monofásico/Trifásico)            | -       | \`tipo_transformador\`       | OK     |
 | Potência Nominal          | Potência Aparente Nominal                      | MVA     | \`potencia\`                 | OK     |
 
-### 2.2. Cálculos Básicos (para cada Tap - Nominal, Maior, Menor)
+### 3.2. Cálculos Básicos (para cada Tap - Nominal, Maior, Menor)
 
 * **Perdas em Carga (Pcc - sem vazio):** \`perdas_carga_sem_vazio\` = \`perdas_totais\` - \`perdas_vazio_nom\`. Status: OK
 * **Perdas CC a Frio (25°C):** \`perdas_cc_a_frio\` = \`perdas_carga_sem_vazio\` * ((235 + 25) / (235 + temperatura_ref)). *(Fator de correção para Cobre)*. Status: OK
 * **Tensão de Curto-Circuito (Vcc):** \`vcc\` = (\`tensao_at\` / 100) * \`impedancia_percentual\`. Status: OK
-* **Corrente Nominal AT:** \`corrente_at\` (calculada com base na \`potencia\` e \`tensao_at\`). Status: OK
+* **Corrente Nominal AT:** \`corrente_at\` = \`potencia\` * 1000 / (\`tensao_at\` * \`sqrt_3\`) para trifásicos ou \`corrente_at\` = \`potencia\` * 1000 / \`tensao_at\` para monofásicos. Status: OK
 
-### 2.3. Cálculos para Condição a Frio (Referência 25°C)
+#### 3.2.1. Implementação no Código
+
+O código em `formulas/losses_math.py` implementa uma aproximação para as perdas em carga:
+* `perdas_carga = 0.01 * potencia_nominal * 1000` (aproximadamente 1% da potência nominal)
+
+Esta é uma estimativa simplificada quando os valores exatos não estão disponíveis. Na implementação completa em `callbacks/losses.py`, são utilizados os valores reais de perdas totais e perdas em vazio para calcular as perdas em carga com maior precisão.
+
+### 3.3. Cálculos para Condição a Frio (Referência 25°C)
 
 * **Tensão de Ensaio (Frio):** \`tensao_frio\` = √(\`perdas_totais\` / \`perdas_cc_a_frio\`) * \`vcc\`. Status: OK
 * **Corrente de Ensaio (Frio):** \`corrente_frio\` = √(\`perdas_totais\` / \`perdas_cc_a_frio\`) * \`corrente_at\`. Status: OK
 * **Potência Aparente de Ensaio (Frio - kVA):** \`pteste_frio\` = \`tensao_frio\` *\`corrente_frio\`* \`sqrt_3\` / 1000. Status: OK
 * **Potência Ativa EPS (Frio - kW):** \`potencia_ativa_eps_frio\` = \`perdas_totais\`. Status: OK
 
-### 2.4. Cálculos para Condição a Quente (Referência 75°C)
+### 3.4. Cálculos para Condição a Quente (Referência 75°C)
 
 * **Tensão de Ensaio (Quente):** \`tensao_quente\` = √(\`perdas_carga_sem_vazio\` / \`perdas_cc_a_frio\`) * \`vcc\`. Status: OK
 * **Corrente de Ensaio (Quente):** \`corrente_quente\` = √(\`perdas_carga_sem_vazio\` / \`perdas_cc_a_frio\`) * \`corrente_at\`. Status: OK
 * **Potência Aparente de Ensaio (Quente - kVA):** \`pteste_quente\` = \`tensao_quente\` *\`corrente_quente\`* \`sqrt_3\` / 1000. Status: OK
 * **Potência Ativa EPS (Quente - kW):** \`potencia_ativa_eps_quente\` = \`perdas_carga_sem_vazio\` * 1.1 *(Fator de segurança/margem)*. Status: OK
 
-### 2.5. Cálculos para Sobrecarga (Aplicável se Tensão AT ≥ 230kV)
+### 3.5. Cálculos para Sobrecarga (Aplicável se Tensão AT ≥ 230kV)
 
-#### 2.5.1. Sobrecarga 1.2 pu (120% Corrente Nominal)
+#### 3.5.1. Sobrecarga 1.2 pu (120% Corrente Nominal)
 
 * **Corrente de Sobrecarga:** \`corrente_1_2\` = \`corrente_at\` * 1.2. Status: OK
 * **Tensão de Ensaio (1.2 pu):** \`tensao_1_2\` = \`vcc\` * 1.2 *(Assumindo Vcc proporcional à corrente)*. Status: OK
@@ -310,7 +518,7 @@ Valores fornecidos ou obtidos para os cálculos de perdas em carga:
   * **Correção:** A fórmula base não inclui correção adicional de temperatura para sobrecarga, apenas o fator quadrático da corrente.
 * **Potência Ativa EPS (1.2 pu - kW):** \`potencia_ativa_eps_1_2\` = \`perdas_1_2\`. Status: OK
 
-#### 2.5.2. Sobrecarga 1.4 pu (140% Corrente Nominal)
+#### 3.5.2. Sobrecarga 1.4 pu (140% Corrente Nominal)
 
 * **Corrente de Sobrecarga:** \`corrente_1_4\` = \`corrente_at\` * 1.4. Status: OK
 * **Tensão de Ensaio (1.4 pu):** \`tensao_1_4\` = \`vcc\` * 1.4 *(Assumindo Vcc proporcional à corrente)*. Status: OK
@@ -321,43 +529,111 @@ Valores fornecidos ou obtidos para os cálculos de perdas em carga:
 
 ---
 
-## 3. Cálculos do Banco de Capacitores (Cap Bank)
+## 4. Cálculos do Banco de Capacitores (Cap Bank)
 
 Estimativa da necessidade de capacitores para compensar a reatância durante os ensaios (principalmente Perdas em Carga e Tensão Induzida). Para detalhes específicos sobre os cálculos de tensão induzida, consulte o arquivo \`formulas_induzida.md\`.
 
-### 3.1. Tensões Disponíveis dos Bancos (kV)
+### 4.1. Tensões Disponíveis dos Bancos (kV)
 
 * Lista padrão de tensões nominais dos bancos disponíveis: \`cap_bank_voltages\` = [13.8, 23.8, 27.6, 41.4, 47.8, 55.2, 71.7, 95.6]. Status: OK
 
-### 3.2. Seleção da Tensão Nominal do Banco
+### 4.2. Seleção da Tensão Nominal do Banco
 
 Seleciona a menor tensão de banco que seja maior ou igual à \`tensão_teste\` calculada para a condição específica (frio, quente, sobrecarga, etc.), considerando ou não um fator de segurança.
 
 * **Com Fator 1.1 (Segurança):** \`cap_bank_voltage_com_fator\` = Próxima tensão de banco ≥ (\`tensão_teste\` / 1.1). Status: OK
 * **Sem Fator 1.1:** \`cap_bank_voltage_sem_fator\` = Próxima tensão de banco ≥ \`tensão_teste\`. Status: OK
 
-### 3.3. Fator de Correção (Capacidade Efetiva)
+### 4.3. Fator de Correção (Capacidade Efetiva)
 
 Fator que ajusta a capacidade nominal do banco baseado na sua tensão nominal (bancos de menor tensão podem ter menor capacidade efetiva relativa).
 
 * Fatores aplicados: 0.25 para 13.8kV, 0.75 para 23.8kV, 1.0 para os demais. Status: OK
 
-### 3.4. Cálculo da Potência Reativa Necessária do Banco (kVAR)
+### 4.4. Cálculo do Banco de Capacitores Requerido (calculate_cap_bank)
 
-Calcula a potência reativa nominal que o banco selecionado precisa ter para fornecer a \`potência_teste\` (potência aparente reativa do ensaio) na \`tensão_teste\`.
+* **Entradas:** voltage (kV, e.g., tensao_frio), power (MVA, e.g., pteste_frio_mva - potência aparente do DUT no ensaio).
+* **Saídas (para C/F e S/F):** cap_bank_voltage_..._fator (kV, tensão nominal do banco selecionado) e pot_cap_bank_..._fator (MVAr, potência nominal que este banco precisaria ter para compensar a potência reativa do DUT na tensão de ensaio).
+* **A função calculate_cap_bank internamente deveria usar a componente reativa pteste_..._mvar (e não a aparente pteste_..._mva) como base para power_f para dimensionar o banco para compensação reativa. O código atual passa pteste_..._mva (aparente).**
 
-* **Com Fator 1.1:**
-    \`pot_cap_bank_com_fator\` = \`potência_teste\` / ((\`tensão_teste\` / \`cap_bank_voltage_com_fator\`)**2 * \`factor_com_fator\`). Status: OK
-* **Sem Fator 1.1:**
-    \`pot_cap_bank_sem_fator\` = \`potência_teste\` / ((\`tensão_teste\` / \`cap_bank_voltage_sem_fator\`)**2 * \`factor_sem_fator\`). Status: OK
+  * **Fórmula correta para potência reativa**: Q_requerida_banco_nominal = Q_{DUT} / ( (V_{ensaio} / V_{banco_nominal})^2 * Cap_Correct_factor )
+  * **Onde Cap_Correct_factor é 1.0 nesta função.**
+
+### 4.5. Configuração do Banco de Capacitores (Disponível/Sugerido)
+
+#### 4.5.1. Capacitores Disponíveis por Nível de Tensão Nominal do Banco
+
+Conforme utils.constants.CAPACITORS_BY_VOLTAGE:
+
+| **Tensão Nominal Banco (kV)** | **Capacitores Físicos Disponíveis (CAPACITORS_BY_VOLTAGE[chave])** |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "13.8"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2"] |
+| "23.9"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2"] |
+| "27.6"                               | ["CP1A1", "CP1A2", "CP1B1", "CP1B2", "CP1C1", "CP1C2", "CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+| "41.4"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+| "47.8"                               | ["CP1A1", "CP1A2", "CP1B1", "CP1B2", "CP1C1", "CP1C2", "CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+| "55.2"                               | ["CP1A1", "CP1A2", "CP1B1", "CP1B2", "CP1C1", "CP1C2", "CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+| "71.7"                               | ["CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+| "95.6"                               | ["CP1A1", "CP1A2", "CP1B1", "CP1B2", "CP1C1", "CP1C2", "CP2A1", "CP2A2", "CP2B1", "CP2B2", "CP2C1", "CP2C2", "CP3A1", "CP3A2", "CP3B1", "CP3B2", "CP3C1", "CP3C2", "CP4A1", "CP4A2", "CP4B1", "CP4B2", "CP4C1", "CP4C2"] |
+
+**Nomenclatura CPxAy**: x=posição (1-4), A=Fase (A,B,C), y=Grupo (1 ou 2).
+
+#### 4.5.2. Potência das Chaves Q por Unidade de Capacitor
+
+Conforme utils.constants.Q_SWITCH_POWERS["generic_cp"]:
+
+| **Chave** | **Potência (MVAr)** |
+| --------------- | -------------------------- |
+| Q1              | 0.1                        |
+| Q2              | 0.2                        |
+| Q3              | 0.8                        |
+| Q4              | 1.2                        |
+| Q5              | 1.6                        |
+| Total (Q1-Q5)   | 3.9                        |
+
+#### 4.5.3. Lógica de Seleção Implementada
+
+A lógica em losses.py (find_best_q_configuration, suggest_capacitor_bank_config) opera como descrito na Seção 2.5.2 e 2.5.3. A potência fornecida por uma combinação de chaves Q em um conjunto de available_caps (unidades monofásicas) é sum(Q_potencias_individuais) * len(available_caps).
+
+#### 4.5.4. Potências Mínima e Máxima Teóricas por Nível de Tensão
+
+Estas são as potências trifásicas totais que podem ser obtidas, considerando o uso apenas do Grupo 1 de capacitores (CPxy1) ou de todos os capacitores disponíveis (Grupo 1 + Grupo 2, i.e., CPxy1 + CPxy2), aplicando a mesma configuração de chaves Q (Q1 para mínima, Q1 a Q5 para máxima) em todas as unidades monofásicas selecionadas.
+
+* **13.8 kV** (CAPACITORS_BY_VOLTAGE["13.8"] = 6 unidades no total, 3 unidades no Grupo 1)
+* **Grupo 1 Apenas (len(available_caps)=3):**
+  * **Mínima (Q1): 0.1 MVAr/unid * 3 unid = 0.3 MVAr**
+  * **Máxima (Q1-Q5): 3.9 MVAr/unid * 3 unid = 11.7 MVAr**
+* **Grupo 1 + Grupo 2 (len(available_caps)=6):**
+  * **Mínima (Q1): 0.1 MVAr/unid * 6 unid = 0.6 MVAr**
+  * **Máxima (Q1-Q5): 3.9 MVAr/unid * 6 unid = 23.4 MVAr**
+
+### 4.6. Análise SUT/EPS para Perdas em Carga (Corrente Compensada)
+
+Função calculate_sut_eps_current_compensated:
+
+* **Entradas:**
+  * tensao_ref_dut_kv: e.g., tensao_frio
+  * corrente_ref_dut_a: e.g., corrente_frio (corrente total do DUT no ensaio)
+  * q_power_scenario_sf/cf_mvar: Potência fornecida pelo banco S/F ou C/F (e.g., Q Power Provided Frio S/F (MVAr)), na sua tensão nominal.
+  * cap_bank_voltage_scenario_sf/cf_kv: Tensão nominal do banco S/F ou C/F.
+  * ... (outros parâmetros SUT).
+* **Cálculos (exemplo para S/F):**
+  * ratio_sut = V_sut_hv_tap_v / tensao_sut_bt_v.
+  * I_dut_reflected (A) = corrente_ref_dut_a * ratio_sut (Corrente total do DUT refletida para BT SUT).
+  * Cap_Correct_factor_sf: 0.25 (banco 13.8/23.9kV), 0.75 (banco 41.4/71.7kV), 1.0 (outros). Para C/F, sempre 1.0.
+  * pteste_mvar_corrected_sf (MVAr): Qbanco_efetiva = Qbanco_fornecida_nominal × (Vensaio_DUT / Vbanco_nominal)² × Cap_Correct_factor_sf
+  * I_cap_base_sf (A) (Corrente capacitiva no lado DUT): (Qbanco_efetiva×1000)/(Vensaio_DUT×sqrt_3)
+  * I_cap_adjustment_sf (A) (Corrente capacitiva refletida para BT SUT): I_cap_base_sf * ratio_sut
+  * I_eps_sf_net (A) (Corrente no EPS): I_dut_reflected - I_cap_adjustment_sf. Esta é uma subtração escalar direta, o que implica que I_dut_reflected é tratada como puramente reativa ou que as fases são tais que a subtração escalar é uma aproximação válida.
+  * percent_limite_sf (%): (abs(I_eps_sf_net) / EPS_CURRENT_LIMIT) * 100.
 
 ---
 
-## 4. Inputs, Tipos e Callbacks
+## 5. Inputs, Tipos e Callbacks
 
-### 4.1. Inputs e Tipos
+### 5.1. Inputs e Tipos
 
-#### 4.1.1. Perdas em Vazio
+#### 5.1.1. Perdas em Vazio
 
 | ID do Componente | Tipo | Descrição |
 |------------------|------|-----------|
@@ -369,7 +645,7 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
 | corrente_exc_1_1_input | number | Corrente de excitação a 110% da tensão nominal em percentual |
 | corrente_exc_1_2_input | number | Corrente de excitação a 120% da tensão nominal em percentual |
 
-#### 4.1.2. Perdas em Carga
+#### 5.1.2. Perdas em Carga
 
 | ID do Componente | Tipo | Descrição |
 |------------------|------|-----------|
@@ -379,7 +655,7 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
 | temperatura_referencia | number | Temperatura de referência para correção das perdas em °C |
 | tipo_ensaio | dropdown | Tipo de ensaio (Frio/Quente) |
 
-#### 4.1.3. Banco de Capacitores
+#### 5.1.3. Banco de Capacitores
 
 | ID do Componente | Tipo | Descrição |
 |------------------|------|-----------|
@@ -388,23 +664,23 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
 | cap_bank_voltage_1_2 | dropdown | Tensão do banco de capacitores para ensaio a 120% |
 | cap_bank_voltage_1_4 | dropdown | Tensão do banco de capacitores para ensaio a 140% |
 
-### 4.2. Callbacks Principais
+### 5.2. Callbacks Principais
 
-#### 4.2.1. Callbacks de Inicialização e Armazenamento
+#### 5.2.1. Callbacks de Inicialização e Armazenamento
 
 | Callback | Função | Descrição |
 |----------|--------|-----------|
 | load_losses_from_store | Carrega dados do store | Carrega os valores salvos no store para os componentes da interface |
 | update_losses_store | Atualiza store de perdas | Salva os resultados dos cálculos no store para uso em outros módulos |
 
-#### 4.2.2. Callbacks de Cálculos de Perdas
+#### 5.2.2. Callbacks de Cálculos de Perdas
 
 | Callback | Função | Descrição |
 |----------|--------|-----------|
 | update_perdas_vazio_calculations | Calcula perdas em vazio | Realiza os cálculos de perdas em vazio, corrente de excitação e potência de ensaio |
 | update_perdas_carga_calculations | Calcula perdas em carga | Realiza os cálculos de perdas em carga, tensão e corrente de ensaio |
 
-#### 4.2.3. Callbacks de Banco de Capacitores
+#### 5.2.3. Callbacks de Banco de Capacitores
 
 | Callback | Função | Descrição |
 |----------|--------|-----------|
@@ -433,6 +709,9 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
                     .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
 
                 heading.id = slug || `heading-${index}`;
+                /*
+                console.log(`Heading text: ${heading.textContent}, Slug: ${slug}, ID: ${heading.id}`);
+                */
             });
 
             // Now find the actual headings in the document and assign the same IDs
@@ -495,7 +774,9 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
             });
 
             // Render markdown to HTML
+            console.log("Iniciando a renderização do Markdown...");
             const renderedHTML = marked.parse(content);
+            console.log("Renderização do Markdown concluída.");
 
             // Apply search highlighting if there's a search term
             const finalHTML = searchTerm ? highlightSearchTerms(renderedHTML, searchTerm) : renderedHTML;
@@ -546,3 +827,4 @@ Calcula a potência reativa nominal que o banco selecionado precisa ter para for
     </script>
 </body>
 </html>
+
