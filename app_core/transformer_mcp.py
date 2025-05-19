@@ -514,13 +514,22 @@ class TransformerMCP:
             tipo_transformador = transformer_data.get("tipo_transformador", "Trifásico")
 
             # Verificar se os dados essenciais estão presentes
-            if not potencia_mva or not tensao_at:
+            if potencia_mva is None or tensao_at is None:
                 log.warning("[MCP CALCULATE] Dados insuficientes para calcular correntes nominais.")
                 return result
 
             # Converter para números se necessário
-            potencia_mva = float(potencia_mva)
-            tensao_at = float(tensao_at)
+            try:
+                potencia_mva = float(potencia_mva)
+                tensao_at = float(tensao_at)
+
+                # Verificar se os valores são válidos
+                if potencia_mva <= 0 or tensao_at <= 0:
+                    log.warning("[MCP CALCULATE] Valores inválidos para potência ou tensão AT.")
+                    return result
+            except (ValueError, TypeError) as e:
+                log.error(f"[MCP CALCULATE] Erro ao converter valores: {e}")
+                return result
 
             # Fator de multiplicação baseado no tipo de transformador
             fator = 1.0
@@ -531,30 +540,46 @@ class TransformerMCP:
 
             # Calcular corrente nominal AT
             corrente_nominal_at = (potencia_mva * 1000) / (tensao_at * fator)
-            result["corrente_nominal_at"] = corrente_nominal_at
+            result["corrente_nominal_at"] = round(corrente_nominal_at, 2)
 
             # Calcular corrente nominal BT se tensão BT estiver presente
-            if tensao_bt:
-                tensao_bt = float(tensao_bt)
-                corrente_nominal_bt = (potencia_mva * 1000) / (tensao_bt * fator)
-                result["corrente_nominal_bt"] = corrente_nominal_bt
+            if tensao_bt is not None:
+                try:
+                    tensao_bt = float(tensao_bt)
+                    if tensao_bt > 0:
+                        corrente_nominal_bt = (potencia_mva * 1000) / (tensao_bt * fator)
+                        result["corrente_nominal_bt"] = round(corrente_nominal_bt, 2)
+                except (ValueError, TypeError) as e:
+                    log.error(f"[MCP CALCULATE] Erro ao converter tensão BT: {e}")
 
             # Calcular corrente nominal terciário se tensão terciário estiver presente
-            if tensao_terciario:
-                tensao_terciario = float(tensao_terciario)
-                corrente_nominal_terciario = (potencia_mva * 1000) / (tensao_terciario * fator)
-                result["corrente_nominal_terciario"] = corrente_nominal_terciario
+            if tensao_terciario is not None:
+                try:
+                    tensao_terciario = float(tensao_terciario)
+                    if tensao_terciario > 0:
+                        corrente_nominal_terciario = (potencia_mva * 1000) / (tensao_terciario * fator)
+                        result["corrente_nominal_terciario"] = round(corrente_nominal_terciario, 2)
+                except (ValueError, TypeError) as e:
+                    log.error(f"[MCP CALCULATE] Erro ao converter tensão terciário: {e}")
 
             # Calcular correntes nominais para taps se presentes
-            if tensao_at_tap_maior:
-                tensao_at_tap_maior = float(tensao_at_tap_maior)
-                corrente_nominal_at_tap_maior = (potencia_mva * 1000) / (tensao_at_tap_maior * fator)
-                result["corrente_nominal_at_tap_maior"] = corrente_nominal_at_tap_maior
+            if tensao_at_tap_maior is not None:
+                try:
+                    tensao_at_tap_maior = float(tensao_at_tap_maior)
+                    if tensao_at_tap_maior > 0:
+                        corrente_nominal_at_tap_maior = (potencia_mva * 1000) / (tensao_at_tap_maior * fator)
+                        result["corrente_nominal_at_tap_maior"] = round(corrente_nominal_at_tap_maior, 2)
+                except (ValueError, TypeError) as e:
+                    log.error(f"[MCP CALCULATE] Erro ao converter tensão AT tap maior: {e}")
 
-            if tensao_at_tap_menor:
-                tensao_at_tap_menor = float(tensao_at_tap_menor)
-                corrente_nominal_at_tap_menor = (potencia_mva * 1000) / (tensao_at_tap_menor * fator)
-                result["corrente_nominal_at_tap_menor"] = corrente_nominal_at_tap_menor
+            if tensao_at_tap_menor is not None:
+                try:
+                    tensao_at_tap_menor = float(tensao_at_tap_menor)
+                    if tensao_at_tap_menor > 0:
+                        corrente_nominal_at_tap_menor = (potencia_mva * 1000) / (tensao_at_tap_menor * fator)
+                        result["corrente_nominal_at_tap_menor"] = round(corrente_nominal_at_tap_menor, 2)
+                except (ValueError, TypeError) as e:
+                    log.error(f"[MCP CALCULATE] Erro ao converter tensão AT tap menor: {e}")
 
             log.info(f"[MCP CALCULATE] Correntes nominais calculadas: {result}")
             return result

@@ -16,10 +16,28 @@ def safe_float(value, default=None):
     if value is None or value == "":
         return default
     try:
-        s_value = str(value).replace(".", "").replace(",", ".")
-        return float(s_value)
-    except (ValueError, TypeError):
-        log.warning(f"Could not convert '{value}' to float.")
+        # Se o valor já for um número, retorná-lo diretamente
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        # Se for uma string, tratar formatação
+        s_value = str(value).strip()
+        # Substituir vírgula por ponto (formato brasileiro para decimal)
+        s_value = s_value.replace(",", ".")
+        # Remover espaços
+        s_value = s_value.replace(" ", "")
+
+        # Verificar se é um número válido
+        result = float(s_value)
+
+        # Verificar se é um número positivo
+        if result <= 0:
+            log.warning(f"Valor '{value}' convertido para {result}, mas é zero ou negativo.")
+            return default
+
+        return result
+    except (ValueError, TypeError) as e:
+        log.warning(f"Could not convert '{value}' to float: {e}")
         return default
 
 
@@ -61,6 +79,9 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
     tensao_bt = safe_float(transformer_data.get("tensao_bt"))
     tensao_terciario = safe_float(transformer_data.get("tensao_terciario"))
 
+    # Log detalhado dos valores após conversão
+    log.debug(f"[elec] Valores após conversão segura: potencia={potencia}, tensao_at={tensao_at}, tensao_bt={tensao_bt}, tensao_terciario={tensao_terciario}, tensao_at_maior={tensao_at_maior}, tensao_at_menor={tensao_at_menor}")
+
     # Verificação detalhada dos dados
     log.info(
         f"[elec] Valores para cálculo: tipo={tipo}, potencia={potencia}, "
@@ -69,19 +90,16 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
     )
 
     # Verificar se temos valores válidos para o cálculo
-    if potencia <= 0:
-        log.warning("[elec] Potência inválida ou ausente.")
+    if potencia is None:
+        log.warning("[elec] Potência ausente.")
         return result
 
-    if tensao_at <= 0:
-        log.warning("[elec] Tensão AT inválida ou ausente.")
+    if tensao_at is None:
+        log.warning("[elec] Tensão AT ausente.")
         result["corrente_nominal_at"] = None
         result["corrente_nominal_at_tap_maior"] = None
         result["corrente_nominal_at_tap_menor"] = None
-
-    if tensao_bt <= 0:
-        log.warning("[elec] Tensão BT inválida ou ausente.")
-        result["corrente_nominal_bt"] = None
+        return result
 
     try:
         # Fator para cálculo da corrente
@@ -90,11 +108,12 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
 
         # Cálculo das correntes com base no tipo de transformador
         if tipo == "Trifásico":
-            if tensao_at > 0:
-                result["corrente_nominal_at"] = round((potencia * 1000) / (sqrt3 * tensao_at), 2)
-                log.info(f"[elec] Corrente AT calculada: {result['corrente_nominal_at']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_at}))")
+            # Corrente AT
+            result["corrente_nominal_at"] = round((potencia * 1000) / (sqrt3 * tensao_at), 2)
+            log.info(f"[elec] Corrente AT calculada: {result['corrente_nominal_at']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_at}))")
 
-            if tensao_at_maior > 0:
+            # Corrente AT tap maior
+            if tensao_at_maior is not None:
                 result["corrente_nominal_at_tap_maior"] = round(
                     (potencia * 1000) / (sqrt3 * tensao_at_maior), 2
                 )
@@ -102,7 +121,8 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
                     f"[elec] Corrente AT tap maior calculada: {result['corrente_nominal_at_tap_maior']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_at_maior}))"
                 )
 
-            if tensao_at_menor > 0:
+            # Corrente AT tap menor
+            if tensao_at_menor is not None:
                 result["corrente_nominal_at_tap_menor"] = round(
                     (potencia * 1000) / (sqrt3 * tensao_at_menor), 2
                 )
@@ -110,11 +130,13 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
                     f"[elec] Corrente AT tap menor calculada: {result['corrente_nominal_at_tap_menor']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_at_menor}))"
                 )
 
-            if tensao_bt > 0:
+            # Corrente BT
+            if tensao_bt is not None:
                 result["corrente_nominal_bt"] = round((potencia * 1000) / (sqrt3 * tensao_bt), 2)
                 log.info(f"[elec] Corrente BT calculada: {result['corrente_nominal_bt']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_bt}))")
 
-            if tensao_terciario > 0:
+            # Corrente Terciário
+            if tensao_terciario is not None:
                 result["corrente_nominal_terciario"] = round(
                     (potencia * 1000) / (sqrt3 * tensao_terciario), 2
                 )
@@ -122,13 +144,14 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
                     f"[elec] Corrente Terciário calculada: {result['corrente_nominal_terciario']}A (Fórmula: {potencia}*1000/({sqrt3}*{tensao_terciario}))"
                 )
         else:  # Monofásico
-            if tensao_at > 0:
-                result["corrente_nominal_at"] = round((potencia * 1000) / tensao_at, 2)
-                log.info(
-                    f"[elec] Corrente AT calculada (monofásico): {result['corrente_nominal_at']}A (Fórmula: {potencia}*1000/{tensao_at})"
-                )
+            # Corrente AT
+            result["corrente_nominal_at"] = round((potencia * 1000) / tensao_at, 2)
+            log.info(
+                f"[elec] Corrente AT calculada (monofásico): {result['corrente_nominal_at']}A (Fórmula: {potencia}*1000/{tensao_at})"
+            )
 
-            if tensao_at_maior > 0:
+            # Corrente AT tap maior
+            if tensao_at_maior is not None:
                 result["corrente_nominal_at_tap_maior"] = round(
                     (potencia * 1000) / tensao_at_maior, 2
                 )
@@ -136,7 +159,8 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
                     f"[elec] Corrente AT tap maior calculada (monofásico): {result['corrente_nominal_at_tap_maior']}A (Fórmula: {potencia}*1000/{tensao_at_maior})"
                 )
 
-            if tensao_at_menor > 0:
+            # Corrente AT tap menor
+            if tensao_at_menor is not None:
                 result["corrente_nominal_at_tap_menor"] = round(
                     (potencia * 1000) / tensao_at_menor, 2
                 )
@@ -144,13 +168,15 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
                     f"[elec] Corrente AT tap menor calculada (monofásico): {result['corrente_nominal_at_tap_menor']}A (Fórmula: {potencia}*1000/{tensao_at_menor})"
                 )
 
-            if tensao_bt > 0:
+            # Corrente BT
+            if tensao_bt is not None:
                 result["corrente_nominal_bt"] = round((potencia * 1000) / tensao_bt, 2)
                 log.info(
                     f"[elec] Corrente BT calculada (monofásico): {result['corrente_nominal_bt']}A (Fórmula: {potencia}*1000/{tensao_bt})"
                 )
 
-            if tensao_terciario > 0:
+            # Corrente Terciário
+            if tensao_terciario is not None:
                 result["corrente_nominal_terciario"] = round(
                     (potencia * 1000) / tensao_terciario, 2
                 )
