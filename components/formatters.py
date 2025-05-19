@@ -55,7 +55,7 @@ def format_parameter_value(
 # --- Formatadores Específicos para Relatório PDF ---
 
 
-def formatar_dados_basicos(dados: dict | None) -> dict:
+def formatar_dados_basicos(dados: dict) -> dict:
     """Formata dados básicos para estrutura de tabela PDF (parâmetro-valor)."""
     if not isinstance(dados, dict) or not dados:
         log.warning("Dados básicos ausentes para formatação PDF.")

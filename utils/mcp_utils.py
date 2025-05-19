@@ -7,7 +7,7 @@ import copy
 import logging
 from typing import Any, Dict
 
-# Removida a importação de PreventUpdate pois não estamos mais lançando exceções
+
 
 from utils.mcp_persistence import _dados_ok, ESSENTIAL
 

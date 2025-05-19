@@ -372,6 +372,10 @@ def register_transformer_inputs_callbacks(app_instance):
             mcp_data = app_instance.mcp.get_data("transformer-inputs-store")
             log.info(f"[UpdateIsolationValues] Dados obtidos do MCP: {len(mcp_data.keys()) if mcp_data else 0} campos")
 
+            # Verificar se o NBI AT está definido no MCP
+            if mcp_data and mcp_data.get("nbi_at"):
+                log.info(f"[UpdateIsolationValues] NBI AT já definido no MCP: {mcp_data.get('nbi_at')}")
+
         # Se não tiver dados do MCP, usar os dados do store
         if not mcp_data and (not store_data or not isinstance(store_data, dict)):
             log.warning("[UpdateIsolationValues] Nem MCP nem Store têm dados válidos. Retornando no_update.")
@@ -400,8 +404,13 @@ def register_transformer_inputs_callbacks(app_instance):
 
         # Função para preservar valores existentes
         def preserve_existing_value(store_dict, key, new_value):
-            """Preserva o valor existente no store se o novo valor for None ou vazio."""
+            """Preserva o valor existente no store se o novo valor for None ou vazio, ou se for um valor definido pelo usuário."""
             existing_value = store_dict.get(key)
+
+            # Verificar se é o campo nbi_at e se foi definido pelo usuário
+            if key == "nbi_at" and store_dict.get("nbi_at_user_defined", False):
+                log.info(f"[UpdateIsolationValues] Preservando valor de NBI AT definido pelo usuário: {existing_value}")
+                return existing_value
 
             # Se o novo valor for None ou string vazia, e o valor existente não for None ou vazio
             if (new_value is None or (isinstance(new_value, str) and new_value.strip() == "")) and \
@@ -535,8 +544,13 @@ def register_transformer_inputs_callbacks(app_instance):
 
             # Função para preservar valores existentes
             def preserve_existing_value(store_dict, key, new_value):
-                """Preserva o valor existente no store se o novo valor for None ou vazio."""
+                """Preserva o valor existente no store se o novo valor for None ou vazio, ou se for um valor definido pelo usuário."""
                 existing_value = store_dict.get(key)
+
+                # Verificar se é o campo nbi_at e se foi definido pelo usuário
+                if key == "nbi_at" and store_dict.get("nbi_at_user_defined", False):
+                    log.info(f"[autosave_with_debounce] Preservando valor de NBI AT definido pelo usuário: {existing_value}")
+                    return existing_value
 
                 # Se o novo valor for None ou string vazia, e o valor existente não for None ou vazio
                 if (new_value is None or (isinstance(new_value, str) and new_value.strip() == "")) and \
@@ -556,6 +570,11 @@ def register_transformer_inputs_callbacks(app_instance):
             for key in isolation_keys:
                 serializable_data[key] = preserve_existing_value(mcp_data, key, serializable_data.get(key))
                 log.info(f"[autosave_with_debounce] Valor final para {key}: {serializable_data.get(key)}")
+
+            # Verificação especial para NBI AT
+            if mcp_data.get("nbi_at") and (serializable_data.get("nbi_at") is None or serializable_data.get("nbi_at") == ""):
+                serializable_data["nbi_at"] = mcp_data.get("nbi_at")
+                log.info(f"[autosave_with_debounce] Preservando valor de NBI AT do MCP: {mcp_data.get('nbi_at')}")
 
             # Salvar no MCP usando set_data diretamente
             app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
@@ -656,8 +675,13 @@ def register_transformer_inputs_callbacks(app_instance):
 
                 # Função para preservar valores existentes
                 def preserve_existing_value(store_dict, key, new_value):
-                    """Preserva o valor existente no store se o novo valor for None ou vazio."""
+                    """Preserva o valor existente no store se o novo valor for None ou vazio, ou se for um valor definido pelo usuário."""
                     existing_value = store_dict.get(key)
+
+                    # Verificar se é o campo nbi_at e se foi definido pelo usuário
+                    if key == "nbi_at" and store_dict.get("nbi_at_user_defined", False):
+                        log.info(f"[flush_on_page_change] Preservando valor de NBI AT definido pelo usuário: {existing_value}")
+                        return existing_value
 
                     # Se o novo valor for None ou string vazia, e o valor existente não for None ou vazio
                     if (new_value is None or (isinstance(new_value, str) and new_value.strip() == "")) and \
@@ -705,6 +729,11 @@ def register_transformer_inputs_callbacks(app_instance):
                     serializable_data[key] = preserve_existing_value(mcp_data, key, serializable_data.get(key))
                     log.info(f"[flush_on_page_change] Valor final para {key}: {serializable_data.get(key)}")
 
+                # Verificação especial para NBI AT
+                if mcp_data.get("nbi_at") and (serializable_data.get("nbi_at") is None or serializable_data.get("nbi_at") == ""):
+                    serializable_data["nbi_at"] = mcp_data.get("nbi_at")
+                    log.info(f"[flush_on_page_change] Preservando valor de NBI AT do MCP: {mcp_data.get('nbi_at')}")
+
                 # Salvar no MCP usando set_data diretamente
                 app_instance.mcp.set_data("transformer-inputs-store", serializable_data)
                 log.info(f"[flush_on_page_change] MCP atualizado ao navegar para {pathname}")
@@ -743,6 +772,68 @@ def register_transformer_inputs_callbacks(app_instance):
     # Adicionar um elemento para o callback de verificação de persistência
     app_instance.layout.children.append(html.Div(id="persistence-check-output", style={"display": "none"}))
 
+    # Adicionar um elemento para o callback de salvar NBI AT
+    app_instance.layout.children.append(html.Div(id="save-nbi-at-output", style={"display": "none"}))
+
+    # Callback para salvar o valor de NBI AT no transformer-inputs-store
+    @app_instance.callback(
+        Output("save-nbi-at-output", "children"),
+        Input("nbi_at", "value"),
+        prevent_initial_call=True,
+    )
+    def save_nbi_at_value(nbi_at_value):
+        """
+        Salva o valor de NBI AT no transformer-inputs-store quando o usuário seleciona um valor no dropdown.
+        """
+        if nbi_at_value is None:
+            return ""
+
+        log.info(f"[save_nbi_at_value] Salvando valor de NBI AT: {nbi_at_value}")
+
+        try:
+            # Obter os dados atuais do MCP
+            if hasattr(app_instance, "mcp") and app_instance.mcp is not None:
+                current_data = app_instance.mcp.get_data("transformer-inputs-store") or {}
+
+                # Atualizar o valor de NBI AT
+                current_data["nbi_at"] = str(nbi_at_value)
+
+                # Adicionar uma flag para indicar que o valor foi definido pelo usuário
+                current_data["nbi_at_user_defined"] = True
+
+                # Salvar no MCP
+                app_instance.mcp.set_data("transformer-inputs-store", current_data)
+
+                # Forçar salvamento no disco
+                app_instance.mcp.save_to_disk(force=True)
+
+                log.info(f"[save_nbi_at_value] MCP atualizado com NBI AT = {nbi_at_value} e salvo no disco")
+
+                # Propagar dados para outros stores
+                from utils.mcp_persistence import ensure_mcp_data_propagation
+
+                target_stores = [
+                    "losses-store",
+                    "impulse-store",
+                    "dieletric-analysis-store",
+                    "applied-voltage-store",
+                    "induced-voltage-store",
+                    "short-circuit-store",
+                    "temperature-rise-store",
+                    "comprehensive-analysis-store",
+                ]
+                ensure_mcp_data_propagation(app_instance, "transformer-inputs-store", target_stores)
+
+                # Verificar se o valor foi salvo corretamente
+                saved_data = app_instance.mcp.get_data("transformer-inputs-store")
+                log.info(f"[save_nbi_at_value] Valor após salvar: nbi_at={saved_data.get('nbi_at')}, user_defined={saved_data.get('nbi_at_user_defined')}")
+
+                return f"NBI AT salvo: {nbi_at_value}"
+        except Exception as e:
+            log.error(f"[save_nbi_at_value] Erro ao salvar NBI AT: {e}")
+
+        return ""
+
     # Callback para verificar a persistência dos dados ao carregar a página
     @app_instance.callback(
         Output("persistence-check-output", "children"),
@@ -774,6 +865,8 @@ def register_transformer_inputs_callbacks(app_instance):
             log.info(f"[verify_data_persistence_on_load] Valor no MCP: {key}={mcp_data.get(key)}")
 
         return ""
+
+
 
     # Callback para limpar os campos do formulário de dados básicos
     @app_instance.callback(
@@ -885,7 +978,7 @@ def register_transformer_inputs_callbacks(app_instance):
 
             # Níveis de Isolamento - AT
             "nbi_at", "sil_at", "teste_tensao_aplicada_at", "teste_tensao_induzida_at",
-            "nbi_neutro_at", "sil_neutro_at",
+            "nbi_neutro_at", "sil_neutro_at", "nbi_at_user_defined",
 
             # Níveis de Isolamento - BT
             "nbi_bt", "sil_bt", "teste_tensao_aplicada_bt", "nbi_neutro_bt", "sil_neutro_bt",

@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 
 # --- Helper Function to Get Verificador Instance (mantido) ---
-def get_verificador_instance() -> VerificadorTransformador | None:
+def get_verificador_instance() -> VerificadorTransformador:
     """Instantiates VerificadorTransformador, handling potential errors."""
     try:
         verificador = VerificadorTransformador()

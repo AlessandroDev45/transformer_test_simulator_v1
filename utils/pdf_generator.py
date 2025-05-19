@@ -82,7 +82,7 @@ def create_pdf_table(table_data, col_widths=None, title="Tabela", styles=None, d
     Creates a ReportLab Table with consistent styling from list-of-lists or dict.
 
     Args:
-        table_data (list|dict): Data for the table. List-of-lists (header first) or Dict (Param:Val).
+        table_data (list or dict): Data for the table. List-of-lists (header first) or Dict (Param:Val).
         col_widths (list, optional): List of column widths. Defaults to reasonable distribution.
         title (str): Title used for logging errors.
         styles (dict): Dictionary containing paragraph styles ('TableHeader', 'TableCellLeft', etc.).

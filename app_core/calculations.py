@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # === Funções de Análise de Expressão (de impulse.py) ===
 
 
-def parse_resistor_expression(expression: str | None) -> tuple[float, dict]:
+def parse_resistor_expression(expression: str) -> tuple:
     """
     Analisa uma expressão de configuração de resistores (série '+', paralelo '||').
     Suporta unidades 'k' e 'm', e capacitores de acoplamento ('pf').

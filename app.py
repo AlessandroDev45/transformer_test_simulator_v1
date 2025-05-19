@@ -326,7 +326,7 @@ if not layout_creation_failed:
             "history": "register_history_callbacks",
             "global_actions": "register_global_actions_callbacks",  # Adicionado
             "insulation_level_callbacks": "register_insulation_level_callbacks",  # Corrigido para o nome correto do ficheiro/função
-            "temperature_rise": "register_temperature_rise_callbacks",  # Callbacks de elevação de temperatura
+            "temperature_rise": "register_temperature_rise_callbacks"  # Callbacks de elevação de temperatura
             # 'standards_consultation': 'register_standards_consultation_callbacks', # Já são decorados
             # 'standards_management': 'register_standards_management_callbacks' # Já são decorados
             # "client_side_callbacks": "register_client_side_callbacks",  # Client-side - Removido: arquivo não existe

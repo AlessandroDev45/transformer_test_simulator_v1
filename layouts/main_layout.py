@@ -512,6 +512,7 @@ def create_main_layout(uso_atual=0, limite_atingido=False, app=None):
                                     className="text-muted",
                                     style={"fontSize": "0.7rem", "opacity": "0.7"},
                                 ),
+
                             ],
                             className="text-center py-1",
                         )

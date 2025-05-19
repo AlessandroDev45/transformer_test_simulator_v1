@@ -450,8 +450,6 @@ def create_transformer_inputs_layout():
                                                                 persistence_type="local",
                                                                 className="dash-dropdown-dark",
                                                             ),
-                                                            # Elemento dummy para callback clientside
-                                                            html.Div(id="_at_dummy_output", style={"display": "none"}),
                                                         ],
                                                         width=6,
                                                     ),

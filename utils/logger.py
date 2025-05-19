@@ -160,79 +160,7 @@ def log_detailed(logger, level, message, module=None, function=None, data=None, 
         logger.info(log_message)
 
 
-def log_callback(logger):
-    """
-    Decorador para registrar a execução de callbacks do Dash.
 
-    Args:
-        logger: O objeto logger a ser usado
-
-    Returns:
-        Decorador que registra informações sobre a execução do callback
-    """
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            start_time = time.time()
-            module_name = func.__module__
-            function_name = func.__name__
-
-            # Log de início
-            log_detailed(
-                logger,
-                "debug",
-                f"Iniciando callback {function_name}",
-                module=module_name,
-                function=function_name,
-                data={"args_count": len(args), "kwargs_keys": list(kwargs.keys())},
-            )
-
-            try:
-                # Executa o callback
-                result = func(*args, **kwargs)
-
-                # Calcula o tempo de execução
-                execution_time = time.time() - start_time
-
-                # Log de sucesso
-                log_detailed(
-                    logger,
-                    "debug",
-                    f"Callback {function_name} concluído com sucesso",
-                    module=module_name,
-                    function=function_name,
-                    data={
-                        "execution_time_ms": round(execution_time * 1000, 2),
-                        "result_type": type(result).__name__,
-                    },
-                )
-
-                return result
-            except Exception as e:
-                # Calcula o tempo até a exceção
-                execution_time = time.time() - start_time
-
-                # Log de erro
-                log_detailed(
-                    logger,
-                    "error",
-                    f"Erro no callback {function_name}",
-                    module=module_name,
-                    function=function_name,
-                    data={
-                        "execution_time_ms": round(execution_time * 1000, 2),
-                        "error_type": type(e).__name__,
-                    },
-                    exception=e,
-                )
-
-                # Re-lança a exceção
-                raise
-
-        return wrapper
-
-    return decorator
 
 
 # Função para verificar a existência de stores

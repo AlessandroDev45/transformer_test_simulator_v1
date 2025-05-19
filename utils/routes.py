@@ -76,18 +76,7 @@ def normalize_pathname(pathname):
     return pathname.strip("/")
 
 
-# Função auxiliar para obter o rótulo de uma rota
-def get_route_label(route):
-    """
-    Retorna o rótulo de uma rota.
 
-    Args:
-        route (str): A rota
-
-    Returns:
-        str: O rótulo da rota ou None se a rota não existir
-    """
-    return ROUTE_LABELS.get(normalize_pathname(route))
 
 
 # Função auxiliar para verificar se uma rota é válida

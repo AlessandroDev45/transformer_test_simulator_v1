@@ -319,17 +319,49 @@ def register_isolation_callbacks(app_instance):
                 f"NBI_neutro={levels['nbi_neutro']}, SIL_neutro={sil_neutro_value}"
             )
 
+            # Verificar se o valor de NBI AT já existe no MCP e foi definido pelo usuário
+            nbi_at_value = store.get("nbi_at")
+            nbi_at_user_defined = store.get("nbi_at_user_defined", False)
+
+            if nbi_at_value and nbi_at_user_defined:
+                log.info(f"[auto_isolation_at] Usando valor definido pelo usuário de NBI AT do MCP: {nbi_at_value}")
+
+                # Verificar se o valor está nas opções
+                nbi_at_in_options = any(opt["value"] == nbi_at_value for opt in nbi_options)
+                if not nbi_at_in_options and nbi_options:
+                    # Adicionar o valor às opções
+                    nbi_options.append({"label": f"{nbi_at_value} kVp (Definido pelo usuário)", "value": nbi_at_value})
+                    log.info(f"[auto_isolation_at] Adicionando valor definido pelo usuário de NBI AT às opções: {nbi_at_value}")
+            elif nbi_at_value:
+                log.info(f"[auto_isolation_at] Usando valor existente de NBI AT do MCP: {nbi_at_value}")
+
+                # Verificar se o valor está nas opções
+                nbi_at_in_options = any(opt["value"] == nbi_at_value for opt in nbi_options)
+                if not nbi_at_in_options and nbi_options:
+                    # Adicionar o valor às opções
+                    nbi_options.append({"label": f"{nbi_at_value} kVp (Salvo)", "value": nbi_at_value})
+                    log.info(f"[auto_isolation_at] Adicionando valor salvo de NBI AT às opções: {nbi_at_value}")
+            else:
+                # Se não houver valor no MCP, usar o valor padrão
+                nbi_at_value = levels["nbi"]
+                log.info(f"[auto_isolation_at] Usando valor padrão de NBI AT: {nbi_at_value}")
+
+                # Atualizar o store com o valor padrão
+                store["nbi_at"] = nbi_at_value
+                app_instance.mcp.set_data("transformer-inputs-store", store)
+                log.info(f"[auto_isolation_at] MCP atualizado com valor padrão de NBI AT: {nbi_at_value}")
+
             return (
                 um,  # value para classe_tensao_at
                 False,  # disabled para classe_tensao_at (agora permitimos edição)
                 nbi_options,  # options para nbi_at
-                levels["nbi"],  # value para nbi_at
+                nbi_at_value,  # value para nbi_at (usar valor do store ou padrão)
                 sil_options,  # options para sil_at
-                levels["sil_im"],  # value para sil_at
+                store.get("sil_at") if store.get("sil_at") else levels["sil_im"],  # value para sil_at
                 nbi_neutro_options,  # options para nbi_neutro_at
-                levels["nbi_neutro"],  # value para nbi_neutro_at
+                store.get("nbi_neutro_at") if store.get("nbi_neutro_at") else levels["nbi_neutro"],  # value para nbi_neutro_at
                 sil_neutro_options,  # options para sil_neutro_at
-                sil_neutro_value,  # value para sil_neutro_at
+                store.get("sil_neutro_at") if store.get("sil_neutro_at") else sil_neutro_value,  # value para sil_neutro_at
                 store,  # data para transformer-inputs-store
             )
         except Exception as e:

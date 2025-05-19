@@ -64,7 +64,7 @@ def derive_um(voltage_kv_ll: float) -> float:
     return PADROES_UM_KV[idx]
 
 
-def candidates(um_kv: float, norma: str = "IEC") -> list[dict]:
+def candidates(um_kv: float, norma: str = "IEC") -> list:
     """
     Retorna todos os registros para uma determinada classe de tensão e norma.
 

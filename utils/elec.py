@@ -6,9 +6,21 @@ import logging
 import math
 from typing import Any, Dict, Optional
 
-from components.validators import safe_float
+
 
 log = logging.getLogger(__name__)
+
+
+def safe_float(value, default=None):
+    """Converte valor para float de forma segura, retorna default em caso de erro."""
+    if value is None or value == "":
+        return default
+    try:
+        s_value = str(value).replace(".", "").replace(",", ".")
+        return float(s_value)
+    except (ValueError, TypeError):
+        log.warning(f"Could not convert '{value}' to float.")
+        return default
 
 
 def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Optional[float]]:
@@ -158,17 +170,4 @@ def calculate_nominal_currents(transformer_data: Dict[str, Any]) -> Dict[str, Op
     return result
 
 
-def format_current(value: Optional[float], decimal_places: int = 2) -> str:
-    """
-    Formata um valor de corrente com o número especificado de casas decimais.
 
-    Args:
-        value: Valor da corrente
-        decimal_places: Número de casas decimais
-
-    Returns:
-        String formatada
-    """
-    if value is None:
-        return "-"
-    return f"{value:.{decimal_places}f}A"

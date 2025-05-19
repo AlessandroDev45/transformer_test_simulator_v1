@@ -22,20 +22,20 @@ log = logging.getLogger(__name__)
 
 def create_labeled_input(
     label_text: str,
-    input_id: str | dict,  # Aceita ID simples ou pattern-matching
+    input_id,  # Aceita ID simples ou pattern-matching
     input_type: str = "number",  # 'number', 'text', 'dropdown'
     placeholder: str = "",
     label_width: int = 6,  # Largura da coluna do label (1-12)
     input_width: int = 6,  # Largura da coluna do input (1-12)
-    step: float | str | None = "any",  # Para type="number"
-    value: str | float | int | None = None,
+    step = "any",  # Para type="number"
+    value = None,
     disabled: bool = False,
     readonly: bool = False,
-    options: list[dict] | None = None,  # Para type="dropdown" [{'label': '...', 'value': '...'}]
+    options = None,  # Para type="dropdown" [{'label': '...', 'value': '...'}]
     persistence: bool = True,
     persistence_type: str = "local",  # Default 'local'
-    input_style: dict | None = None,  # Estilo inline opcional para input/dropdown
-    label_style: dict | None = None,  # Estilo inline opcional para label
+    input_style = None,  # Estilo inline opcional para input/dropdown
+    label_style = None,  # Estilo inline opcional para label
     row_classname: str = "g-1 mb-1 align-items-center",  # Classes Bootstrap para a Row
     **kwargs,  # Outros props para dbc.Input ou dcc.Dropdown
 ) -> dbc.Row:
@@ -320,7 +320,7 @@ def create_dielectric_input_column(verificador_instance, label: str, identifier:
 
 
 def create_test_sequence_table(
-    title: str, data: dict | None, tipo_isolamento: str = None
+    title: str, data, tipo_isolamento = None
 ) -> html.Div:
     """Cria tabela formatada para sequências de ensaio (ex: Tensão Induzida NBR)."""
     bg_medium = config.colors.get("background_medium", "#e9ecef")
@@ -440,7 +440,7 @@ def create_test_sequence_table(
 
 
 def create_comparison_table(
-    title: str, nbr_data: dict | None, ieee_data: dict | None, tipo_isolamento: str = None
+    title: str, nbr_data, ieee_data, tipo_isolamento = None
 ) -> html.Div:
     """Cria tabela comparativa entre normas (NBR vs IEEE)."""
     bg_medium = config.colors.get("background_medium", "#e9ecef")

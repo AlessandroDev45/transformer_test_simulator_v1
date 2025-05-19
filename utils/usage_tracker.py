@@ -157,36 +157,4 @@ class UsageTracker:
             log.error(f"Erro ao obter contador de uso: {e}", exc_info=True)
             return None
 
-    def reset_counter(self, counter_name: str = "app_usage") -> bool:
-        """
-        Reseta um contador para zero.
 
-        Args:
-            counter_name: Nome do contador
-
-        Returns:
-            bool: True se sucesso, False se falha
-        """
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-
-            cursor.execute(
-                "UPDATE usage_counters SET value = 0, last_updated = ? WHERE counter_name = ?",
-                (datetime.now().isoformat(), counter_name),
-            )
-
-            # Registrar no histórico
-            cursor.execute(
-                "INSERT INTO usage_history (counter_name, timestamp, action, value) VALUES (?, ?, ?, ?)",
-                (counter_name, datetime.now().isoformat(), "reset", 0),
-            )
-
-            conn.commit()
-            conn.close()
-            log.info(f"Contador de uso resetado: {counter_name}")
-            return True
-
-        except Exception as e:
-            log.error(f"Erro ao resetar contador de uso: {e}", exc_info=True)
-            return False
